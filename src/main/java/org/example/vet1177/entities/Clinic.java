@@ -1,6 +1,8 @@
 package org.example.vet1177.entities;
 import jakarta.persistence.*;
 
+import java.util.UUID;
+
 
 @Entity
 @Table(name = "clinics")
@@ -8,26 +10,42 @@ public class Clinic {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
+
+    @Column(name = "clinic_id")
+    private UUID clinicId;
 
     private String name;
 
     private String address;
 
+    @Column(name = "phone_number")
     private String phoneNumber;
 
     public Clinic() {
     }
 
-    public Clinic(Long id, String name, String address, String phoneNumber) {
+    public Clinic(UUID id, String name, String address, String phoneNumber) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.phoneNumber = phoneNumber;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getClinicId() {
+        return clinicId;
+    }
+
+    public void setClinicId(UUID clinicId) {
+        this.clinicId = clinicId;
     }
 
     public String getName() {
@@ -40,10 +58,6 @@ public class Clinic {
 
     public String getPhoneNumber() {
         return phoneNumber;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public void setName(String name) {

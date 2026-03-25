@@ -2,20 +2,23 @@ package org.example.vet1177.entities;
 
 import jakarta.persistence.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "users") // nödvändigt med raden då User är reserverat ord i PostgreSQL
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
 
     private String name;
 
-    @Column
+    @Column(nullable = false, unique = true, length = 254)
     private String email;
 
-    private String password;
+    @Column(name = "password_hash")
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     private Role role; //role använder enum OWNER, VET, ADMIN
@@ -23,19 +26,19 @@ public class User {
     public User() {
     } //tom konsturktor för JPA
 
-    public User(Long id, String name, String email, String password, Role role) {
+    public User(UUID id, String name, String email, String password, Role role) {
         this.id = id;
         this.name = name;
         this.email = email;
-        this.password = password;
+        this.passwordHash = password;
         this.role = role;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -55,12 +58,12 @@ public class User {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public Role getRole() {
