@@ -27,20 +27,15 @@ public class User {
     public User() {
     } //tom konsturktor för JPA
 
-    public User(UUID id, String name, String email, String password, Role role) {
-        this.id = id;
+    public User(String name, String email, String passwordHash, Role role) {
         this.name = name;
         this.email = email;
-        this.passwordHash = password;
+        this.passwordHash = passwordHash;
         this.role = role;
     }
 
     public UUID getId() {
         return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
     }
 
     public String getName() {

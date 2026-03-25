@@ -26,8 +26,7 @@ public class Clinic {
     public Clinic() {
     }
 
-    public Clinic(UUID id, String name, String address, String phoneNumber) {
-        this.id = id;
+    public Clinic(String name, String address, String phoneNumber) {
         this.name = name;
         this.address = address;
         this.phoneNumber = phoneNumber;
@@ -37,9 +36,6 @@ public class Clinic {
         return id;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
 
     public UUID getClinicId() {
         return clinicId;
