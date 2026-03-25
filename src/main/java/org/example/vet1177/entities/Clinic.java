@@ -33,15 +33,6 @@ public class Clinic {
         return id;
     }
 
-
-    public UUID getClinicId() {
-        return clinicId;
-    }
-
-    public void setClinicId(UUID clinicId) {
-        this.clinicId = clinicId;
-    }
-
     public String getName() {
         return name;
     }
