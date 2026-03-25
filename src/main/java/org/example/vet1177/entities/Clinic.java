@@ -13,9 +13,6 @@ public class Clinic {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "clinic_id")
-    private UUID clinicId;
-
     private String name;
 
     private String address;
