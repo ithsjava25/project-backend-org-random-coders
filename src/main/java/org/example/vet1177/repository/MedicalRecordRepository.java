@@ -1,4 +1,4 @@
-package org.example.vet1177;
+package org.example.vet1177.repository;
 
 import org.example.vet1177.entities.MedicalRecord;
 import org.example.vet1177.entities.RecordStatus;
