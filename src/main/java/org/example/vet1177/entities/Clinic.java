@@ -13,9 +13,6 @@ public class Clinic {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "clinic_id")
-    private UUID clinicId;
-
     private String name;
 
     private String address;
@@ -34,15 +31,6 @@ public class Clinic {
 
     public UUID getId() {
         return id;
-    }
-
-
-    public UUID getClinicId() {
-        return clinicId;
-    }
-
-    public void setClinicId(UUID clinicId) {
-        this.clinicId = clinicId;
     }
 
     public String getName() {
