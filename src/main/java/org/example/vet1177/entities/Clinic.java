@@ -5,7 +5,7 @@ import java.util.UUID;
 
 
 @Entity
-@Table(name = "clinics")
+@Table(name = "clinic")
 public class Clinic {
 
     @Id
