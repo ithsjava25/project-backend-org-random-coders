@@ -83,7 +83,13 @@ public class MedicalRecord {
     public void setDescription(String description) { this.description = description; }
 
     public RecordStatus getStatus() { return status; }
-    public void setStatus(RecordStatus status) { this.status = status; }
+    public void setStatus(RecordStatus status) { this.status = status;
+    if (status==RecordStatus.CLOSED && this.closedAt==null){
+    this.closedAt=Instant.now();
+    } else if (status !=RecordStatus.CLOSED){
+        this.closedAt=null;
+    }
+    }
 
     public Pet getPet() { return pet; }
     public void setPet(Pet pet) { this.pet = pet; }
