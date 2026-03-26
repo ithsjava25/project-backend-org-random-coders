@@ -44,6 +44,3 @@ build/
 # macOS system files
 .DS_Store
 
-
-# IDE-specific files
-.vscode/
