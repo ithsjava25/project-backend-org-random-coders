@@ -30,7 +30,7 @@ public class Vet {
     }
 
     public Vet(User user, String licenseId, String specialization, String bookingInfo) {
-        this.user = user;
+        this.setUser(user);
         this.licenseId = licenseId;
         this.specialization = specialization;
         this.bookingInfo = bookingInfo;
@@ -41,9 +41,6 @@ public class Vet {
         return userId;
     }
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
 
     public User getUser() {
         return user;
