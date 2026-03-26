@@ -1,7 +1,7 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.entities.*;
-import org.example.vet1177.repositories.MedicalRecordRepository;
+import org.example.vet1177.repository.MedicalRecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
