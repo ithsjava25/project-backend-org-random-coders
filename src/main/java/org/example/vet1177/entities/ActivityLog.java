@@ -21,7 +21,7 @@ public class ActivityLog {
     private String description;
 
     @Column(nullable = false)
-    private String performedBy;
+    private User performedBy;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -32,7 +32,7 @@ public class ActivityLog {
 
     protected ActivityLog() {}
 
-    public ActivityLog(ActivityType action, String description, String performedBy, MedicalRecord medicalRecord) {
+    public ActivityLog(ActivityType action, String description, User performedBy, MedicalRecord medicalRecord) {
         this.action = action;
         this.description = description;
         this.performedBy = performedBy;
@@ -50,7 +50,7 @@ public class ActivityLog {
 
     public String getDescription() { return description; }
 
-    public String getPerformedBy() { return performedBy; }
+    public User getPerformedBy() { return performedBy; }
 
     public Instant getCreatedAt() { return createdAt; }
 
