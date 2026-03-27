@@ -14,10 +14,13 @@ public class ActivityLog {
     private UUID id;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ActivityType action;
 
+    @Column(nullable = false)
     private String description;
 
+    @Column(nullable = false)
     private String performedBy;
 
     @Column(name = "created_at", nullable = false, updatable = false)
