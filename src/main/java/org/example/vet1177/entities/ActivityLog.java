@@ -10,16 +10,17 @@ import java.util.UUID;
 public class ActivityLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    private String action;
+    @Enumerated(EnumType.STRING)
+    private ActivityType action;
 
     private String description;
 
     private String performedBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -28,11 +29,27 @@ public class ActivityLog {
 
     protected ActivityLog() {}
 
-    public ActivityLog(String action, String description, String performedBy, MedicalRecord medicalRecord) {
+    public ActivityLog(ActivityType action, String description, String performedBy, MedicalRecord medicalRecord) {
         this.action = action;
         this.description = description;
         this.performedBy = performedBy;
         this.medicalRecord = medicalRecord;
+    }
+
+    @PrePersist
+    protected void onCreate() {
         this.createdAt = Instant.now();
     }
+
+    public UUID getId() { return id; }
+
+    public ActivityType getAction() { return action; }
+
+    public String getDescription() { return description; }
+
+    public String getPerformedBy() { return performedBy; }
+
+    public Instant getCreatedAt() { return createdAt; }
+
+    public MedicalRecord getMedicalRecord() { return medicalRecord; }
 }
