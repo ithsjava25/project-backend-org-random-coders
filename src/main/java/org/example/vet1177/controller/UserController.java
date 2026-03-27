@@ -1,5 +1,6 @@
 package org.example.vet1177.controller;
 
+import jakarta.validation.Valid;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.services.UserService;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +17,9 @@ public class UserController {
         this.userService = userService;
     }
 
-    //skapa user
+    //skapa user, validation
     @PostMapping
-    public User createUser(@RequestBody CreateUserRequest request){
+    public User createUser(@Valid @RequestBody CreateUserRequest request){
         return userService.createUser(
                 request.getName(),
                 request.getEmail(),
