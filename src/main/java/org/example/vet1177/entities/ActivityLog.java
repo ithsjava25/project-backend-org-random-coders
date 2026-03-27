@@ -20,7 +20,8 @@ public class ActivityLog {
     @Column(nullable = false)
     private String description;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "performed_by", nullable = false)
     private User performedBy;
 
     @Column(name = "created_at", nullable = false, updatable = false)
