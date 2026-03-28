@@ -3,6 +3,7 @@ package org.example.vet1177.services;
 import org.example.vet1177.entities.Clinic;
 import org.example.vet1177.repository.ClinicRepository;
 import org.springframework.stereotype.Service;
+import org.example.vet1177.exception.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +28,7 @@ public class ClinicService {
 
     public Clinic getById(UUID id){
         return clinicRepository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Clinic not found"));
+                .orElseThrow(()-> new ResourceNotFoundException("Clinic", id));
     }
 
 }

@@ -2,8 +2,10 @@ package org.example.vet1177.services;
 
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
+import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.UserRepository;
 import org.springframework.stereotype.Service;
+
 
 import java.util.UUID;
 
@@ -23,12 +25,12 @@ public class UserService {
 
     public User getById(UUID id){
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 
     public User getByEmail(String email){
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", email));
     }
 
 }
