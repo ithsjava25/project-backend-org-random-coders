@@ -79,15 +79,32 @@ public class User {
 
 
     public List<Attachment> getUploadedAttachments() {
-        return uploadedAttachments;
+        return java.util.Collections.unmodifiableList(uploadedAttachments);
     }
 
-    public void setUploadedAttachments(List<Attachment> uploadedAttachments) {
-        this.uploadedAttachments = uploadedAttachments;
+
+    public void setUploadedAttachments(List<Attachment> attachments) {
+        this.uploadedAttachments.clear();
+        if (attachments != null) {
+            attachments.forEach(this::addAttachment);
+        }
     }
+
 
     public void addAttachment(Attachment attachment) {
-        uploadedAttachments.add(attachment);
-        attachment.setUploadedBy(this);
+        if (attachment != null) {
+            this.uploadedAttachments.add(attachment);
+            // Säkerställ att bilagan pekar på denna användare
+            if (attachment.getUploadedBy() != this) {
+                attachment.setUploadedBy(this);
+            }
+        }
+    }
+
+    public void removeAttachment(Attachment attachment) {
+        if (attachment != null) {
+            this.uploadedAttachments.remove(attachment);
+            attachment.setUploadedBy(null);
+        }
     }
 }
