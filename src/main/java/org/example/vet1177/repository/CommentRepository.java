@@ -1,6 +1,7 @@
 package org.example.vet1177.repository;
 
 import org.example.vet1177.entities.Comment;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,9 +12,11 @@ import java.util.UUID;
 public interface CommentRepository extends JpaRepository<Comment, UUID> {
 
     // Alla kommentarer för ett ärende — sorterat äldst först
+    @EntityGraph(attributePaths = {"medicalRecord", "author"})
     List<Comment> findByMedicalRecordIdOrderByCreatedAtAsc(UUID recordId);
 
     // Alla kommentarer skrivna av en specifik användare
+    @EntityGraph(attributePaths = {"medicalRecord", "author"})
     List<Comment> findByAuthorId(UUID authorId);
 
     // Antal kommentarer på ett ärende
