@@ -2,6 +2,8 @@ package org.example.vet1177.entities;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -46,6 +48,9 @@ public class MedicalRecord {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
     private User updatedBy;
+
+    @OneToMany(mappedBy = "medicalRecord", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Attachment> attachments = new ArrayList<>();
 
     // Timestamps
     @Column(name = "created_at", updatable = false)
@@ -108,6 +113,42 @@ public class MedicalRecord {
 
     public User getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(User updatedBy) { this.updatedBy = updatedBy; }
+
+
+    public List<Attachment> getAttachments() {
+        return java.util.Collections.unmodifiableList(attachments);
+    }
+
+    public void setAttachments(List<Attachment> newAttachments) {
+        List<Attachment> currentAttachments = new ArrayList<>(this.attachments);
+
+        for (Attachment attachment : currentAttachments) {
+            this.removeAttachment(attachment);
+        }
+
+        if (newAttachments != null) {
+            for (Attachment attachment : newAttachments) {
+                this.addAttachment(attachment);
+            }
+        }
+    }
+
+    public void addAttachment(Attachment attachment) {
+        if (attachment != null) {
+            this.attachments.add(attachment);
+            // Sätt baksidan av relationen om den inte redan är satt
+            if (attachment.getMedicalRecord() != this) {
+                attachment.setMedicalRecord(this);
+            }
+        }
+    }
+
+    public void removeAttachment(Attachment attachment) {
+        if (attachment != null) {
+            this.attachments.remove(attachment);
+            attachment.setMedicalRecord(null);
+        }
+    }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -2,6 +2,8 @@ package org.example.vet1177.entities;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -23,6 +25,11 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role; //role använder enum OWNER, VET, ADMIN
+
+    // Koppling till bilagor som användaren laddat upp
+    // Vi använder inte CascadeType.REMOVE för att skydda medicinsk data om en användare raderas
+    @OneToMany(mappedBy = "uploadedBy", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Attachment> uploadedAttachments = new ArrayList<>();
 
     public User() {
     } //tom konsturktor för JPA
@@ -68,5 +75,34 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+
+    public List<Attachment> getUploadedAttachments() {
+        return java.util.Collections.unmodifiableList(uploadedAttachments);
+    }
+
+    public void setUploadedAttachments(List<Attachment> attachments) {
+        this.uploadedAttachments.clear();
+        if (attachments != null) {
+            attachments.forEach(this::addAttachment);
+        }
+    }
+
+    public void addAttachment(Attachment attachment) {
+        if (attachment != null) {
+            this.uploadedAttachments.add(attachment);
+            // Säkerställ att bilagan pekar på denna användare
+            if (attachment.getUploadedBy() != this) {
+                attachment.setUploadedBy(this);
+            }
+        }
+    }
+
+    public void removeAttachment(Attachment attachment) {
+        if (attachment != null) {
+            this.uploadedAttachments.remove(attachment);
+            attachment.setUploadedBy(null);
+        }
     }
 }
