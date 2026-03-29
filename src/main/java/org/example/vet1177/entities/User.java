@@ -13,7 +13,7 @@ public class User {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false, unique = true, length = 255)
@@ -26,13 +26,16 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    // Relation till clinic
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "clinic_id")
     private Clinic clinic;
 
+    // FIX: primitive boolean istället för Boolean
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    private boolean isActive = true;
 
+    //Timestamps
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
@@ -87,9 +90,11 @@ public class User {
     public Clinic getClinic() { return clinic; }
     public void setClinic(Clinic clinic) { this.clinic = clinic; }
 
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public boolean isActive() { return isActive; }
+
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }
+
+
