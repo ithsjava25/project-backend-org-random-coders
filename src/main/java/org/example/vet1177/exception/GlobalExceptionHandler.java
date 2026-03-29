@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
 
         log.warn("Resource not found: {}", ex.getMessage());
 
-        return new ErrorResponse(404, ex.getMessage(), null);
+        return new ErrorResponse(404, "Resource not found", null);
     }
 
     // Access denied
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
 
         log.warn("Access denied: {}", ex.getMessage());
 
-        return new ErrorResponse(403, ex.getMessage(), null);
+        return new ErrorResponse(403, "Access denied", null);
     }
 
     // Business rule violation
@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
 
         log.warn("Business rule violation: {}", ex.getMessage());
 
-        return new ErrorResponse(400, ex.getMessage(), null);
+        return new ErrorResponse(400, "Business rule violation", null);
     }
 
     // Fallback (ALLA andra errors)
