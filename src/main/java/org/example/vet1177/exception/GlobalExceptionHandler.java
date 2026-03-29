@@ -4,11 +4,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 
     // Validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -21,6 +27,8 @@ public class GlobalExceptionHandler {
                 errors.put(error.getField(), error.getDefaultMessage())
         );
 
+        log.warn("Validation failed: {}", errors);
+
         return new ErrorResponse(
                 400,
                 "Validation failed",
@@ -32,13 +40,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleResourceNotFound(ResourceNotFoundException ex) {
+
+        log.warn("Resource not found: {}", ex.getMessage());
+
         return new ErrorResponse(404, ex.getMessage(), null);
     }
 
     // Access denied
-    @ExceptionHandler(AccessDeniedException.class)
+    @ExceptionHandler(ForbiddenException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse handleAccessDenied(AccessDeniedException ex) {
+    public ErrorResponse handleForbidden(ForbiddenException ex) {
+
+        log.warn("Access denied: {}", ex.getMessage());
+
         return new ErrorResponse(403, ex.getMessage(), null);
     }
 
@@ -46,6 +60,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessRuleException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBusinessRule(BusinessRuleException ex) {
+
+        log.warn("Business rule violation: {}", ex.getMessage());
+
         return new ErrorResponse(400, ex.getMessage(), null);
     }
 
@@ -53,6 +70,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneric(Exception ex) {
+
+        log.error("Unexpected error occurred", ex);
+
         return new ErrorResponse(500, "Something went wrong", null);
     }
 }
