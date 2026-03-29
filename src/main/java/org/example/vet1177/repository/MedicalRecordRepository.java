@@ -18,16 +18,16 @@ public interface MedicalRecordRepository extends JpaRepository<MedicalRecord, UU
     })
     Optional<MedicalRecord> findById(UUID id);
 
-    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet"})
+    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet", "createdBy"})
     List<MedicalRecord> findByPetId(UUID petId);
 
-    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet"})
+    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet", "createdBy"})
     List<MedicalRecord> findByOwnerId(UUID ownerId);
 
-    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet"})
+    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet", "createdBy"})
     List<MedicalRecord> findByClinicId(UUID clinicId);
 
-    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet"})
+    @EntityGraph(attributePaths = {"pet", "owner", "clinic", "assignedVet", "createdBy"})
     List<MedicalRecord> findByClinicIdAndStatus(UUID clinicId, RecordStatus status);
 
     List<MedicalRecord> findByAssignedVetId(UUID vetId);
