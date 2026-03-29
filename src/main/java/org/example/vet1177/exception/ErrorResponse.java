@@ -1,6 +1,7 @@
 package org.example.vet1177.exception;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 public class ErrorResponse {
@@ -8,9 +9,9 @@ public class ErrorResponse {
     private Instant timestamp;
     private int status;
     private String message;
-    private Map<String, String> errors;
+    private Map<String, List<String>> errors;
 
-    public ErrorResponse(int status, String message, Map<String, String> errors) {
+    public ErrorResponse(int status, String message, Map<String, List<String>> errors) {
         this.timestamp = Instant.now();
         this.status = status;
         this.message = message;
@@ -20,5 +21,5 @@ public class ErrorResponse {
     public Instant getTimestamp() { return timestamp; }
     public int getStatus() { return status; }
     public String getMessage() { return message; }
-    public Map<String, String> getErrors() { return errors; }
+    public Map<String, List<String>> getErrors() { return errors; }
 }
