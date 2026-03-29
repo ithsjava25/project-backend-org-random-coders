@@ -114,19 +114,36 @@ public class MedicalRecord {
     public User getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(User updatedBy) { this.updatedBy = updatedBy; }
 
-    // Getters/Setters för Attachments
-    public List<Attachment> getAttachments() { return attachments; }
-    public void setAttachments(List<Attachment> attachments) { this.attachments = attachments; }
+
+    public List<Attachment> getAttachments() {
+        return java.util.Collections.unmodifiableList(attachments);
+    }
+
+    public void setAttachments(List<Attachment> newAttachments) {
+        this.attachments.clear();
+        if (newAttachments != null) {
+            for (Attachment attachment : newAttachments) {
+                this.addAttachment(attachment);
+            }
+        }
+    }
 
 
     public void addAttachment(Attachment attachment) {
-        attachments.add(attachment);
-        attachment.setMedicalRecord(this);
+        if (attachment != null) {
+            this.attachments.add(attachment);
+            // Sätt baksidan av relationen om den inte redan är satt
+            if (attachment.getMedicalRecord() != this) {
+                attachment.setMedicalRecord(this);
+            }
+        }
     }
 
     public void removeAttachment(Attachment attachment) {
-        attachments.remove(attachment);
-        attachment.setMedicalRecord(null);
+        if (attachment != null) {
+            this.attachments.remove(attachment);
+            attachment.setMedicalRecord(null);
+        }
     }
 
     public Instant getCreatedAt() { return createdAt; }

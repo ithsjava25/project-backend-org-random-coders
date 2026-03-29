@@ -22,6 +22,7 @@ public class Attachment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by", nullable = false)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User uploadedBy;
 
     @Column(name = "file_name", nullable = false, length = 500)

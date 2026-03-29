@@ -69,8 +69,8 @@ CREATE TABLE IF NOT EXISTS comment (
 
 CREATE TABLE IF NOT EXISTS attachment (
                                           id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-                                          record_id       UUID        NOT NULL REFERENCES medical_record(id),
-                                          uploaded_by     UUID        NOT NULL REFERENCES users(id),
+                                          record_id       UUID        NOT NULL REFERENCES medical_record(id) ON DELETE CASCADE,
+                                          uploaded_by     UUID        REFERENCES users(id) ON DELETE SET NULL,
                                           file_name       VARCHAR(500) NOT NULL,
                                           s3_key          VARCHAR(1000) NOT NULL UNIQUE,
                                           s3_bucket       VARCHAR(255) NOT NULL,

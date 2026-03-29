@@ -82,14 +82,12 @@ public class User {
         return java.util.Collections.unmodifiableList(uploadedAttachments);
     }
 
-
     public void setUploadedAttachments(List<Attachment> attachments) {
         this.uploadedAttachments.clear();
         if (attachments != null) {
             attachments.forEach(this::addAttachment);
         }
     }
-
 
     public void addAttachment(Attachment attachment) {
         if (attachment != null) {
