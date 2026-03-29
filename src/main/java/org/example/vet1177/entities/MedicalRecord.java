@@ -120,14 +120,18 @@ public class MedicalRecord {
     }
 
     public void setAttachments(List<Attachment> newAttachments) {
-        this.attachments.clear();
+        List<Attachment> currentAttachments = new ArrayList<>(this.attachments);
+
+        for (Attachment attachment : currentAttachments) {
+            this.removeAttachment(attachment);
+        }
+
         if (newAttachments != null) {
             for (Attachment attachment : newAttachments) {
                 this.addAttachment(attachment);
             }
         }
     }
-
 
     public void addAttachment(Attachment attachment) {
         if (attachment != null) {

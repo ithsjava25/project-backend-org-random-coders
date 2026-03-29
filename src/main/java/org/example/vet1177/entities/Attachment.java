@@ -21,7 +21,7 @@ public class Attachment {
     private MedicalRecord medicalRecord;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "uploaded_by", nullable = false)
+    @JoinColumn(name = "uploaded_by", nullable = true)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private User uploadedBy;
 
