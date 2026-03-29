@@ -1,6 +1,9 @@
 package org.example.vet1177.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -14,6 +17,7 @@ public class Attachment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "record_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private MedicalRecord medicalRecord;
 
     @ManyToOne(fetch = FetchType.LAZY)
