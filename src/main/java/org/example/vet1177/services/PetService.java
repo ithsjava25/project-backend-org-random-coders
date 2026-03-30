@@ -1,7 +1,6 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.entities.Pet;
-import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.PetRepository;
@@ -42,8 +41,15 @@ public class PetService {
         }
 
     // READ
-    public List<Pet> getAllPets() {
-        return petRepository.findAll();
+    // - Måste vara ADMIN eller OWNER för att se pet
+    public Pet getPetById(UUID currentUserId, UUID petId) {
+        User currentUser = getUserById(currentUserId);
+        Pet pet = getPetByIdOrThrow(petId);
+
+        if(!petPolicy.canView(currentUser, pet)){
+            throw new RuntimeException("Du har inte behörighet till djuret du söker");
+        }
+        return pet;
     }
 
     public Pet getPetById(UUID id) {
@@ -55,9 +61,14 @@ public class PetService {
         return petRepository.findByOwnerId(ownerId);
     }
 
-    //HELPER
+    //HELPERS
     private User getUserById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(()-> new RuntimeException("Användare ej hittad"));
     }
+    private Pet getPetByIdOrThrow(UUID petId) {
+        return petRepository.findById(petId)
+                .orElseThrow(() -> new RuntimeException("Djuret ej hittat"));
+}
+
 }
