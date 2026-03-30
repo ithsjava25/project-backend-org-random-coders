@@ -45,16 +45,20 @@ public class VetService {
                     userRepository.save(user);
                 }
 
-                Vet vet = new Vet(
-                        user,
-                        request.licenseId(),
-                        request.specialization(),
-                        request.bookingInfo()
-                );
+        try {
+            Vet vet = new Vet(
+                    user,
+                    request.licenseId(),
+                    request.specialization(),
+                    request.bookingInfo()
+            );
 
-                Vet savedVet = vetRepository.save(vet);
+            Vet savedVet = vetRepository.save(vet);
+            return VetResponse.from(savedVet);
 
-                return  VetResponse.from(savedVet);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new BusinessRuleException("Licens-ID " + request.licenseId() + " används redan eller bryter mot databasregler.");
+        }
     }
 
 @Transactional(readOnly = true)
