@@ -16,13 +16,10 @@ public class Pet {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id")
-    private Clinic clinic;
 
     @NotBlank
     @Size(max = 100)
@@ -60,10 +57,9 @@ public class Pet {
     public Pet() {
     }
 
-    public Pet(User owner, Clinic clinic, String name, String species, String breed,
+    public Pet(User owner , String name, String species, String breed,
                LocalDate dateOfBirth, BigDecimal weightKg, String insuranceNumber) {
         this.owner = owner;
-        this.clinic = clinic;
         this.name = name;
         this.species = species;
         this.breed = breed;
@@ -93,14 +89,6 @@ public class Pet {
 
     public void setOwner(User owner) {
         this.owner = owner;
-    }
-
-    public Clinic getClinic() {
-        return clinic;
-    }
-
-    public void setClinic(Clinic clinic) {
-        this.clinic = clinic;
     }
 
     public String getName() {

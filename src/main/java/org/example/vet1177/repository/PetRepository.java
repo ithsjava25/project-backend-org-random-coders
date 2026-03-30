@@ -4,10 +4,15 @@ import org.example.vet1177.entities.Pet;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface PetRepository extends JpaRepository<Pet, UUID> {
 
     // Hitta djur via ägare
     List<Pet> findByOwnerId(UUID ownerId);
+    boolean existsByOwnerIdAndName(UUID ownerId, String name);
+
+    //hämta ett specifikt pet för en specifik owner
+    Optional<Pet> findByIdAndOwnerId(UUID petId, UUID ownerId);
 }
