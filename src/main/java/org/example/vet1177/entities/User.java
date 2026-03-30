@@ -2,6 +2,9 @@ package org.example.vet1177.entities;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -26,21 +29,21 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    // Relation till clinic
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "clinic_id")
     private Clinic clinic;
 
-    // FIX: primitive boolean istället för Boolean
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
-    //Timestamps
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at")
     private Instant updatedAt;
+
+    @OneToMany(mappedBy = "uploadedBy", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Attachment> uploadedAttachments = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -53,10 +56,8 @@ public class User {
         updatedAt = Instant.now();
     }
 
-    // Tom konstruktor krävs av JPA
-    public User() {}
+    public User() {} 
 
-    // Konstruktor utan clinic — för OWNER
     public User(String name, String email, String passwordHash, Role role) {
         this.name = name;
         this.email = email;
@@ -64,7 +65,6 @@ public class User {
         this.role = role;
     }
 
-    // Konstruktor med clinic — för VET och ADMIN
     public User(String name, String email, String passwordHash, Role role, Clinic clinic) {
         this.name = name;
         this.email = email;
@@ -91,10 +91,36 @@ public class User {
     public void setClinic(Clinic clinic) { this.clinic = clinic; }
 
     public boolean isActive() { return isActive; }
-
+    public void setActive(boolean active) { isActive = active; }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
-}
 
+    public List<Attachment> getUploadedAttachments() {
+        return Collections.unmodifiableList(uploadedAttachments);
+    }
+
+    public void setUploadedAttachments(List<Attachment> attachments) {
+        this.uploadedAttachments.clear();
+        if (attachments != null) {
+            attachments.forEach(this::addAttachment);
+        }
+    }
+
+    public void addAttachment(Attachment attachment) {
+        if (attachment != null) {
+            this.uploadedAttachments.add(attachment);
+            if (attachment.getUploadedBy() != this) {
+                attachment.setUploadedBy(this);
+            }
+        }
+    }
+
+    public void removeAttachment(Attachment attachment) {
+        if (attachment != null) {
+            this.uploadedAttachments.remove(attachment);
+            attachment.setUploadedBy(null);
+        }
+    }
+}
 
