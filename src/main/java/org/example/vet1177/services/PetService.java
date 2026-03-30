@@ -47,19 +47,25 @@ public class PetService {
         Pet pet = getPetByIdOrThrow(petId);
 
         if(!petPolicy.canView(currentUser, pet)){
-            throw new RuntimeException("Du har inte behörighet till djuret du söker");
+            throw new RuntimeException("Du saknar behörighet");
         }
         return pet;
     }
 
-    public Pet getPetById(UUID id) {
-        return petRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Husdjur hittades inte"));
+    // Lista djur som tillhör ägaren
+    public List<Pet> getPetByOwner(UUID currentUserId, UUID ownerId) {
+        User currentUser = getUserById(currentUserId);
+        if (!petPolicy.canViewOwnerPets(currentUser, ownerId)){
+            throw new RuntimeException("Du saknar behörighet");
+        }
+        return petRepository.findByOwnerId(ownerId);
     }
+
 
     public List<Pet> getPetsByOwner(UUID ownerId) {
         return petRepository.findByOwnerId(ownerId);
     }
+
 
     //HELPERS
     private User getUserById(UUID userId) {

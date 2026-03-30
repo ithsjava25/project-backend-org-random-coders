@@ -5,6 +5,9 @@ import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
+
 @Component
 public class PetPolicy {
 
@@ -25,6 +28,17 @@ public class PetPolicy {
         }
         return false;
     }
+
+    // Owner kan enbart se djur de äger.
+    public boolean canViewOwnerPets(User user, UUID ownerId) {
+        if (user.getRole() == Role.ADMIN) {
+            return true;
+        }
+
+        return user.getRole() == Role.OWNER &&
+                user.getId().equals(ownerId);
+    }
+
 
 
 }
