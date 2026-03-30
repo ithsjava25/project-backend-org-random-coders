@@ -8,6 +8,9 @@ import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.repository.ActivityLogRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 public class ActivityLogService {
 
@@ -27,5 +30,17 @@ public class ActivityLogService {
         ActivityLog log = new ActivityLog(action, description, user, record);
 
         repository.save(log);
+    }
+
+    public List<ActivityLog> getByRecord(UUID recordId, User currentUser) {
+
+        List<ActivityLog> logs = repository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId);
+
+        // 🔐 Policy check (superviktigt!)
+        for (ActivityLog log : logs) {
+            activityLogPolicy.canView(currentUser, log);
+        }
+
+        return logs;
     }
 }
