@@ -20,10 +20,14 @@ public class CommentPolicy {
                     throw new ForbiddenException("Du kan inte kommentera på någon annans ärende");
             }
             case VET -> {
+                if (user.getClinic() == null || record.getClinic() == null) {
+                    throw new ForbiddenException("Klinikuppgifter saknas");
+                }
                 if (!user.getClinic().getId().equals(record.getClinic().getId()))
                     throw new ForbiddenException("Du kan inte kommentera ärenden på en annan klinik");
             }
             case ADMIN -> {}
+            default -> throw new ForbiddenException("Okänd roll");
         }
     }
 
@@ -34,10 +38,14 @@ public class CommentPolicy {
                     throw new ForbiddenException("Åtkomst nekad");
             }
             case VET -> {
+                if (user.getClinic() == null || record.getClinic() == null) {
+                    throw new ForbiddenException("Åtkomst nekad");
+                }
                 if (!user.getClinic().getId().equals(record.getClinic().getId()))
                     throw new ForbiddenException("Åtkomst nekad");
             }
             case ADMIN -> {}
+            default -> throw new ForbiddenException("Åtkomst nekad");
         }
     }
 
