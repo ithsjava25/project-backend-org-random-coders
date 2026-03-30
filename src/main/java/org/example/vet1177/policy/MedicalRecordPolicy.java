@@ -55,7 +55,20 @@ public class MedicalRecordPolicy {
         }
     }
 
+    public void canUpdateStatus(User user, MedicalRecord record, RecordStatus newStatus) {
+        if (record.getStatus().isFinal())
+            throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
 
+        switch (user.getRole()) {
+            case OWNER ->
+                    throw new ForbiddenException("Ägare får inte ändra status på ärenden");
+            case VET -> {
+                if (!sameClinic(user, record))
+                    throw new ForbiddenException("Du har inte tillgång till ärenden på en annan klinik");
+            }
+            case ADMIN -> {}
+        }
+    }
 
     public void canAssignVet(User user, MedicalRecord record, User vetToAssign) {
         switch (user.getRole()) {
