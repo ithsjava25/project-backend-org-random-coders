@@ -39,6 +39,17 @@ public class PetPolicy {
                 user.getId().equals(ownerId);
     }
 
+    // Owner and admin can update animal info
+    public boolean canUpdate(User user, Pet pet) {
+        if (user.getRole() == Role.ADMIN) {
+            return true;
+        }
+
+        return user.getRole() == Role.OWNER &&
+                pet.getOwner() != null &&
+                pet.getOwner().getId().equals(user.getId());
+    }
+
 
 
 }

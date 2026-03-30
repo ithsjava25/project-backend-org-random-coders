@@ -61,10 +61,25 @@ public class PetService {
         return petRepository.findByOwnerId(ownerId);
     }
 
+    // UPDATE
+    public Pet updatePet(UUID currentUserId, UUID petId, Pet updatedPet) {
+        User currentUser = getUserById(currentUserId);
+        Pet existingPet = getPetByIdOrThrow(petId);
 
-    public List<Pet> getPetsByOwner(UUID ownerId) {
-        return petRepository.findByOwnerId(ownerId);
+        if (!petPolicy.canUpdate(currentUser, existingPet)) {
+            throw new RuntimeException("Du saknar behörighet för att uppdatera info om djuret");
+        }
+
+        existingPet.setName(updatedPet.getName());
+        existingPet.setSpecies(updatedPet.getSpecies());
+        existingPet.setBreed(updatedPet.getBreed());
+        existingPet.setDateOfBirth(updatedPet.getDateOfBirth());
+        existingPet.setWeightKg(updatedPet.getWeightKg());
+        existingPet.setInsuranceNumber(updatedPet.getInsuranceNumber());
+
+        return petRepository.save(existingPet);
     }
+
 
 
     //HELPERS
