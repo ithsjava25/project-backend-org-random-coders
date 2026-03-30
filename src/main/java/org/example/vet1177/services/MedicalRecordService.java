@@ -1,6 +1,8 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.entities.*;
+import org.example.vet1177.exception.BusinessRuleException;
+import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +48,7 @@ public class MedicalRecordService {
     @Transactional(readOnly = true)
     public MedicalRecord getById(UUID id) {
         return medicalRecordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ärende hittades inte: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", id));  // ← rad 49
     }
 
     @Transactional(readOnly = true)
@@ -73,6 +75,11 @@ public class MedicalRecordService {
 
     public MedicalRecord update(UUID id, String title, String description, User updatedBy) {
         MedicalRecord record = getById(id);
+
+        if (record.getStatus().isFinal()) {                                               // ← mellan rad 75-76
+            throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
+        }
+
         record.setTitle(title);
         record.setDescription(description);
         record.setUpdatedBy(updatedBy);
@@ -104,8 +111,8 @@ public class MedicalRecordService {
     public MedicalRecord close(UUID recordId, User closedBy) {
         MedicalRecord record = getById(recordId);
 
-        if (record.getStatus() == RecordStatus.CLOSED) {
-            throw new RuntimeException("Ärendet är redan stängt");
+        if (record.getStatus().isFinal()) {                                               // ← rad 108
+            throw new BusinessRuleException("Ärendet är redan stängt");
         }
 
         record.setStatus(RecordStatus.CLOSED);
