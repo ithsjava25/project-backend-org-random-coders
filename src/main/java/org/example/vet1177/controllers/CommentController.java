@@ -71,6 +71,22 @@ public class CommentController {
                 )
         );
     }
+    // DELETE /api/comments/{id}
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User currentUser) {
+
+        commentService.delete(id, currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    // GET /api/comments/record/{recordId}/count
+    @GetMapping("/record/{recordId}/count")
+    public ResponseEntity<Long> countByRecord(@PathVariable UUID recordId) {
+        return ResponseEntity.ok(commentService.countByRecord(recordId));
+    }
 
 
 
