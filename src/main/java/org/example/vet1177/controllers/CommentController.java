@@ -82,10 +82,15 @@ public class CommentController {
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/comments/record/{recordId}/count
+    // CommentController — lägg till currentUser
     @GetMapping("/record/{recordId}/count")
-    public ResponseEntity<Long> countByRecord(@PathVariable UUID recordId) {
-        return ResponseEntity.ok(commentService.countByRecord(recordId));
+    @Transactional(readOnly = true)
+    public ResponseEntity<Long> countByRecord(
+            @PathVariable UUID recordId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(
+                commentService.countByRecord(recordId, currentUser)
+        );
     }
 
 
