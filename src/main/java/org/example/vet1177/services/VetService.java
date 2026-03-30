@@ -33,7 +33,7 @@ public class VetService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", request.userId()));
 
                 if (vetRepository.existsByLicenseId(request.licenseId())) {
-                    throw new BusinessRuleException(("Licens-ID" + request.licenseId() + " används redan"));
+                    throw new BusinessRuleException("Licens-ID " + request.licenseId() + " används redan");
                 }
 
                 if(vetRepository.existsById(request.userId())){
