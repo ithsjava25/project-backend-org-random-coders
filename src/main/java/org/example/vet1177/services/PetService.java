@@ -26,7 +26,7 @@ public class PetService {
 
     public Pet getPetById(UUID id) {
         return petRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pet not found"));
+                .orElseThrow(() -> new RuntimeException("Husdjur hittades inte"));
     }
 
     public List<Pet> getPetsByOwner(UUID ownerId) {
