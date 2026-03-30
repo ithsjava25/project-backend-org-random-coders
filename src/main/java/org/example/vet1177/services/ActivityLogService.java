@@ -20,7 +20,7 @@ public class ActivityLogService {
     public void log(ActivityType action, String description, User user, MedicalRecord record){
 
         // Null-skydd
-        if (action == null || description == null || record == null) {
+        if (action == null || description == null || user == null || record == null) {
             throw new BusinessRuleException("Invalid activity log data");
         }
 
