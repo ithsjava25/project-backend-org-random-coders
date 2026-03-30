@@ -42,5 +42,37 @@ public class CommentController {
         );
     }
 
+    // GET /api/comments/record/{recordId}
+    @GetMapping("/record/{recordId}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<CommentResponse>> getByRecord(
+            @PathVariable UUID recordId,
+            @AuthenticationPrincipal User currentUser) {
+
+        return ResponseEntity.ok(
+                commentService.getByRecord(recordId, currentUser)
+                        .stream()
+                        .map(CommentResponse::from)
+                        .toList()
+        );
+    }
+
+    // PUT /api/comments/{id}
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<CommentResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateCommentRequest request,
+            @AuthenticationPrincipal User currentUser) {
+
+        return ResponseEntity.ok(
+                CommentResponse.from(
+                        commentService.update(id, request.body(), currentUser)
+                )
+        );
+    }
+
+
+
 
 }
