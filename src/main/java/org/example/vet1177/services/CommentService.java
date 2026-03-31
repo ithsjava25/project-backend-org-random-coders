@@ -1,7 +1,6 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.entities.*;
-import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.CommentPolicy;
 import org.example.vet1177.repository.CommentRepository;
@@ -72,7 +71,12 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public long countByRecord(UUID recordId) {
+    public long countByRecord(UUID recordId, User currentUser) {
+        MedicalRecord record = medicalRecordRepository.findById(recordId)
+                .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
+
+        commentPolicy.canView(currentUser, record);  // ← åtkomstkontroll
+
         return commentRepository.countByMedicalRecordId(recordId);
     }
 }
