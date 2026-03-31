@@ -26,13 +26,14 @@ public class ActivityLogService {
     }
 
     // CREATE
+
     public void log(ActivityType action, String description, User user, MedicalRecord record) {
 
         if (action == null || description == null || user == null || record == null) {
             throw new BusinessRuleException("Invalid activity log data");
         }
 
-        // Policy
+        // Policy (vem får skapa loggar)
         activityLogPolicy.canCreate(user);
 
         ActivityLog log = new ActivityLog(action, description, user, record);
@@ -40,6 +41,7 @@ public class ActivityLogService {
     }
 
     // READ
+
     public List<ActivityLog> getByRecord(UUID recordId, User currentUser) {
 
         if (recordId == null || currentUser == null) {
@@ -49,9 +51,20 @@ public class ActivityLogService {
         List<ActivityLog> logs =
                 repository.findByMedicalRecordIdOrderByCreatedAtDesc(recordId);
 
-        // Policy check per logg
-        logs.forEach(log -> activityLogPolicy.canView(currentUser, log));
+        // Filtrera istället för att kasta exception
+        return logs.stream()
+                .filter(log -> canView(currentUser, log))
+                .toList();
+    }
 
-        return logs;
+    // HELPER
+
+    private boolean canView(User user, ActivityLog log) {
+        try {
+            activityLogPolicy.canView(user, log);
+            return true;
+        } catch (ForbiddenException e) {
+            return false;
+        }
     }
 }
