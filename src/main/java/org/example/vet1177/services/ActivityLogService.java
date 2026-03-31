@@ -35,6 +35,9 @@ public class ActivityLogService {
         // Policy check (optional men bra att ha)
         activityLogPolicy.canCreate(user);
 
+        // Policy
+        activityLogPolicy.canCreate(user);
+
         ActivityLog log = new ActivityLog(action, description, user, record);
         repository.save(log);
     }
