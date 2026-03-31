@@ -50,6 +50,8 @@ public class PetPolicy {
                 pet.getOwner().getId().equals(user.getId());
     }
 
-
-
+    public boolean canDelete(User user, Pet pet) {
+        return user.getRole() == Role.ADMIN;
+    }
 }
+

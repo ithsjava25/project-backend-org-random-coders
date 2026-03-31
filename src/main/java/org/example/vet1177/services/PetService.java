@@ -1,8 +1,10 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.entities.Pet;
+import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.policy.PetPolicy;
+import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -18,14 +20,16 @@ public class PetService {
     private final PetRepository petRepository;
     private final UserRepository userRepository;
     private final PetPolicy petPolicy;
+    private final MedicalRecordRepository medicalRecordRepository;
 
 
     public PetService(PetRepository petRepository,
-                      UserRepository userRepository,
-                      PetPolicy petPolicy) {
+                      UserRepository userRepository, PetPolicy petPolicy,
+                      MedicalRecordRepository medicalRecordRepository) {
         this.petRepository = petRepository;
         this.userRepository = userRepository;
         this.petPolicy = petPolicy;
+        this.medicalRecordRepository = medicalRecordRepository;
     }
 
     // CREATE - Måste vara en OWNER för att få skapa/lägga till ett djur.
@@ -78,6 +82,34 @@ public class PetService {
         existingPet.setInsuranceNumber(updatedPet.getInsuranceNumber());
 
         return petRepository.save(existingPet);
+    }
+
+    // DELETE
+    public void deletePet(UUID currentUserId, UUID petId) {
+        User currentUser = getUserById(currentUserId);
+        Pet pet = getPetByIdOrThrow(petId);
+
+        // ADMIN → alltid tillåtet
+        if (currentUser.getRole() == Role.ADMIN) {
+            petRepository.delete(pet);
+            return;
+        }
+
+        // OWNER → bara sitt eget pet + inga medical records
+        if (currentUser.getRole() == Role.OWNER &&
+                pet.getOwner().getId().equals(currentUser.getId())) {
+
+            boolean hasRecords = medicalRecordRepository.existsByPetId(petId);
+
+            if (hasRecords) {
+                throw new RuntimeException("Cannot delete pet with existing medical records");
+            }
+
+            petRepository.delete(pet);
+            return;
+        }
+
+        throw new RuntimeException("Not allowed to delete pet");
     }
 
 
