@@ -99,6 +99,15 @@ public class MedicalRecordService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<MedicalRecord> getByOwnerAllowedForUser(UUID ownerId, User currentUser) {
+        List<MedicalRecord> all = medicalRecordRepository.findByOwnerId(ownerId);
+
+        return all.stream()
+                .filter(record -> medicalRecordPolicy.isAllowed(currentUser, record))
+                .toList();
+    }
+
     // ── Uppdatera ─────────────────────────────────────────────
 
     public MedicalRecord update(UUID id, String title, String description, User updatedBy) {
