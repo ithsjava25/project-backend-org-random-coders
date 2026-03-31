@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component;
 public class ActivityLogPolicy {
 
     private static final String FORBIDDEN_MSG = "Åtkomst nekad";
+    private static final String ADMIN_ONLY_MSG = "Endast admin/system får skapa loggar";
 
-    //VIEW- vem får läsa loggar
+    // VIEW
     public void canView(User user, ActivityLog log){
 
-        // Null-skydd (viktigt!)
         if (user == null || user.getRole() == null || log == null) {
             throw new ForbiddenException(FORBIDDEN_MSG);
         }
@@ -28,52 +28,42 @@ public class ActivityLogPolicy {
         switch (user.getRole()){
 
             case OWNER -> {
-                if (record.getOwner() == null || record.getOwner().getId() == null) {
-                    throw new ForbiddenException(FORBIDDEN_MSG);
-                }
-
-                if(!record.getOwner().getId().equals(user.getId())){
+                if (record.getOwner() == null || record.getOwner().getId() == null ||
+                        !record.getOwner().getId().equals(user.getId())) {
                     throw new ForbiddenException(FORBIDDEN_MSG);
                 }
             }
 
             case VET -> {
-                if(user.getClinic() == null || record.getClinic() == null){
-                    throw new ForbiddenException(FORBIDDEN_MSG);
-                }
-
-                if(!user.getClinic().getId().equals(record.getClinic().getId())){
+                if (user.getClinic() == null || record.getClinic() == null ||
+                        !user.getClinic().getId().equals(record.getClinic().getId())) {
                     throw new ForbiddenException(FORBIDDEN_MSG);
                 }
             }
 
-            //full access
             case ADMIN -> {}
 
             default -> throw new ForbiddenException(FORBIDDEN_MSG);
         }
     }
 
-    //CREATE- loggar ska skapas av systemet(inte användare)
+    // CREATE
     public void canCreate(User user){
 
-        // Null-skydd
         if (user == null || user.getRole() == null) {
-            throw new ForbiddenException("Endast admin/system får skapa loggar");
+            throw new ForbiddenException(ADMIN_ONLY_MSG);
         }
 
         switch (user.getRole()){
             case ADMIN -> {}
-            default -> throw new ForbiddenException("Endast admin/system får skapa loggar");
+            default -> throw new ForbiddenException(ADMIN_ONLY_MSG);
         }
     }
 
-    //UPDATE- aldrig tillåtet
     public void canUpdate(){
         throw new ForbiddenException("Activity logs kan inte uppdateras");
     }
 
-    //DELETE- aldrig tillåtet
     public void canDelete(){
         throw new ForbiddenException("Activity logs kan inte tas bort");
     }
