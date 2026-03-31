@@ -7,15 +7,17 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
+import static org.example.vet1177.entities.Role.ADMIN;
+
 @Component
 public class PetPolicy {
 
     public boolean canCreate(User user) {
-        return user.getRole() == Role.OWNER;
+        return user.getRole() == Role.OWNER || user.getRole() == ADMIN;
     }
 
     public boolean canView(User user, Pet pet) {
-        if (user.getRole() == Role.ADMIN) {
+        if (user.getRole() == ADMIN) {
             return true;
         }
 
@@ -28,7 +30,7 @@ public class PetPolicy {
     }
 
     public boolean canViewOwnerPets(User user, UUID ownerId) {
-        if (user.getRole() == Role.ADMIN) {
+        if (user.getRole() == ADMIN) {
             return true;
         }
 
@@ -37,7 +39,7 @@ public class PetPolicy {
     }
 
     public boolean canUpdate(User user, Pet pet) {
-        if (user.getRole() == Role.ADMIN) {
+        if (user.getRole() == ADMIN) {
             return true;
         }
 
@@ -47,7 +49,7 @@ public class PetPolicy {
     }
 
     public boolean canDelete(User user, Pet pet) {
-        if (user.getRole() == Role.ADMIN) {
+        if (user.getRole() == ADMIN) {
             return true;
         }
 

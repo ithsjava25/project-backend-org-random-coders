@@ -1,11 +1,13 @@
 package org.example.vet1177.services;
 
+import jakarta.transaction.Transactional;
 import org.example.vet1177.entities.Pet;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -84,21 +86,17 @@ public class PetService {
     }
 
     // DELETE
-    public void deletePet(UUID currentUserId, UUID petId) {
-        User currentUser = getUserById(currentUserId);
-        Pet pet = getPetByIdOrThrow(petId);
+    @Transactional
+    public void deletePet(UUID petId) {
+        Pet pet = petRepository.findById(petId)
+                .orElseThrow(() -> new RuntimeException("Djuret finns inte"));
 
-        if (!petPolicy.canDelete(currentUser, pet)) {
-            throw new RuntimeException("Du saknar behörighet att radera djuret");
-        }
-
-        boolean hasRecords = medicalRecordRepository.existsByPetId(petId);
-
-        if (hasRecords) {
+        try {
+            petRepository.delete(pet);
+            petRepository.flush();
+        } catch (DataIntegrityViolationException e) {
             throw new RuntimeException("Djuret kan inte raderas eftersom journaler finns kopplade");
         }
-
-        petRepository.delete(pet);
     }
 
 
