@@ -90,12 +90,21 @@ public class MedicalRecordService {
         return medicalRecordRepository.findByClinicIdAndStatus(clinicId, status);
     }
 
+    @Transactional(readOnly = true)
+    public List<MedicalRecord> getByPetAllowedForUser(UUID petId, User currentUser) {
+        List<MedicalRecord> all = medicalRecordRepository.findByPetId(petId);
+
+        return all.stream()
+                .filter(record -> medicalRecordPolicy.isAllowed(currentUser, record))
+                .toList();
+    }
+
     // ── Uppdatera ─────────────────────────────────────────────
 
     public MedicalRecord update(UUID id, String title, String description, User updatedBy) {
         MedicalRecord record = getById(id);
 
-        if (record.getStatus().isFinal()) {                                               // ← mellan rad 75-76
+        if (record.getStatus().isFinal()) {
             throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
         }
 
@@ -105,9 +114,19 @@ public class MedicalRecordService {
         return medicalRecordRepository.save(record);
     }
 
-    public MedicalRecord assignVet(UUID recordId, User vet, User updatedBy) {
+    public MedicalRecord assignVet(UUID recordId, User vetToAssign, User updatedBy) {
         MedicalRecord record = getById(recordId);
-        record.setAssignedVet(vet);
+        if (record.getStatus().isFinal()) {
+            throw new BusinessRuleException(
+                    "Kan inte tilldela handläggare till ett stängt ärende");
+        }
+
+        if (vetToAssign.getRole() != Role.VET) {
+            throw new BusinessRuleException(
+                    "Endast veterinärer kan tilldelas som handläggare");
+        }
+
+        record.setAssignedVet(vetToAssign);
         record.setStatus(RecordStatus.IN_PROGRESS);
         record.setUpdatedBy(updatedBy);
         return medicalRecordRepository.save(record);

@@ -84,21 +84,40 @@ public class MedicalRecordController {
         );
     }
 
+    // Lägg till i MedicalRecordController
+    @GetMapping("/owner/{ownerId}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<MedicalRecordSummaryResponse>> getByOwner(
+            @PathVariable UUID ownerId,
+            @AuthenticationPrincipal User currentUser) {
+
+        // OWNER får bara hämta sina egna ärenden
+        if (currentUser.getRole() == Role.OWNER &&
+                !currentUser.getId().equals(ownerId)) {
+            throw new ForbiddenException("Du kan bara se dina egna ärenden");
+        }
+
+        return ResponseEntity.ok(
+                medicalRecordService.getByOwner(ownerId)
+                        .stream()
+                        .map(MedicalRecordSummaryResponse::from)
+                        .toList()
+        );
+    }
+
     // GET /api/medical-records/pet/{petId}
+    // I controllern — enklare
     @GetMapping("/pet/{petId}")
     @Transactional(readOnly = true)
     public ResponseEntity<List<MedicalRecordSummaryResponse>> getByPet(
             @PathVariable UUID petId,
             @AuthenticationPrincipal User currentUser) {
 
-        List<MedicalRecord> records = medicalRecordService.getByPet(petId);
-
-        if (!records.isEmpty()) {
-            medicalRecordPolicy.canView(currentUser, records.get(0));
-        }
-
         return ResponseEntity.ok(
-                records.stream().map(MedicalRecordSummaryResponse::from).toList()
+                medicalRecordService.getByPetAllowedForUser(petId, currentUser)
+                        .stream()
+                        .map(MedicalRecordSummaryResponse::from)
+                        .toList()
         );
     }
 
