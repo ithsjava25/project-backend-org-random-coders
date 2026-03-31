@@ -1,4 +1,4 @@
-package org.example.vet1177.controllers;
+package org.example.vet1177.controller;
 
 import jakarta.validation.Valid;
 import org.example.vet1177.entities.*;
@@ -8,7 +8,6 @@ import org.example.vet1177.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.example.vet1177.dto.request.medicalrecord.*;
 import org.example.vet1177.dto.response.medicalrecord.*;
-import org.example.vet1177.entities.*;
 import org.example.vet1177.exception.ForbiddenException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;

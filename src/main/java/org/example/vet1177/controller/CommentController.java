@@ -1,4 +1,4 @@
-package org.example.vet1177.controllers;
+package org.example.vet1177.controller;
 
 import jakarta.validation.Valid;
 import org.example.vet1177.dto.request.comment.CreateCommentRequest;
