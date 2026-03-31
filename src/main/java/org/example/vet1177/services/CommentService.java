@@ -19,14 +19,17 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final MedicalRecordRepository medicalRecordRepository;
     private final CommentPolicy commentPolicy;
+    private final ActivityLogService activityLogService;
 
     public CommentService(
             CommentRepository commentRepository,
             MedicalRecordRepository medicalRecordRepository,
-            CommentPolicy commentPolicy) {
+            CommentPolicy commentPolicy,
+            ActivityLogService activityLogService) {
         this.commentRepository = commentRepository;
         this.medicalRecordRepository = medicalRecordRepository;
         this.commentPolicy = commentPolicy;
+        this.activityLogService = activityLogService;
     }
 
     public Comment create(UUID recordId, String body, User currentUser) {
@@ -39,7 +42,17 @@ public class CommentService {
         comment.setMedicalRecord(record);
         comment.setAuthor(currentUser);
         comment.setBody(body);
-        return commentRepository.save(comment);
+//        return commentRepository.save(comment);
+
+        Comment saved = commentRepository.save(comment);
+        // LOGGING
+        activityLogService.log(
+                ActivityType.COMMENT_ADDED,
+                "Kommentar skapad",
+                currentUser,
+                record
+        );
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -59,7 +72,18 @@ public class CommentService {
         commentPolicy.canUpdate(currentUser, comment);  // ← en rad
 
         comment.setBody(body);
-        return commentRepository.save(comment);
+//        return commentRepository.save(comment);
+        Comment updated = commentRepository.save(comment);
+
+        // LOGGING
+        activityLogService.log(
+                ActivityType.UPDATED,
+                "Kommentar uppdaterad",
+                currentUser,
+                comment.getMedicalRecord()
+        );
+
+        return updated;
     }
 
     public void delete(UUID commentId, User currentUser) {
@@ -69,6 +93,14 @@ public class CommentService {
         commentPolicy.canDelete(currentUser, comment);  // ← en rad
 
         commentRepository.delete(comment);
+
+        // LOGGING
+        activityLogService.log(
+                ActivityType.UPDATED,
+                "Kommentar borttagen",
+                currentUser,
+                comment.getMedicalRecord()
+        );
     }
 
     @Transactional(readOnly = true)
