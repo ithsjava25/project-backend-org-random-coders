@@ -49,6 +49,9 @@ public class PetService {
                 throw new RuntimeException("Admin måste ange ownerId");
             }
             owner = getUserById(ownerId);
+            if (owner.getRole() != Role.OWNER) {
+                throw new RuntimeException("ownerId måste tillhöra en användare med rollen OWNER");
+            }
         } else {
             owner = currentUser;
         }
@@ -68,6 +71,9 @@ public class PetService {
         }
 
         if (currentUser.getRole() == Role.VET) {
+            if (currentUser.getClinic() == null) {
+                throw new RuntimeException("Veterinären saknar koppling till klinik");
+            }
             boolean vetHasAccess = medicalRecordRepository
                     .existsByPetIdAndClinicId(petId, currentUser.getClinic().getId());
 
@@ -109,10 +115,13 @@ public class PetService {
 
     // DELETE
     @Transactional
-    public void deletePet(UUID petId) {
+    public void deletePet(UUID petId, User currentUser) {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new RuntimeException("Djuret finns inte"));
 
+        if (!petPolicy.canDelete(currentUser, pet)) {
+            throw new RuntimeException("Du har inte behörighet att radera detta djur");
+        }
         try {
             petRepository.delete(pet);
             petRepository.flush();
