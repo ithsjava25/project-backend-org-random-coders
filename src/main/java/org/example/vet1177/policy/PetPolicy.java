@@ -7,16 +7,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-
 @Component
 public class PetPolicy {
 
-    // Bara Owner kan skapa djur
     public boolean canCreate(User user) {
         return user.getRole() == Role.OWNER;
     }
 
-    // Bara Admin och Owner kan se djur där de finns behörighet
     public boolean canView(User user, Pet pet) {
         if (user.getRole() == Role.ADMIN) {
             return true;
@@ -26,10 +23,10 @@ public class PetPolicy {
             return pet.getOwner() != null &&
                     pet.getOwner().getId().equals(user.getId());
         }
+
         return false;
     }
 
-    // Owner kan enbart se djur de äger.
     public boolean canViewOwnerPets(User user, UUID ownerId) {
         if (user.getRole() == Role.ADMIN) {
             return true;
@@ -39,7 +36,6 @@ public class PetPolicy {
                 user.getId().equals(ownerId);
     }
 
-    // Owner and admin can update animal info
     public boolean canUpdate(User user, Pet pet) {
         if (user.getRole() == Role.ADMIN) {
             return true;
@@ -51,7 +47,12 @@ public class PetPolicy {
     }
 
     public boolean canDelete(User user, Pet pet) {
-        return user.getRole() == Role.ADMIN;
+        if (user.getRole() == Role.ADMIN) {
+            return true;
+        }
+
+        return user.getRole() == Role.OWNER &&
+                pet.getOwner() != null &&
+                pet.getOwner().getId().equals(user.getId());
     }
 }
-

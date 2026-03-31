@@ -1,7 +1,6 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.entities.Pet;
-import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.MedicalRecordRepository;
@@ -57,7 +56,7 @@ public class PetService {
     }
 
     // Lista djur som tillhör ägaren
-    public List<Pet> getPetByOwner(UUID currentUserId, UUID ownerId) {
+    public List<Pet> getPetsByOwner(UUID currentUserId, UUID ownerId) {
         User currentUser = getUserById(currentUserId);
         if (!petPolicy.canViewOwnerPets(currentUser, ownerId)){
             throw new RuntimeException("Du saknar behörighet");
@@ -89,27 +88,17 @@ public class PetService {
         User currentUser = getUserById(currentUserId);
         Pet pet = getPetByIdOrThrow(petId);
 
-        // ADMIN → alltid tillåtet
-        if (currentUser.getRole() == Role.ADMIN) {
-            petRepository.delete(pet);
-            return;
+        if (!petPolicy.canDelete(currentUser, pet)) {
+            throw new RuntimeException("Du saknar behörighet att radera djuret");
         }
 
-        // OWNER → bara sitt eget pet + inga medical records
-        if (currentUser.getRole() == Role.OWNER &&
-                pet.getOwner().getId().equals(currentUser.getId())) {
+        boolean hasRecords = medicalRecordRepository.existsByPetId(petId);
 
-            boolean hasRecords = medicalRecordRepository.existsByPetId(petId);
-
-            if (hasRecords) {
-                throw new RuntimeException("Cannot delete pet with existing medical records");
-            }
-
-            petRepository.delete(pet);
-            return;
+        if (hasRecords) {
+            throw new RuntimeException("Djuret kan inte raderas eftersom journaler finns kopplade");
         }
 
-        throw new RuntimeException("Not allowed to delete pet");
+        petRepository.delete(pet);
     }
 
 
