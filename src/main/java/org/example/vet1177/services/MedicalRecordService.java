@@ -143,6 +143,9 @@ public class MedicalRecordService {
 
     public MedicalRecord updateStatus(UUID recordId, RecordStatus newStatus, User updatedBy) {
         MedicalRecord record = getById(recordId);
+
+        if (record.getStatus().isFinal()) {
+            throw new BusinessRuleException("Stängda ärenden kan inte ändras");}
         record.setStatus(newStatus);
         record.setUpdatedBy(updatedBy);
 
