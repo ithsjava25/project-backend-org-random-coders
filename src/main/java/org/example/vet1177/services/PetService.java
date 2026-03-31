@@ -2,6 +2,7 @@ package org.example.vet1177.services;
 
 import jakarta.transaction.Transactional;
 import org.example.vet1177.entities.Pet;
+import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.MedicalRecordRepository;
@@ -34,27 +35,48 @@ public class PetService {
     }
 
     // CREATE - Måste vara en OWNER för att få skapa/lägga till ett djur.
-        public Pet createPet(UUID currentUserId, Pet pet) {
-            User currentUser = getUserById(currentUserId);
+    public Pet createPet(UUID currentUserId, UUID ownerId, Pet pet) {
+        User currentUser = getUserById(currentUserId);
 
-            if (!petPolicy.canCreate(currentUser)) {
-                throw new RuntimeException("Du kan inte lägga till ett djur");
-            }
-
-            pet.setOwner(currentUser);
-            return petRepository.save(pet);
+        if (!petPolicy.canCreate(currentUser)) {
+            throw new RuntimeException("Du kan inte lägga till ett djur");
         }
+
+        User owner;
+
+        if (currentUser.getRole() == Role.ADMIN) {
+            if (ownerId == null) {
+                throw new RuntimeException("Admin måste ange ownerId");
+            }
+            owner = getUserById(ownerId);
+        } else {
+            owner = currentUser;
+        }
+
+        pet.setOwner(owner);
+        return petRepository.save(pet);
+    }
 
     // READ
     // - Måste vara ADMIN eller OWNER för att se pet
-    public Pet getPetById(UUID currentUserId, UUID petId) {
-        User currentUser = getUserById(currentUserId);
-        Pet pet = getPetByIdOrThrow(petId);
+    public Pet getPetById(UUID petId, User currentUser) {
+        Pet pet = petRepository.findById(petId)
+                .orElseThrow(() -> new RuntimeException("Pet not found"));
 
-        if(!petPolicy.canView(currentUser, pet)){
-            throw new RuntimeException("Du saknar behörighet");
+        if (petPolicy.canView(currentUser, pet)) {
+            return pet;
         }
-        return pet;
+
+        if (currentUser.getRole() == Role.VET) {
+            boolean vetHasAccess = medicalRecordRepository
+                    .existsByPetIdAndClinicId(petId, currentUser.getClinic().getId());
+
+            if (vetHasAccess) {
+                return pet;
+            }
+        }
+
+        throw new RuntimeException("Du har inte behörighet att se detta djur");
     }
 
     // Lista djur som tillhör ägaren
