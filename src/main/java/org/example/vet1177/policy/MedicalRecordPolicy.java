@@ -70,6 +70,16 @@ public class MedicalRecordPolicy {
         }
     }
 
+
+    public boolean isAllowed(User user, MedicalRecord record) {
+        return switch (user.getRole()) {
+            case OWNER -> user.getId().equals(record.getOwner().getId());
+            case VET   -> user.getClinic() != null &&
+                    user.getClinic().getId().equals(record.getClinic().getId());
+            case ADMIN -> true;
+        };
+    }
+
     public void canAssignVet(User user, MedicalRecord record, User vetToAssign) {
         switch (user.getRole()) {
             case OWNER ->
