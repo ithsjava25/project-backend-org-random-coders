@@ -25,15 +25,12 @@ public class ActivityLogService {
         this.activityLogPolicy = activityLogPolicy;
     }
 
-    // CREATE (system/internal usage)
+    // CREATE
     public void log(ActivityType action, String description, User user, MedicalRecord record) {
 
         if (action == null || description == null || user == null || record == null) {
             throw new BusinessRuleException("Invalid activity log data");
         }
-
-        // Policy check (optional men bra att ha)
-        activityLogPolicy.canCreate(user);
 
         // Policy
         activityLogPolicy.canCreate(user);
@@ -42,7 +39,7 @@ public class ActivityLogService {
         repository.save(log);
     }
 
-    // READ (logs för ett ärende)
+    // READ
     public List<ActivityLog> getByRecord(UUID recordId, User currentUser) {
 
         if (recordId == null || currentUser == null) {
@@ -52,7 +49,7 @@ public class ActivityLogService {
         List<ActivityLog> logs =
                 repository.findByMedicalRecordIdOrderByCreatedAtDesc(recordId);
 
-        // Authorization check per logg
+        // Policy check per logg
         logs.forEach(log -> activityLogPolicy.canView(currentUser, log));
 
         return logs;
