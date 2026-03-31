@@ -1,6 +1,7 @@
 package org.example.vet1177.repository;
 
 import org.example.vet1177.entities.Vet;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -22,4 +23,7 @@ public interface VetRepository extends JpaRepository<Vet, UUID> {
 
     // Kontrollerar om ett licens-ID redan finns i systemet.
     boolean existsByLicenseId(String licenseId);
+
+    @EntityGraph(attributePaths = {"user, user.clinic"})
+    List<Vet> findAll();
 }
