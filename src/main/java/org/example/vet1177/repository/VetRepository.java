@@ -24,6 +24,7 @@ public interface VetRepository extends JpaRepository<Vet, UUID> {
     // Kontrollerar om ett licens-ID redan finns i systemet.
     boolean existsByLicenseId(String licenseId);
 
-    @EntityGraph(attributePaths = {"user, user.clinic"})
+    @Override
+    @EntityGraph(attributePaths = {"user", "user.clinic"})
     List<Vet> findAll();
 }
