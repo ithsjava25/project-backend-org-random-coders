@@ -3,6 +3,7 @@ package org.example.vet1177.dto.request.pet;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,6 +23,9 @@ public class PetRequest {
 
     @Positive
     private BigDecimal weightKg;
+
+    @Size(max = 100)
+    private String insuranceNumber;
 
     public PetRequest() {
     }
@@ -64,5 +68,13 @@ public class PetRequest {
 
     public void setWeightKg(BigDecimal weightKg) {
         this.weightKg = weightKg;
+    }
+
+    public String getInsuranceNumber() {
+        return insuranceNumber;
+    }
+
+    public void setInsuranceNumber(String insuranceNumber) {
+        this.insuranceNumber = insuranceNumber;
     }
 }
