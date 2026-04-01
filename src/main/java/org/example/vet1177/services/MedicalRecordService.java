@@ -22,15 +22,18 @@ public class MedicalRecordService {
     private final PetRepository petRepository;
     private final ClinicRepository clinicRepository;
     private final MedicalRecordPolicy medicalRecordPolicy;
+    private final ActivityLogService activityLogService;
 
     public MedicalRecordService(MedicalRecordRepository medicalRecordRepository,
                                 PetRepository petRepository,
                                 ClinicRepository clinicRepository,
-                                MedicalRecordPolicy medicalRecordPolicy) {
+                                MedicalRecordPolicy medicalRecordPolicy,
+                                ActivityLogService activityLogService) {
         this.medicalRecordRepository = medicalRecordRepository;
         this.petRepository = petRepository;
         this.clinicRepository = clinicRepository;
         this.medicalRecordPolicy = medicalRecordPolicy;
+        this.activityLogService = activityLogService;
     }
 
     // ── Skapa ────────────────────────────────────────────────
@@ -59,7 +62,18 @@ public class MedicalRecordService {
         record.setCreatedBy(currentUser);
         record.setStatus(RecordStatus.OPEN);
 
-        return medicalRecordRepository.save(record);
+//        return medicalRecordRepository.save(record);
+        MedicalRecord saved = medicalRecordRepository.save(record);
+
+        // LOGGING
+        activityLogService.log(
+                ActivityType.CASE_CREATED,
+                "Ärende skapat",
+                currentUser,
+                saved
+        );
+
+        return saved;
     }
 
     // ── Läsa ─────────────────────────────────────────────────
@@ -120,7 +134,19 @@ public class MedicalRecordService {
         record.setTitle(title);
         record.setDescription(description);
         record.setUpdatedBy(updatedBy);
-        return medicalRecordRepository.save(record);
+//        return medicalRecordRepository.save(record);
+
+        MedicalRecord updated = medicalRecordRepository.save(record);
+
+        // LOGGING
+        activityLogService.log(
+                ActivityType.UPDATED,
+                "Ärende uppdaterat",
+                updatedBy,
+                updated
+        );
+
+        return updated;
     }
 
     public MedicalRecord assignVet(UUID recordId, User vetToAssign, User updatedBy) {
@@ -138,7 +164,22 @@ public class MedicalRecordService {
         record.setAssignedVet(vetToAssign);
         record.setStatus(RecordStatus.IN_PROGRESS);
         record.setUpdatedBy(updatedBy);
-        return medicalRecordRepository.save(record);
+
+//        return medicalRecordRepository.save(record);
+
+        MedicalRecord updated = medicalRecordRepository.save(record);
+
+        // LOGGING
+        activityLogService.log(
+                ActivityType.ASSIGNED,
+                "Veterinär tilldelad",
+                updatedBy,
+                updated
+        );
+
+        return updated;
+
+
     }
 
     public MedicalRecord updateStatus(UUID recordId, RecordStatus newStatus, User updatedBy) {
@@ -153,7 +194,20 @@ public class MedicalRecordService {
             record.setClosedAt(Instant.now());
         }
 
-        return medicalRecordRepository.save(record);
+//        return medicalRecordRepository.save(record);
+
+        MedicalRecord updated = medicalRecordRepository.save(record);
+
+        // LOGGING
+        activityLogService.log(
+                ActivityType.STATUS_CHANGED,
+                "Status ändrad till: " + newStatus,
+                updatedBy,
+                updated
+        );
+
+        return updated;
+
     }
 
     // ── Stänga ────────────────────────────────────────────────
@@ -169,7 +223,19 @@ public class MedicalRecordService {
         record.setClosedAt(Instant.now());
         record.setUpdatedBy(closedBy);
 
-        return medicalRecordRepository.save(record);
+//        return medicalRecordRepository.save(record);
+
+        MedicalRecord updated = medicalRecordRepository.save(record);
+
+        // LOGGING
+        activityLogService.log(
+                ActivityType.STATUS_CHANGED,
+                "Ärende stängt",
+                closedBy,
+                updated
+        );
+
+        return updated;
     }
 
     public MedicalRecord save(MedicalRecord record) {
