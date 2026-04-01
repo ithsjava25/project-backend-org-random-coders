@@ -1,6 +1,7 @@
 package org.example.vet1177.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,26 +16,31 @@ public class Pet {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "clinic_id")
-    private Clinic clinic;
-
+    @NotBlank
+    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String name;
 
+    @NotBlank
+    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String species;
 
+    @Size(max = 100)
     @Column(length = 100)
     private String breed;
 
+    @NotNull
+    @PastOrPresent
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
+    @Positive
     @Column(name = "weight_kg", precision = 6, scale = 2)
     private BigDecimal weightKg;
 
@@ -44,18 +50,22 @@ public class Pet {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Size(max = 100)
+    @Column(name = "insurance_number", length = 100)
+    private String insuranceNumber;
+
     public Pet() {
     }
 
-    public Pet(User owner, Clinic clinic, String name, String species, String breed,
-               LocalDate dateOfBirth, BigDecimal weightKg) {
+    public Pet(User owner , String name, String species, String breed,
+               LocalDate dateOfBirth, BigDecimal weightKg, String insuranceNumber) {
         this.owner = owner;
-        this.clinic = clinic;
         this.name = name;
         this.species = species;
         this.breed = breed;
         this.dateOfBirth = dateOfBirth;
         this.weightKg = weightKg;
+        this.insuranceNumber = insuranceNumber;
     }
 
     @PrePersist
@@ -79,14 +89,6 @@ public class Pet {
 
     public void setOwner(User owner) {
         this.owner = owner;
-    }
-
-    public Clinic getClinic() {
-        return clinic;
-    }
-
-    public void setClinic(Clinic clinic) {
-        this.clinic = clinic;
     }
 
     public String getName() {
@@ -135,5 +137,13 @@ public class Pet {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getInsuranceNumber() {
+        return insuranceNumber;
+    }
+
+    public void setInsuranceNumber(String insuranceNumber) {
+        this.insuranceNumber = insuranceNumber;
     }
 }
