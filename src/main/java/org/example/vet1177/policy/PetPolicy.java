@@ -13,7 +13,7 @@ import static org.example.vet1177.entities.Role.ADMIN;
 public class PetPolicy {
 
     public boolean canCreate(User user) {
-        return user.getRole() == Role.OWNER || user.getRole() == ADMIN;
+        return user.getRole() == Role.OWNER || user.getRole() == Role.ADMIN;
     }
 
     public boolean canView(User user, Pet pet) {
