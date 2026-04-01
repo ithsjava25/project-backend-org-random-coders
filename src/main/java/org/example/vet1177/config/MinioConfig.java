@@ -11,7 +11,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
-import software.amazon.awssdk.services.s3.model.S3Exception; // Tillagd import
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.net.URI;
@@ -46,10 +47,14 @@ public class MinioConfig {
 
     @Bean
     public S3Presigner s3Presigner() {
-        return S3Presigner.builder().endpointOverride(URI.create(endpoint))
+        return S3Presigner.builder()
+                .endpointOverride(URI.create(endpoint))
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKey, secretKey)))
                 .region(Region.of(region))
+                .serviceConfiguration(S3Configuration.builder()
+                        .pathStyleAccessEnabled(true)
+                        .build())
                 .build();
     }
 
@@ -64,17 +69,14 @@ public class MinioConfig {
 
                 System.out.println(">>>> S3/MinIO: Connected to bucket '" + bucketName + "'.");
             } catch (NoSuchBucketException e) {
-                // Expected if the bucket doesn't exist – let's create it
                 System.out.println(">>>> S3/MinIO: Bucket not found. Creating '" + bucketName + "'...");
                 s3Client.createBucket(CreateBucketRequest.builder()
                         .bucket(bucketName)
                         .build());
                 System.out.println(">>>> S3/MinIO: Bucket created automatically.");
             } catch (S3Exception e) {
-                // Targeted catch for SDK errors (e.g. 403 Forbidden, connection issues)
                 System.err.println(">>>> S3/MinIO FATAL ERROR: " + e.awsErrorDetails().errorMessage());
                 System.err.println(">>>> Status Code: " + e.statusCode());
-                // Rethrow to stop application startup
                 throw new RuntimeException("Could not initialize storage on startup. Check credentials and MinIO status.", e);
             }
         };
