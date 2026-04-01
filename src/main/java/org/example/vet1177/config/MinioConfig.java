@@ -42,6 +42,7 @@ public class MinioConfig {
                 .build();
     }
 
+    @Bean
     public CommandLineRunner initializeBucket(S3Client s3Client) {
         return args -> {
             try {
