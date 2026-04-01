@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.S3Exception; // Tillagd import
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.net.URI;
@@ -44,27 +45,6 @@ public class MinioConfig {
     }
 
     @Bean
-    public CommandLineRunner initializeBucket(S3Client s3Client) {
-        return args -> {
-            try {
-                s3Client.headBucket(HeadBucketRequest.builder()
-                        .bucket(bucketName)
-                        .build());
-
-                System.out.println("S3/MinIO: Ansluten till bucket '" + bucketName + "'.");
-            } catch(NoSuchBucketException e) {
-                s3Client.createBucket(CreateBucketRequest.builder()
-                        .bucket(bucketName)
-                        .build());
-                System.out.println("S3/MinIO: Bucket '" + bucketName + "' skapades automatiskt.");
-            } catch (Exception e) {
-                System.err.println("S3/MinIO Error: Kunde inte verifiera bucket. Är Docker-containern startad?");
-            }
-        };
-
-    }
-
-    @Bean
     public S3Presigner s3Presigner() {
         return S3Presigner.builder().endpointOverride(URI.create(endpoint))
                 .credentialsProvider(StaticCredentialsProvider.create(
@@ -73,6 +53,30 @@ public class MinioConfig {
                 .build();
     }
 
+    @Bean
+    public CommandLineRunner initializeBucket(S3Client s3Client) {
+        return args -> {
+            try {
+                System.out.println(">>>> S3/MinIO: Verifying bucket: " + bucketName);
+                s3Client.headBucket(HeadBucketRequest.builder()
+                        .bucket(bucketName)
+                        .build());
+
+                System.out.println(">>>> S3/MinIO: Connected to bucket '" + bucketName + "'.");
+            } catch (NoSuchBucketException e) {
+                // Expected if the bucket doesn't exist – let's create it
+                System.out.println(">>>> S3/MinIO: Bucket not found. Creating '" + bucketName + "'...");
+                s3Client.createBucket(CreateBucketRequest.builder()
+                        .bucket(bucketName)
+                        .build());
+                System.out.println(">>>> S3/MinIO: Bucket created automatically.");
+            } catch (S3Exception e) {
+                // Targeted catch for SDK errors (e.g. 403 Forbidden, connection issues)
+                System.err.println(">>>> S3/MinIO FATAL ERROR: " + e.awsErrorDetails().errorMessage());
+                System.err.println(">>>> Status Code: " + e.statusCode());
+                // Rethrow to stop application startup
+                throw new RuntimeException("Could not initialize storage on startup. Check credentials and MinIO status.", e);
+            }
+        };
+    }
 }
-
-
