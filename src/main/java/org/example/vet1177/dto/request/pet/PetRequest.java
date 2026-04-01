@@ -1,9 +1,6 @@
 package org.example.vet1177.dto.request.pet;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,6 +15,7 @@ public class PetRequest {
 
     private String breed;
 
+    @NotNull
     @PastOrPresent
     private LocalDate dateOfBirth;
 
