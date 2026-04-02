@@ -10,7 +10,6 @@ public record AttachmentRequest(
         @NotNull(message = "Journal-ID får inte vara tomt")
         UUID recordId,
 
-        @NotBlank(message = "Beskrivning av bilagan krävs")
         @Size(max = 500, message = "Beskrivningen får vara max 500 tecken")
         String description
 ) {}
