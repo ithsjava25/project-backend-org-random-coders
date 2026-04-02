@@ -44,6 +44,9 @@ public class Attachment {
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;
 
+    @Column(name = "description", length = 500)
+    private String description;
+
     public Attachment() {
     }
 
@@ -95,4 +98,7 @@ public class Attachment {
 
     public Instant getUploadedAt() {
         return uploadedAt; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }
