@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS attachment (
                                           record_id       UUID        NOT NULL REFERENCES medical_record(id) ON DELETE CASCADE,
                                           uploaded_by     UUID        REFERENCES users(id) ON DELETE SET NULL,
                                           file_name       VARCHAR(500) NOT NULL,
+                                          description     VARCHAR(500),
                                           s3_key          VARCHAR(1000) NOT NULL UNIQUE,
                                           s3_bucket       VARCHAR(255) NOT NULL,
                                           file_type       VARCHAR(100),
