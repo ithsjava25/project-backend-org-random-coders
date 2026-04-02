@@ -8,6 +8,7 @@ import org.example.vet1177.exception.ForbiddenException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Locale;
 
 
 @Component
@@ -68,12 +69,17 @@ public class AttachmentPolicy {
     // Hjälpmetoder för validering
 
     private void validateFileType(String contentType) {
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.trim().toLowerCase(Locale.ROOT))) {
             throw new BusinessRuleException("Otillåtet filformat. Endast JPG, PNG och PDF accepteras.");
         }
     }
 
     private void validateFileSize(long fileSize) {
+
+        if (fileSize < 0) {
+            throw new BusinessRuleException("Filstorlek kan inte vara negativ.");
+        }
+
         if (fileSize > MAX_FILE_SIZE_BYTES) {
             throw new BusinessRuleException("Filen är för stor. Maxgränsen är 10 MB.");
         }
