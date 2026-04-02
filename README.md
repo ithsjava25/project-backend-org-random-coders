@@ -13,7 +13,6 @@ Ett webbaserat journalhanteringssystem för veterinärkliniker. Husdjursägare k
 - [API-endpoints](#api-endpoints)
 - [Roller och behörigheter](#roller-och-behörigheter)
 - [Fillagring (MinIO/S3)](#fillagring-minios3)
-- [Backlog och pågående arbete](#backlog-och-pågående-arbete)
 - [Testning](#testning)
 - [CI/CD](#cicd)
 
