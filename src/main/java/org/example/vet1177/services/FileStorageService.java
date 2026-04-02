@@ -31,15 +31,32 @@ public class FileStorageService {
     }
 
     /**
-     * Laddar upp en fil till S3/MinIO.
+     * Laddar upp en fil till S3/MinIO med fail-fast validering.
      * @param key Den unika sökvägen/namnet i bucketen
      * @param inputStream Dataströmmen från filen
      * @param size Storleken på filen i bytes
      * @param contentType MIME-typ (t.ex. image/jpeg)
      */
     public void upload(String key, InputStream inputStream, long size, String contentType) {
+        // --- Fail-fast validering ---
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("Key får inte vara null eller tom vid uppladdning till S3");
+        }
+        if (inputStream == null) {
+            throw new IllegalArgumentException("InputStream får inte vara null för key: " + key);
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("Filstorleken måste vara större än 0 för key: " + key);
+        }
+        if (contentType == null || contentType.isBlank()) {
+            throw new IllegalArgumentException("ContentType måste anges för korrekt filhantering av key: " + key);
+        }
+        if (bucketName == null || bucketName.isBlank()) {
+            throw new IllegalStateException("S3 bucketName är inte konfigurerad i applikationen");
+        }
+
         try {
-            log.debug("S3/MinIO: Uploading file with key: {}", key);
+            log.debug("S3/MinIO: Uploading file to bucket '{}' with key: {}", bucketName, key);
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
@@ -47,11 +64,12 @@ public class FileStorageService {
                     .contentType(contentType)
                     .build();
 
+            // Anropar s3Client endast om alla valideringar passerat
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, size));
 
-            log.info("S3/MinIO: Successfully uploaded file: {}", key);
+            log.info("S3/MinIO: Successfully uploaded file: {} to bucket: {}", key, bucketName);
         } catch (Exception e) {
-            log.error("S3/MinIO: Failed to upload file {}: {}", key, e.getMessage());
+            log.error("S3/MinIO: Failed to upload file {} to bucket {}: {}", key, bucketName, e.getMessage());
             throw new RuntimeException("Kunde inte ladda upp filen till lagringstjänsten", e);
         }
     }
