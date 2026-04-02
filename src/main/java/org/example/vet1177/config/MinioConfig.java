@@ -20,6 +20,10 @@ import java.net.URI;
 @Configuration
 public class MinioConfig {
 
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MinioConfig.class);
+
+
     @Value("${aws.s3.endpoint}")
     private String endpoint;
 
@@ -62,21 +66,31 @@ public class MinioConfig {
     public CommandLineRunner initializeBucket(S3Client s3Client) {
         return args -> {
             try {
-                System.out.println(">>>> S3/MinIO: Verifying bucket: " + bucketName);
+
+                log.debug("S3/MinIO: Verifying bucket: {}", bucketName);
+
                 s3Client.headBucket(HeadBucketRequest.builder()
                         .bucket(bucketName)
                         .build());
 
-                System.out.println(">>>> S3/MinIO: Connected to bucket '" + bucketName + "'.");
+                log.info("S3/MinIO: Successfully connected to bucket '{}'.", bucketName);
+
             } catch (NoSuchBucketException e) {
-                System.out.println(">>>> S3/MinIO: Bucket not found. Creating '" + bucketName + "'...");
+
+                log.warn("S3/MinIO: Bucket '{}' not found. Attempting to create it...", bucketName);
+
                 s3Client.createBucket(CreateBucketRequest.builder()
                         .bucket(bucketName)
                         .build());
-                System.out.println(">>>> S3/MinIO: Bucket created automatically.");
+
+                log.info("S3/MinIO: Bucket '{}' created automatically.", bucketName);
+
             } catch (S3Exception e) {
-                System.err.println(">>>> S3/MinIO FATAL ERROR: " + e.awsErrorDetails().errorMessage());
-                System.err.println(">>>> Status Code: " + e.statusCode());
+                // ERROR används för kritiska fel som stoppar applikationen
+                log.error("S3/MinIO FATAL ERROR: {} (Status Code: {})",
+                        e.awsErrorDetails().errorMessage(),
+                        e.statusCode());
+
                 throw new RuntimeException("Could not initialize storage on startup. Check credentials and MinIO status.", e);
             }
         };
