@@ -80,6 +80,14 @@ public class FileStorageService {
      * @return En URL som är giltig i 15 minuter
      */
     public String generatePresignedUrl(String key) {
+        // --- Fail-fast validering ---
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("Key får inte vara null eller tom vid generering av URL");
+        }
+        if (bucketName == null || bucketName.isBlank()) {
+            throw new IllegalStateException("S3 bucketName är inte konfigurerad i applikationen");
+        }
+
         try {
             GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofMinutes(15))
@@ -88,7 +96,7 @@ public class FileStorageService {
 
             return s3Presigner.presignGetObject(presignRequest).url().toString();
         } catch (Exception e) {
-            log.error("S3/MinIO: Failed to generate presigned URL for key {}: {}", key, e.getMessage());
+            log.error("S3/MinIO: Failed to generate presigned URL for key {} in bucket {}: {}", key, bucketName, e.getMessage());
             throw new RuntimeException("Kunde inte generera åtkomstlänk för filen", e);
         }
     }
@@ -98,8 +106,16 @@ public class FileStorageService {
      * @param key Filens unika nyckel
      */
     public void delete(String key) {
+        // --- Fail-fast validering ---
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("Key får inte vara null eller tom vid radering från S3");
+        }
+        if (bucketName == null || bucketName.isBlank()) {
+            throw new IllegalStateException("S3 bucketName är inte konfigurerad i applikationen");
+        }
+
         try {
-            log.debug("S3/MinIO: Deleting file with key: {}", key);
+            log.debug("S3/MinIO: Deleting file with key: {} from bucket: {}", key, bucketName);
 
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
@@ -108,9 +124,9 @@ public class FileStorageService {
 
             s3Client.deleteObject(deleteObjectRequest);
 
-            log.info("S3/MinIO: Successfully deleted file: {}", key);
+            log.info("S3/MinIO: Successfully deleted file: {} from bucket: {}", key, bucketName);
         } catch (Exception e) {
-            log.error("S3/MinIO: Failed to delete file {}: {}", key, e.getMessage());
+            log.error("S3/MinIO: Failed to delete file {} from bucket {}: {}", key, bucketName, e.getMessage());
             throw new RuntimeException("Kunde inte radera filen från lagringstjänsten", e);
         }
     }
