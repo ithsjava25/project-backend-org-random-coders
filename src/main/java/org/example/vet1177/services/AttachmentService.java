@@ -39,7 +39,6 @@ public class AttachmentService {
         this.fileStorageService = fileStorageService;
         this.medicalRecordRepository = medicalRecordRepository;
         this.attachmentPolicy = attachmentPolicy;
-        // Vi hämtar bucket-namnet centralt från din nya properties-klass
         this.bucketName = props.getBucketName();
     }
 
