@@ -14,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -43,7 +45,7 @@ public class AttachmentService {
     }
 
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request) throws IOException {
         MedicalRecord record = medicalRecordRepository.findById(request.recordId())
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", request.recordId()));
@@ -134,13 +136,27 @@ public class AttachmentService {
 
         attachmentPolicy.canDelete(currentUser, attachment);
 
-        // Radera objekt i S3
-        fileStorageService.delete(attachment.getS3Key());
+        String s3Key = attachment.getS3Key();
 
-        // Radera rad i DB
         attachmentRepository.delete(attachment);
 
-        log.info("Attachment {} deleted from storage and database", attachmentId);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        fileStorageService.delete(s3Key);
+                        log.info("S3 object {} deleted after successful DB commit", s3Key);
+                    } catch (Exception e) {
+                        log.error("CRITICAL: Failed to delete S3 object {} after DB commit!", s3Key, e);
+                    }
+                }
+            });
+        } else {
+            fileStorageService.delete(s3Key);
+        }
+
+        log.info("Attachment {} marked for deletion in database", attachmentId);
     }
 
     private AttachmentResponse mapToResponse(Attachment attachment) {
