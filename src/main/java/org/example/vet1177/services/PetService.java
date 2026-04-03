@@ -35,7 +35,7 @@ public class PetService {
         this.medicalRecordRepository = medicalRecordRepository;
     }
 
-    // CREATE - Måste vara en OWNER för att få skapa/lägga till ett djur.
+    // CREATE - OWNER kan skapa för sig själv, ADMIN kan skapa för en OWNER via ownerId.
     public Pet createPet(UUID currentUserId, UUID ownerId, PetRequest request) {
         User currentUser = getUserById(currentUserId);
 
@@ -58,12 +58,7 @@ public class PetService {
         }
 
         Pet pet = new Pet();
-        pet.setName(request.getName());
-        pet.setSpecies(request.getSpecies());
-        pet.setBreed(request.getBreed());
-        pet.setDateOfBirth(request.getDateOfBirth());
-        pet.setWeightKg(request.getWeightKg());
-        pet.setInsuranceNumber(request.getInsuranceNumber());
+        applyPetRequest(pet, request);
         pet.setOwner(owner);
 
         return petRepository.save(pet);
@@ -104,7 +99,7 @@ public class PetService {
     }
 
     // UPDATE
-    public Pet updatePet(UUID currentUserId, UUID petId, Pet updatedPet) {
+    public Pet updatePet(UUID currentUserId, UUID petId, PetRequest request) {
         User currentUser = getUserById(currentUserId);
         Pet existingPet = getPetByIdOrThrow(petId);
 
@@ -112,12 +107,7 @@ public class PetService {
             throw new RuntimeException("Du saknar behörighet för att uppdatera info om djuret");
         }
 
-        existingPet.setName(updatedPet.getName());
-        existingPet.setSpecies(updatedPet.getSpecies());
-        existingPet.setBreed(updatedPet.getBreed());
-        existingPet.setDateOfBirth(updatedPet.getDateOfBirth());
-        existingPet.setWeightKg(updatedPet.getWeightKg());
-        existingPet.setInsuranceNumber(updatedPet.getInsuranceNumber());
+        applyPetRequest(existingPet, request);
 
         return petRepository.save(existingPet);
     }
@@ -150,5 +140,14 @@ public class PetService {
         return petRepository.findById(petId)
                 .orElseThrow(() -> new RuntimeException("Djuret ej hittat"));
 }
+
+    private void applyPetRequest(Pet target, PetRequest request) {
+        target.setName(request.getName());
+        target.setSpecies(request.getSpecies());
+        target.setBreed(request.getBreed());
+        target.setDateOfBirth(request.getDateOfBirth());
+        target.setWeightKg(request.getWeightKg());
+        target.setInsuranceNumber(request.getInsuranceNumber());
+    }
 
 }
