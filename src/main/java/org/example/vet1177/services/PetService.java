@@ -1,6 +1,7 @@
 package org.example.vet1177.services;
 
 import jakarta.transaction.Transactional;
+import org.example.vet1177.dto.request.pet.PetRequest;
 import org.example.vet1177.entities.Pet;
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
@@ -35,7 +36,7 @@ public class PetService {
     }
 
     // CREATE - Måste vara en OWNER för att få skapa/lägga till ett djur.
-    public Pet createPet(UUID currentUserId, UUID ownerId, Pet pet) {
+    public Pet createPet(UUID currentUserId, UUID ownerId, PetRequest request) {
         User currentUser = getUserById(currentUserId);
 
         if (!petPolicy.canCreate(currentUser)) {
@@ -56,7 +57,15 @@ public class PetService {
             owner = currentUser;
         }
 
+        Pet pet = new Pet();
+        pet.setName(request.getName());
+        pet.setSpecies(request.getSpecies());
+        pet.setBreed(request.getBreed());
+        pet.setDateOfBirth(request.getDateOfBirth());
+        pet.setWeightKg(request.getWeightKg());
+        pet.setInsuranceNumber(request.getInsuranceNumber());
         pet.setOwner(owner);
+
         return petRepository.save(pet);
     }
 

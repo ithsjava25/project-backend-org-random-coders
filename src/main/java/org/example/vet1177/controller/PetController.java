@@ -21,19 +21,12 @@ public class PetController {
 
     @PostMapping
     public PetResponse createPet(
-            @RequestParam UUID currentUserId,
+            // TODO: Ersätt med användare från autentiserad kontext (t.ex. JWT / Spring Security)
+            @RequestHeader UUID currentUserId,
             @RequestParam(required = false) UUID ownerId,
             @Valid @RequestBody PetRequest request
     ) {
-        Pet pet = new Pet();
-        pet.setName(request.getName());
-        pet.setSpecies(request.getSpecies());
-        pet.setBreed(request.getBreed());
-        pet.setDateOfBirth(request.getDateOfBirth());
-        pet.setWeightKg(request.getWeightKg());
-        pet.setInsuranceNumber(request.getInsuranceNumber());
-
-        Pet saved = petService.createPet(currentUserId, ownerId, pet);
+        Pet saved = petService.createPet(currentUserId, ownerId, request);
 
         return new PetResponse(
                 saved.getId(),
