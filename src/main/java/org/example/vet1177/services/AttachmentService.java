@@ -51,6 +51,9 @@ public class AttachmentService {
         // Validering
         attachmentPolicy.canUpload(currentUser, record, file.getContentType(), file.getSize());
 
+        String originalName = file.getOriginalFilename();
+        String sanitizedName = sanitizeFilename(originalName);
+
         // Skapa unik S3-nyckel
         String s3Key = String.format("records/%s/%s_%s",
                 record.getId(),
@@ -76,6 +79,21 @@ public class AttachmentService {
         log.info("Attachment {} successfully saved for record {}", attachment.getId(), record.getId());
 
         return mapToResponse(attachment);
+    }
+
+    private String sanitizeFilename(String originalFilename) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return UUID.randomUUID().toString();
+        }
+
+        String filename = new java.io.File(originalFilename).getName();
+        filename = filename.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+
+        filename = filename.trim();
+            if (filename.isEmpty() || filename.equals(".") || filename.equals("..")) {
+                return "file_" + System.currentTimeMillis();
+            }
+            return filename;
     }
 
 
