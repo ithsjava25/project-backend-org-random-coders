@@ -50,22 +50,19 @@ public class Pet {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @Size(max = 100)
-    @Column(name = "insurance_number", length = 100)
-    private String insuranceNumber;
 
     public Pet() {
     }
 
     public Pet(User owner , String name, String species, String breed,
-               LocalDate dateOfBirth, BigDecimal weightKg, String insuranceNumber) {
+               LocalDate dateOfBirth, BigDecimal weightKg) {
         this.owner = owner;
         this.name = name;
         this.species = species;
         this.breed = breed;
         this.dateOfBirth = dateOfBirth;
         this.weightKg = weightKg;
-        this.insuranceNumber = insuranceNumber;
+
     }
 
     @PrePersist
@@ -139,11 +136,4 @@ public class Pet {
         return updatedAt;
     }
 
-    public String getInsuranceNumber() {
-        return insuranceNumber;
-    }
-
-    public void setInsuranceNumber(String insuranceNumber) {
-        this.insuranceNumber = insuranceNumber;
-    }
 }

@@ -108,7 +108,7 @@ public class PetService {
         existingPet.setBreed(updatedPet.getBreed());
         existingPet.setDateOfBirth(updatedPet.getDateOfBirth());
         existingPet.setWeightKg(updatedPet.getWeightKg());
-        existingPet.setInsuranceNumber(updatedPet.getInsuranceNumber());
+
 
         return petRepository.save(existingPet);
     }
