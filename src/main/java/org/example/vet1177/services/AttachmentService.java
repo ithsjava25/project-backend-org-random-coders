@@ -50,6 +50,10 @@ public class AttachmentService {
         MedicalRecord record = medicalRecordRepository.findById(request.recordId())
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", request.recordId()));
 
+        if (file.isEmpty() || file.getSize() <= 0) {
+            throw new IllegalArgumentException("Det går inte att ladda upp en tom fil.");
+        }
+
         // Validering
         attachmentPolicy.canUpload(currentUser, record, file.getContentType(), file.getSize());
 
