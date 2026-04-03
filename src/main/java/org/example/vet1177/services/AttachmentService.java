@@ -68,7 +68,6 @@ public class AttachmentService {
             throw new RuntimeException("Kunde inte ladda upp filen till lagringen", e);
         }
 
-
         // Skapa entitet
     try {
         Attachment attachment = new Attachment();
@@ -76,20 +75,20 @@ public class AttachmentService {
         attachment.setUploadedBy(currentUser);
         attachment.setFileName(file.getOriginalFilename());
         attachment.setS3Key(s3Key);
-        attachment.setS3Bucket(bucketName); // Använder namnet från AwsS3Properties
+        attachment.setS3Bucket(bucketName);
         attachment.setFileType(file.getContentType());
         attachment.setFileSizeBytes(file.getSize());
         attachment.setDescription(request.description());
 
-        attachment = attachmentRepository.save(attachment);
+        attachment = attachmentRepository.saveAndFlush(attachment);
 
-        log.info("Attachment {} successfully saved for record {}", attachment.getId(), record.getId());
+        log.info("Attachment {} successfully persisted for record {}", attachment.getId(), record.getId());
 
         return mapToResponse(attachment);
 
         } catch (Exception e) {
-        // Om DB-sparningen misslyckas, måste vi städa upp i S3 för att undvika "orphaned objects"
-        log.error("Database save failed for attachment with S3 key: {}. Cleaning up S3 object.", s3Key);
+        // Tack vare saveAndFlush hamnar vi här om databasen nekar sparningen
+        log.error("Database persistence failed for attachment with S3 key: {}. Triggering S3 cleanup.", s3Key);
 
         try {
             fileStorageService.delete(s3Key);
