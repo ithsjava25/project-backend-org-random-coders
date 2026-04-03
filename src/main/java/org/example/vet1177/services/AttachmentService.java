@@ -61,9 +61,16 @@ public class AttachmentService {
                 file.getOriginalFilename());
 
         // Anropa FileStorageService
-        fileStorageService.upload(s3Key, file.getInputStream(), file.getSize(), file.getContentType());
+        try {
+            fileStorageService.upload(s3Key, file.getInputStream(), file.getSize(), file.getContentType());
+        } catch (Exception e) {
+            log.error("S3 upload failed for key: {}", s3Key);
+            throw new RuntimeException("Kunde inte ladda upp filen till lagringen", e);
+        }
+
 
         // Skapa entitet
+    try {
         Attachment attachment = new Attachment();
         attachment.setMedicalRecord(record);
         attachment.setUploadedBy(currentUser);
@@ -79,6 +86,19 @@ public class AttachmentService {
         log.info("Attachment {} successfully saved for record {}", attachment.getId(), record.getId());
 
         return mapToResponse(attachment);
+
+        } catch (Exception e) {
+        // Om DB-sparningen misslyckas, måste vi städa upp i S3 för att undvika "orphaned objects"
+        log.error("Database save failed for attachment with S3 key: {}. Cleaning up S3 object.", s3Key);
+
+        try {
+            fileStorageService.delete(s3Key);
+        } catch (Exception deleteEx) {
+            log.error("CRITICAL: Failed to cleanup S3 object {} after DB failure!", s3Key, deleteEx);
+        }
+
+        throw new RuntimeException("Kunde inte spara bilagans metadata. Uppladdningen avbröts.", e);
+        }
     }
 
     private String sanitizeFilename(String originalFilename) {
