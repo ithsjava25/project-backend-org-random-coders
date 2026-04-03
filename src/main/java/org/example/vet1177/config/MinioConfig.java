@@ -30,7 +30,33 @@ public class MinioConfig {
     private final AwsS3Properties props;
 
     public MinioConfig(AwsS3Properties props) {
+        validateProps(props);
         this.props = props;
+    }
+
+    private static void validateProps(AwsS3Properties props) {
+        java.util.Map<String, String> fields = java.util.Map.of(
+                "aws.s3.endpoint (S3_ENDPOINT)",       nullToEmpty(props.getEndpoint()),
+                "aws.s3.access-key (S3_ACCESS_KEY)",   nullToEmpty(props.getAccessKey()),
+                "aws.s3.secret-key (S3_SECRET_KEY)",   nullToEmpty(props.getSecretKey()),
+                "aws.s3.region (S3_REGION)",            nullToEmpty(props.getRegion()),
+                "aws.s3.bucket-name (S3_BUCKET)",       nullToEmpty(props.getBucketName())
+        );
+        long presentCount = fields.values().stream().filter(v -> !v.isBlank()).count();
+        if (presentCount > 0 && presentCount < fields.size()) {
+            String missing = fields.entrySet().stream()
+                    .filter(e -> e.getValue().isBlank())
+                    .map(java.util.Map.Entry::getKey)
+                    .sorted()
+                    .collect(java.util.stream.Collectors.joining(", "));
+            throw new IllegalArgumentException(
+                    "Incomplete S3/MinIO configuration: the following properties are missing: " + missing +
+                    ". Either set all five S3 properties or none of them.");
+        }
+    }
+
+    private static String nullToEmpty(String value) {
+        return value != null ? value : "";
     }
 
     @Bean
