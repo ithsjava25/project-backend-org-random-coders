@@ -1,8 +1,9 @@
 package org.example.vet1177.services;
 
+import org.example.vet1177.config.AwsS3Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -15,19 +16,19 @@ import java.io.InputStream;
 import java.time.Duration;
 
 @Service
+@ConditionalOnExpression("#{!'${aws.s3.endpoint:}'.isBlank()}")
 public class FileStorageService {
 
     private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
+    private final String bucketName;
 
-    @Value("${aws.s3.bucket-name}")
-    private String bucketName;
-
-    public FileStorageService(S3Client s3Client, S3Presigner s3Presigner) {
+    public FileStorageService(S3Client s3Client, S3Presigner s3Presigner, AwsS3Properties props) {
         this.s3Client = s3Client;
         this.s3Presigner = s3Presigner;
+        this.bucketName = props.getBucketName();
     }
 
     /**
