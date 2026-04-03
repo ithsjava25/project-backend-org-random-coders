@@ -1,5 +1,6 @@
 package org.example.vet1177.services;
 
+import org.example.vet1177.config.AwsS3Properties;
 import org.example.vet1177.dto.request.attachment.AttachmentRequest;
 import org.example.vet1177.dto.response.attachment.AttachmentResponse;
 import org.example.vet1177.entities.Attachment;
@@ -11,7 +12,6 @@ import org.example.vet1177.repository.AttachmentRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,65 +28,58 @@ public class AttachmentService {
     private final FileStorageService fileStorageService;
     private final MedicalRecordRepository medicalRecordRepository;
     private final AttachmentPolicy attachmentPolicy;
+    private final String bucketName;
 
-    @Value("${aws.s3.bucket-name}")
-    private String bucketName;
-
-    // Manuell konstruktor för Dependency Injection
     public AttachmentService(AttachmentRepository attachmentRepository,
                              FileStorageService fileStorageService,
                              MedicalRecordRepository medicalRecordRepository,
-                             AttachmentPolicy attachmentPolicy) {
+                             AttachmentPolicy attachmentPolicy,
+                             AwsS3Properties props) {
         this.attachmentRepository = attachmentRepository;
         this.fileStorageService = fileStorageService;
         this.medicalRecordRepository = medicalRecordRepository;
         this.attachmentPolicy = attachmentPolicy;
+        // Vi hämtar bucket-namnet centralt från din nya properties-klass
+        this.bucketName = props.getBucketName();
     }
 
-    /**
-     * Laddar upp en bilaga, sparar i S3 och skapar metadata i databasen.
-     */
+
     @Transactional
     public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request) throws IOException {
-        // 1. Hämta journalposten
         MedicalRecord record = medicalRecordRepository.findById(request.recordId())
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", request.recordId()));
 
-        // 2. Validera behörighet och filregler (MIME-typ, 10MB gräns) via Policy
+        // Validering
         attachmentPolicy.canUpload(currentUser, record, file.getContentType(), file.getSize());
 
-        // 3. Skapa en unik S3-nyckel
+        // Skapa unik S3-nyckel
         String s3Key = String.format("records/%s/%s_%s",
                 record.getId(),
                 UUID.randomUUID(),
                 file.getOriginalFilename());
 
-        log.debug("Uploading file {} to S3 with key {}", file.getOriginalFilename(), s3Key);
-
-        // 4. Ladda upp till S3/MinIO
+        // Anropa FileStorageService
         fileStorageService.upload(s3Key, file.getInputStream(), file.getSize(), file.getContentType());
 
-        // 5. Skapa och spara Attachment-entiteten
+        // Skapa entitet
         Attachment attachment = new Attachment();
         attachment.setMedicalRecord(record);
         attachment.setUploadedBy(currentUser);
         attachment.setFileName(file.getOriginalFilename());
         attachment.setS3Key(s3Key);
-        attachment.setS3Bucket(bucketName);
+        attachment.setS3Bucket(bucketName); // Använder namnet från AwsS3Properties
         attachment.setFileType(file.getContentType());
         attachment.setFileSizeBytes(file.getSize());
         attachment.setDescription(request.description());
 
         attachment = attachmentRepository.save(attachment);
 
-        log.info("Attachment {} saved for record {}", attachment.getId(), record.getId());
+        log.info("Attachment {} successfully saved for record {}", attachment.getId(), record.getId());
 
         return mapToResponse(attachment);
     }
 
-    /**
-     * Hämtar metadata och en tidsbegränsad länk.
-     */
+
     @Transactional(readOnly = true)
     public AttachmentResponse getAttachment(User currentUser, UUID attachmentId) {
         Attachment attachment = attachmentRepository.findById(attachmentId)
@@ -97,9 +90,7 @@ public class AttachmentService {
         return mapToResponse(attachment);
     }
 
-    /**
-     * Raderar både i S3 och i databasen.
-     */
+
     @Transactional
     public void deleteAttachment(User currentUser, UUID attachmentId) {
         Attachment attachment = attachmentRepository.findById(attachmentId)
@@ -107,13 +98,13 @@ public class AttachmentService {
 
         attachmentPolicy.canDelete(currentUser, attachment);
 
-        // Radera fysiskt objekt
+        // Radera objekt i S3
         fileStorageService.delete(attachment.getS3Key());
 
-        // Radera i DB
+        // Radera rad i DB
         attachmentRepository.delete(attachment);
 
-        log.info("Attachment {} deleted by user {}", attachmentId, currentUser.getId());
+        log.info("Attachment {} deleted from storage and database", attachmentId);
     }
 
     private AttachmentResponse mapToResponse(Attachment attachment) {
@@ -127,7 +118,7 @@ public class AttachmentService {
                 attachment.getFileType(),
                 attachment.getFileSizeBytes(),
                 attachment.getUploadedAt(),
-                attachment.getUploadedBy() != null ? attachment.getUploadedBy().getName() : "Okänd",
+                attachment.getUploadedBy() != null ? attachment.getUploadedBy().getName() : "System",
                 downloadUrl
         );
     }
