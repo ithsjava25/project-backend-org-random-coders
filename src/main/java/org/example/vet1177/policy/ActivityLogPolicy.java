@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 public class ActivityLogPolicy {
 
     private static final String FORBIDDEN_MSG = "Åtkomst nekad";
-    private static final String ADMIN_ONLY_MSG = "Endast admin/system får skapa loggar";
 
     // VIEW
     public void canView(User user, ActivityLog log){
