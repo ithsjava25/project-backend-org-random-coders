@@ -41,3 +41,11 @@ jobs:
 
           MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
           MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+
+      # 5. Upload artifact (ONLY on main)
+      - name: Upload JAR artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-${{ github.ref_name }}-${{ github.run_number }}-${{ github.sha }}
+          path: target/*.jar
