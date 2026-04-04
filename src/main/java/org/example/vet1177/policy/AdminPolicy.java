@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AdminPolicy {
-
     public void requireAdmin(User user){
         if (user.getRole() != Role.ADMIN) {
             throw new ForbiddenException("Åtkomst nekad: Endast administratörer har behörighet");
