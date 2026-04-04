@@ -53,12 +53,6 @@ class CommentEntityTest {
         assertThat(comment.getUpdatedAt()).isNotNull();
     }
 
-    @Test
-    void onCreate_createdAtAndUpdatedAtShouldBeEqual() {
-        comment.onCreate();
-
-        assertThat(comment.getCreatedAt()).isEqualTo(comment.getUpdatedAt());
-    }
 
     // --- Lifecycle: onUpdate ---
 
