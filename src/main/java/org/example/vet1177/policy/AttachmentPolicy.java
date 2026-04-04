@@ -31,6 +31,9 @@ public class AttachmentPolicy {
     }
 
     public void canUpload(User user, MedicalRecord record, String contentType, long fileSize) {
+        if (fileSize <= 0) {
+            throw new IllegalArgumentException("Filen kan inte vara tom (0 bytes).");
+        }
 
         validateFileType(contentType);
         validateFileSize(fileSize);
