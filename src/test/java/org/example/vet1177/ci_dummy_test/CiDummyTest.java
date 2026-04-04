@@ -8,7 +8,7 @@ public class CiDummyTest {
 
     @Test
     void shouldPass() {
-        assertTrue(true);
+        assertTrue(false);
     }
 
 }
