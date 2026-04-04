@@ -54,6 +54,7 @@ public class ActivityLogPolicy {
             throw new ForbiddenException(ADMIN_ONLY_MSG);
         }
 
+
         switch (user.getRole()){
             case ADMIN -> {}
             default -> throw new ForbiddenException(ADMIN_ONLY_MSG);
