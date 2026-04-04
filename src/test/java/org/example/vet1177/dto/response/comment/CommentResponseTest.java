@@ -24,6 +24,7 @@ class CommentResponseTest {
     private UUID authorId;
     private UUID recordId;
 
+
     @BeforeEach
     void setUp() throws Exception {
         commentId = UUID.randomUUID();
