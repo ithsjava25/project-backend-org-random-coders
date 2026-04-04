@@ -47,19 +47,6 @@ public class ActivityLogPolicy {
         }
     }
 
-    // CREATE
-    public void canCreate(User user){
-
-        if (user == null || user.getRole() == null) {
-            throw new ForbiddenException(ADMIN_ONLY_MSG);
-        }
-
-
-        switch (user.getRole()){
-            case ADMIN -> {}
-            default -> throw new ForbiddenException(ADMIN_ONLY_MSG);
-        }
-    }
 
     public void canUpdate(){
         throw new ForbiddenException("Activity logs kan inte uppdateras");
