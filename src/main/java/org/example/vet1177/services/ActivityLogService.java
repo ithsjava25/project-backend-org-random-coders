@@ -33,8 +33,6 @@ public class ActivityLogService {
             throw new BusinessRuleException("Invalid activity log data");
         }
 
-        // Policy (vem får skapa loggar)
-        activityLogPolicy.canCreate(user);
 
         ActivityLog log = new ActivityLog(action, description, user, record);
         repository.save(log);
