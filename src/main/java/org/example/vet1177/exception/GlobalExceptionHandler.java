@@ -1,6 +1,8 @@
 package org.example.vet1177.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,5 +78,27 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error occurred", ex);
 
         return new ErrorResponse(500, "Something went wrong", null);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, List<String>> validationErrors = new HashMap<>();
+
+        ex.getConstraintViolations().forEach(violation -> {
+            String fieldName = violation.getPropertyPath().toString();
+            String errorMessage = violation.getMessage();
+
+            validationErrors.computeIfAbsent(fieldName, k -> new ArrayList<>())
+                    .add(errorMessage);
+        });
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Valideringsfel",
+                validationErrors // <--- Nu matchar vi Map<String, List<String>>
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
