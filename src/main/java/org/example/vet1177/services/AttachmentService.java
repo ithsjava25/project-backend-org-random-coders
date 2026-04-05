@@ -19,6 +19,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -64,7 +65,7 @@ public class AttachmentService {
         String s3Key = String.format("records/%s/%s_%s",
                 record.getId(),
                 UUID.randomUUID(),
-                file.getOriginalFilename());
+                sanitizedName);
 
         // Anropa FileStorageService
         try {
@@ -161,6 +162,17 @@ public class AttachmentService {
         }
 
         log.info("Attachment {} marked for deletion in database", attachmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttachmentResponse> getAttachmentsByRecord(User currentUser, UUID recordId) {
+        MedicalRecord record = medicalRecordRepository.findById(recordId)
+                .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
+
+
+        return attachmentRepository.findByMedicalRecordId(recordId).stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private AttachmentResponse mapToResponse(Attachment attachment) {
