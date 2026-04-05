@@ -51,7 +51,7 @@ public class AttachmentService {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request) throws IOException {
+    public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request)  {
         MedicalRecord record = medicalRecordRepository.findById(request.recordId())
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", request.recordId()));
 
@@ -74,9 +74,12 @@ public class AttachmentService {
         // Anropa FileStorageService
         try {
             fileStorageService.upload(s3Key, file.getInputStream(), file.getSize(), file.getContentType());
+        } catch (IOException e) {
+            log.error("Kritisk IO-fel vid läsning av MultipartFile: {}", originalName, e);
+            throw new RuntimeException("Kunde inte läsa den uppladdade filen. Försök igen.", e);
         } catch (Exception e) {
-            log.error("S3 upload failed for key: {}", s3Key);
-            throw new RuntimeException("Kunde inte ladda upp filen till lagringen", e);
+            log.error("S3 upload failed for key: {}", s3Key, e);
+            throw new RuntimeException("Kunde inte ladda upp filen till molnlagringen", e);
         }
 
         // Skapa entitet
@@ -98,17 +101,15 @@ public class AttachmentService {
         return mapToResponse(attachment);
 
         } catch (Exception e) {
-        // Tack vare saveAndFlush hamnar vi här om databasen nekar sparningen
-        log.error("Database persistence failed for attachment with S3 key: {}. Triggering S3 cleanup.", s3Key);
+        log.error("Database persistence failed for S3 key: {}. Triggering cleanup.", s3Key);
 
         try {
             fileStorageService.delete(s3Key);
         } catch (Exception deleteEx) {
-            log.error("CRITICAL: Failed to cleanup S3 object {} after DB failure!", s3Key, deleteEx);
+            log.error("CRITICAL: Failed to cleanup S3 object {}!", s3Key, deleteEx);
         }
-
-        throw new RuntimeException("Kunde inte spara bilagans metadata. Uppladdningen avbröts.", e);
-        }
+        throw new RuntimeException("Kunde inte spara metadata i databasen. Uppladdningen avbröts.", e);
+    }
     }
 
     private String sanitizeFilename(String originalFilename) {
