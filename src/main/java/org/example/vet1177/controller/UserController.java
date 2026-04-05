@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.example.vet1177.dto.request.user.UserRequest;
 import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.services.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +28,7 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    // GEt /users/{id}- Hämta en användte
+    // GET /users/{id}- Hämta 1 användare
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
         UserResponse user = userService.getById(id);
@@ -38,16 +39,22 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
         UserResponse user = userService.createUser(request);
-        return ResponseEntity.status(201).body(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     //PUT /users/{id} - uppdatera användare
+    // PUT /users/{id} - uppdatera användare
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequest request) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id,
+                                                   @Valid @RequestBody UserRequest request) {
         UserResponse user = userService.updateUser(id, request);
         return ResponseEntity.ok(user);
     }
 
     //DELETE /users/{id} - Tar bort användare
-
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -20,13 +20,13 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-
     public UserResponse createUser(UserRequest request) {
         // TODO: Hasha lösenordet med BCrypt när Spring Security implementeras
         User user = new User(request.getName(), request.getEmail(), request.getPassword(), request.getRole());
         return mapToResponse(userRepository.save(user));
     }
 
+    // TODO: GET /users/search?email= - Sök användare på email, kräver ADMIN-roll (implementera när Spring Security är på plats)
     public User getByEmail(String email){
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", email));
@@ -62,6 +62,13 @@ public class UserService {
         user.setEmail(request.getEmail());
 
         return mapToResponse(userRepository.save(user));
+    }
+
+    //Delete user
+    public void deleteUser(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        userRepository.delete(user);
     }
 
     //Helper
