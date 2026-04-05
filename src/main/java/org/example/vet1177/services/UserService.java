@@ -118,5 +118,4 @@ public class UserService {
             user.setClinic(null);
         }
     }
-
 }
