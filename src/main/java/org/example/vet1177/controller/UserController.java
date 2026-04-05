@@ -4,10 +4,12 @@ import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -27,6 +29,11 @@ public class UserController {
     }
 
     // GEt /users/{id}- Hämta en användte
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
+        UserResponse user = userService.getById(id);
+        return ResponseEntity.ok(user);
+    }
 
     //POST /users - skapa ny användare
 //    @GetMapping

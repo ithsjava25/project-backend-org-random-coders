@@ -184,7 +184,7 @@ public class MedicalRecordController {
             @AuthenticationPrincipal User currentUser) {
 
         MedicalRecord record = medicalRecordService.getById(id);
-        User vetToAssign = userService.getById(request.vetId());
+        User vetToAssign = userService.getUserEntityById(request.vetId());
         medicalRecordPolicy.canAssignVet(currentUser, record, vetToAssign);
 
         return ResponseEntity.ok(

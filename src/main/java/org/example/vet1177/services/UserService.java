@@ -25,30 +25,44 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User getById(UUID id){
+    public User getByEmail(String email){
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+    }
+
+    // Returnerar User-entiteten, används internt när andra services behöver ett User-objekt. OK? - annars
+    public User getUserEntityById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 
-    public User getByEmail(String email){
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+    // Returnerar UserResponse DTO, används av UserController för att exponera användardata till klienten.
+    // Ändra anrop från getById() till getUserEntityById() i ActivityLogController
+    public UserResponse getById(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        return mapToResponse(user);
     }
 
     //Get all users
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll()
                 .stream()
-                .map(user -> new UserResponse(
-                        user.getId(),
-                        user.getName(),
-                        user.getEmail(),
-                        user.getRole(),
-                        user.getClinic() != null ? user.getClinic().getId() : null,
-                        user.getCreatedAt(),
-                        user.getUpdatedAt()
-                ))
+                .map(this::mapToResponse)
                 .toList();
+    }
+
+    //Helper
+    private UserResponse mapToResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getClinic() != null ? user.getClinic().getId() : null,
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
     }
 
 }
