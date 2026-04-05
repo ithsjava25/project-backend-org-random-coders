@@ -1,12 +1,11 @@
 package org.example.vet1177.controller;
 
+import jakarta.validation.Valid;
+import org.example.vet1177.dto.request.user.UserRequest;
 import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.services.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,10 +35,11 @@ public class UserController {
     }
 
     //POST /users - skapa ny användare
-//    @GetMapping
-//    public UserResponse createUser() {
-//        return ;
-//    }
+    @PostMapping
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest request) {
+        UserResponse user = userService.createUser(request);
+        return ResponseEntity.status(201).body(user);
+    }
 
     //PUT /users/{id} - uppdatera användare
 

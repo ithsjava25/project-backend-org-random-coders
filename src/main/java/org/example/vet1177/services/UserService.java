@@ -1,5 +1,6 @@
 package org.example.vet1177.services;
 
+import org.example.vet1177.dto.request.user.UserRequest;
 import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
@@ -20,9 +21,9 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User createUser(String name, String email, String passwordHash, Role role){
-        User user = new User(name, email, passwordHash, role);
-        return userRepository.save(user);
+    public UserResponse createUser(UserRequest request) {
+        User user = new User(request.getName(), request.getEmail(), request.getPassword(), request.getRole());
+        return mapToResponse(userRepository.save(user));
     }
 
     public User getByEmail(String email){
