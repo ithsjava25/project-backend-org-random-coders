@@ -1,6 +1,8 @@
 package org.example.vet1177.controller;
 
-
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
 import org.example.vet1177.dto.request.attachment.AttachmentRequest;
 import org.example.vet1177.dto.response.attachment.AttachmentResponse;
 import org.example.vet1177.entities.User;
@@ -11,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -20,9 +21,13 @@ import java.util.UUID;
 public class AttachmentController {
 
     private final AttachmentService attachmentService;
+    private final Validator validator;
 
-    public AttachmentController(AttachmentService attachmentService) {
+    public AttachmentController(AttachmentService attachmentService, Validator validator) {
+
         this.attachmentService = attachmentService;
+        this.validator = validator;
+
     }
 
 
@@ -31,10 +36,15 @@ public class AttachmentController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID recordId,
             @RequestPart("file") MultipartFile file,
-            @RequestPart("description") String description)  {
+            @RequestPart(value = "description", required = false) String description)  {
 
 
         AttachmentRequest request = new AttachmentRequest(recordId, description);
+
+        var violations = validator.validate(request);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
 
         AttachmentResponse response = attachmentService.uploadAttachment(currentUser, file, request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
