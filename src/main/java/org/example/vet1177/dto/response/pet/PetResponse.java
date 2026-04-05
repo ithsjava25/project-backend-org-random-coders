@@ -14,7 +14,6 @@ public class PetResponse {
     private String breed;
     private LocalDate dateOfBirth;
     private BigDecimal weightKg;
-    private String insuranceNumber;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -23,7 +22,7 @@ public class PetResponse {
 
     public PetResponse(UUID id, UUID ownerId, String name, String species,
                        String breed, LocalDate dateOfBirth, BigDecimal weightKg,
-                       String insuranceNumber, Instant createdAt, Instant updatedAt) {
+                       Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.ownerId = ownerId;
         this.name = name;
@@ -31,7 +30,6 @@ public class PetResponse {
         this.breed = breed;
         this.dateOfBirth = dateOfBirth;
         this.weightKg = weightKg;
-        this.insuranceNumber = insuranceNumber;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -62,10 +60,6 @@ public class PetResponse {
 
     public BigDecimal getWeightKg() {
         return weightKg;
-    }
-
-    public String getInsuranceNumber() {
-        return insuranceNumber;
     }
 
     public Instant getCreatedAt() {
