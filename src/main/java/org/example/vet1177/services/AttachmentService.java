@@ -8,6 +8,7 @@ import org.example.vet1177.entities.MedicalRecord;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.AttachmentPolicy;
+import org.example.vet1177.policy.MedicalRecordPolicy;
 import org.example.vet1177.repository.AttachmentRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.security.access.AccessDeniedException;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -32,17 +33,20 @@ public class AttachmentService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final AttachmentPolicy attachmentPolicy;
     private final String bucketName;
+    private final MedicalRecordPolicy medicalRecordPolicy;
 
     public AttachmentService(AttachmentRepository attachmentRepository,
                              FileStorageService fileStorageService,
                              MedicalRecordRepository medicalRecordRepository,
                              AttachmentPolicy attachmentPolicy,
-                             AwsS3Properties props) {
+                             AwsS3Properties props,
+                             MedicalRecordPolicy medicalRecordPolicy) {
         this.attachmentRepository = attachmentRepository;
         this.fileStorageService = fileStorageService;
         this.medicalRecordRepository = medicalRecordRepository;
         this.attachmentPolicy = attachmentPolicy;
         this.bucketName = props.getBucketName();
+        this.medicalRecordPolicy = medicalRecordPolicy;
     }
 
 
@@ -168,6 +172,8 @@ public class AttachmentService {
     public List<AttachmentResponse> getAttachmentsByRecord(User currentUser, UUID recordId) {
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
+
+        medicalRecordPolicy.canView(currentUser, record);
 
 
         return attachmentRepository.findByMedicalRecordId(recordId).stream()
