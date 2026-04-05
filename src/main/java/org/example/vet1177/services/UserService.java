@@ -2,7 +2,6 @@ package org.example.vet1177.services;
 
 import org.example.vet1177.dto.request.user.UserRequest;
 import org.example.vet1177.dto.response.user.UserResponse;
-import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.UserRepository;
@@ -21,7 +20,9 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+
     public UserResponse createUser(UserRequest request) {
+        // TODO: Hasha lösenordet med BCrypt när Spring Security implementeras
         User user = new User(request.getName(), request.getEmail(), request.getPassword(), request.getRole());
         return mapToResponse(userRepository.save(user));
     }
@@ -51,6 +52,16 @@ public class UserService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    //Update user
+    public UserResponse updateUser(UUID id, UserRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+
+        return mapToResponse(userRepository.save(user));
     }
 
     //Helper

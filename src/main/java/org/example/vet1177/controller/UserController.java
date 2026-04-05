@@ -42,6 +42,11 @@ public class UserController {
     }
 
     //PUT /users/{id} - uppdatera användare
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequest request) {
+        UserResponse user = userService.updateUser(id, request);
+        return ResponseEntity.ok(user);
+    }
 
     //DELETE /users/{id} - Tar bort användare
 

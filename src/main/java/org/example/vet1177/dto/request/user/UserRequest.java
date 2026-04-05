@@ -22,8 +22,7 @@ public class UserRequest {
     @NotNull
     private Role role;
 
-    @NotNull
-    private UUID ClinicId;
+    private UUID clinicId;
 
     public  UserRequest(){
     }
@@ -61,10 +60,10 @@ public class UserRequest {
     }
 
     public UUID getClinicId() {
-        return ClinicId;
+        return clinicId;
     }
 
     public void setClinicId(UUID clinicId) {
-        ClinicId = clinicId;
+        this.clinicId = clinicId;
     }
 }
