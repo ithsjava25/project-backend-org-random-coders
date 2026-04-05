@@ -1,5 +1,6 @@
 package org.example.vet1177.services;
 
+import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ResourceNotFoundException;
@@ -7,6 +8,7 @@ import org.example.vet1177.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -31,6 +33,22 @@ public class UserService {
     public User getByEmail(String email){
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", email));
+    }
+
+    //Get all users
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(user -> new UserResponse(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getRole(),
+                        user.getClinic() != null ? user.getClinic().getId() : null,
+                        user.getCreatedAt(),
+                        user.getUpdatedAt()
+                ))
+                .toList();
     }
 
 }
