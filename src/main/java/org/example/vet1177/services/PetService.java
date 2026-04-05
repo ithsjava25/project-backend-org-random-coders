@@ -107,7 +107,12 @@ public class PetService {
             throw new RuntimeException("Du saknar behörighet för att uppdatera info om djuret");
         }
 
-        applyPetRequest(existingPet, request);
+        existingPet.setName(updatedPet.getName());
+        existingPet.setSpecies(updatedPet.getSpecies());
+        existingPet.setBreed(updatedPet.getBreed());
+        existingPet.setDateOfBirth(updatedPet.getDateOfBirth());
+        existingPet.setWeightKg(updatedPet.getWeightKg());
+
 
         return petRepository.save(existingPet);
     }
