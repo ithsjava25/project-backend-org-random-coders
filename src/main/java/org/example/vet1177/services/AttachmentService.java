@@ -8,6 +8,7 @@ import org.example.vet1177.entities.MedicalRecord;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.AttachmentPolicy;
+import org.example.vet1177.policy.MedicalRecordPolicy;
 import org.example.vet1177.repository.AttachmentRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.slf4j.Logger;
@@ -17,8 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.security.access.AccessDeniedException;
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -31,22 +33,25 @@ public class AttachmentService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final AttachmentPolicy attachmentPolicy;
     private final String bucketName;
+    private final MedicalRecordPolicy medicalRecordPolicy;
 
     public AttachmentService(AttachmentRepository attachmentRepository,
                              FileStorageService fileStorageService,
                              MedicalRecordRepository medicalRecordRepository,
                              AttachmentPolicy attachmentPolicy,
-                             AwsS3Properties props) {
+                             AwsS3Properties props,
+                             MedicalRecordPolicy medicalRecordPolicy) {
         this.attachmentRepository = attachmentRepository;
         this.fileStorageService = fileStorageService;
         this.medicalRecordRepository = medicalRecordRepository;
         this.attachmentPolicy = attachmentPolicy;
         this.bucketName = props.getBucketName();
+        this.medicalRecordPolicy = medicalRecordPolicy;
     }
 
 
     @Transactional(rollbackFor = Exception.class)
-    public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request) throws IOException {
+    public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request)  {
         MedicalRecord record = medicalRecordRepository.findById(request.recordId())
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", request.recordId()));
 
@@ -64,14 +69,17 @@ public class AttachmentService {
         String s3Key = String.format("records/%s/%s_%s",
                 record.getId(),
                 UUID.randomUUID(),
-                file.getOriginalFilename());
+                sanitizedName);
 
         // Anropa FileStorageService
         try {
             fileStorageService.upload(s3Key, file.getInputStream(), file.getSize(), file.getContentType());
+        } catch (IOException e) {
+            log.error("Kritisk IO-fel vid läsning av MultipartFile: {}", originalName, e);
+            throw new RuntimeException("Kunde inte läsa den uppladdade filen. Försök igen.", e);
         } catch (Exception e) {
-            log.error("S3 upload failed for key: {}", s3Key);
-            throw new RuntimeException("Kunde inte ladda upp filen till lagringen", e);
+            log.error("S3 upload failed for key: {}", s3Key, e);
+            throw new RuntimeException("Kunde inte ladda upp filen till molnlagringen", e);
         }
 
         // Skapa entitet
@@ -93,17 +101,15 @@ public class AttachmentService {
         return mapToResponse(attachment);
 
         } catch (Exception e) {
-        // Tack vare saveAndFlush hamnar vi här om databasen nekar sparningen
-        log.error("Database persistence failed for attachment with S3 key: {}. Triggering S3 cleanup.", s3Key);
+        log.error("Database persistence failed for S3 key: {}. Triggering cleanup.", s3Key);
 
         try {
             fileStorageService.delete(s3Key);
         } catch (Exception deleteEx) {
-            log.error("CRITICAL: Failed to cleanup S3 object {} after DB failure!", s3Key, deleteEx);
+            log.error("CRITICAL: Failed to cleanup S3 object {}!", s3Key, deleteEx);
         }
-
-        throw new RuntimeException("Kunde inte spara bilagans metadata. Uppladdningen avbröts.", e);
-        }
+        throw new RuntimeException("Kunde inte spara metadata i databasen. Uppladdningen avbröts.", e);
+    }
     }
 
     private String sanitizeFilename(String originalFilename) {
@@ -161,6 +167,19 @@ public class AttachmentService {
         }
 
         log.info("Attachment {} marked for deletion in database", attachmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttachmentResponse> getAttachmentsByRecord(User currentUser, UUID recordId) {
+        MedicalRecord record = medicalRecordRepository.findById(recordId)
+                .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
+
+        medicalRecordPolicy.canView(currentUser, record);
+
+
+        return attachmentRepository.findByMedicalRecordId(recordId).stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private AttachmentResponse mapToResponse(Attachment attachment) {

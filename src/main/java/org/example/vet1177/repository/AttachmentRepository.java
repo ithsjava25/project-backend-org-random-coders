@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
 
-    List<Attachment> findByMedicalRecordId(UUID recordId);
+    List<Attachment> findByMedicalRecordId(UUID medicalRecordId);
 
     List<Attachment> findByUploadedById(UUID userId);
 
