@@ -7,6 +7,7 @@ import org.example.vet1177.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.example.vet1177.dto.request.user.UserUpdateRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -46,7 +47,7 @@ public class UserController {
     // PUT /users/{id} - uppdatera användare
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id,
-                                                   @Valid @RequestBody UserRequest request) {
+                                                   @Valid @RequestBody UserUpdateRequest request) {
         UserResponse user = userService.updateUser(id, request);
         return ResponseEntity.ok(user);
     }

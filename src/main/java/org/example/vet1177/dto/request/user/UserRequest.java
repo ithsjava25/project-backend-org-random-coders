@@ -3,6 +3,7 @@ package org.example.vet1177.dto.request.user;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.example.vet1177.entities.Role;
 
 import java.util.UUID;
@@ -10,6 +11,7 @@ import java.util.UUID;
 public class UserRequest {
 
     @NotBlank
+    @Size(min = 2, max = 100)
     private String name;
 
     @NotBlank
@@ -17,6 +19,7 @@ public class UserRequest {
     private String email;
 
     @NotBlank
+    @Size(min = 8, max = 100)
     private String password;
 
     @NotNull

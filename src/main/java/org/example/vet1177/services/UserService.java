@@ -1,13 +1,16 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.dto.request.user.UserRequest;
+import org.example.vet1177.dto.request.user.UserUpdateRequest;
 import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.entities.Clinic;
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ResourceNotFoundException;
+import org.example.vet1177.repository.ClinicRepository;
 import org.example.vet1177.repository.UserRepository;
 import org.springframework.stereotype.Service;
+
 
 
 import java.util.List;
@@ -17,11 +20,12 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final ClinicService clinicService;
+    private final ClinicRepository clinicRepository;
 
-    public UserService(UserRepository userRepository, ClinicService clinicService){
+    public UserService(UserRepository userRepository,
+                       ClinicRepository clinicRepository){
         this.userRepository = userRepository;
-        this.clinicService = clinicService;
+        this.clinicRepository = clinicRepository;
     }
     // TODO: Hasha lösenordet med BCrypt när Spring Security implementeras
     public UserResponse createUser(UserRequest request) {
@@ -31,7 +35,7 @@ public class UserService {
                 request.getEmail(),
                 request.getPassword(),
                 request.getRole());
-        applyClinicRules(user, request);
+        applyClinicRules(user, request.getClinicId());
         return mapToResponse(userRepository.save(user));
     }
 
@@ -64,13 +68,21 @@ public class UserService {
     }
 
     //Update user
-    public UserResponse updateUser(UUID id, UserRequest request) {
+    public UserResponse updateUser(UUID id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
-        validateEmailUniqueForUpdate(request.getEmail(), id);
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        applyClinicRules(user, request);
+
+        if (request.getEmail() != null) {
+            validateEmailUniqueForUpdate(request.getEmail(), id);
+            user.setEmail(request.getEmail());
+        }
+
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+
+        applyClinicRules(user, request.getClinicId());
+
         return mapToResponse(userRepository.save(user));
     }
 
@@ -106,13 +118,15 @@ public class UserService {
         }
     }
 
-    private void applyClinicRules(User user, UserRequest request) {
-        if (request.getRole() == Role.VET) {
-            if (request.getClinicId() == null) {
+    private void applyClinicRules(User user, UUID clinicId) {
+        if (user.getRole() == Role.VET) {
+            if (clinicId == null) {
                 throw new IllegalArgumentException("Veterinär måste vara kopplad till en klinik");
             }
 
-            Clinic clinic = clinicService.getById(request.getClinicId());
+            Clinic clinic = clinicRepository.findById(clinicId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Clinic", clinicId));
+
             user.setClinic(clinic);
         } else {
             user.setClinic(null);
