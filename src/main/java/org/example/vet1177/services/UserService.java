@@ -6,6 +6,7 @@ import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.entities.Clinic;
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
+import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.ClinicRepository;
 import org.example.vet1177.repository.UserRepository;
@@ -81,7 +82,9 @@ public class UserService {
             user.setName(request.getName());
         }
 
-        applyClinicRules(user, request.getClinicId());
+        if (request.getClinicId() != null) {
+            applyClinicRulesForUpdate(user, request.getClinicId());
+        }
 
         return mapToResponse(userRepository.save(user));
     }
@@ -108,28 +111,38 @@ public class UserService {
 
     private void validateEmailUnique(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email används redan");
+            throw new BusinessRuleException("Email används redan");
         }
     }
 
     private void validateEmailUniqueForUpdate(String email, UUID userId) {
         if (userRepository.existsByEmailAndIdNot(email, userId)) {
-            throw new IllegalArgumentException("Email används redan");
+            throw new BusinessRuleException("Email används redan");
         }
     }
 
+    // Vid skapande — VET måste ha klinik, övriga får inte ha det
     private void applyClinicRules(User user, UUID clinicId) {
         if (user.getRole() == Role.VET) {
             if (clinicId == null) {
-                throw new IllegalArgumentException("Veterinär måste vara kopplad till en klinik");
+                throw new BusinessRuleException("Veterinär måste vara kopplad till en klinik");
             }
-
             Clinic clinic = clinicRepository.findById(clinicId)
                     .orElseThrow(() -> new ResourceNotFoundException("Clinic", clinicId));
-
             user.setClinic(clinic);
         } else {
             user.setClinic(null);
         }
     }
+
+    // Vid uppdatering — klinik ändras bara om clinicId skickas med
+    private void applyClinicRulesForUpdate(User user, UUID clinicId) {
+        if (user.getRole() != Role.VET) {
+            throw new BusinessRuleException("Endast veterinärer kan kopplas till en klinik");
+        }
+        Clinic clinic = clinicRepository.findById(clinicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Clinic", clinicId));
+        user.setClinic(clinic);
+    }
+
 }

@@ -44,7 +44,6 @@ public class UserController {
     }
 
     //PUT /users/{id} - uppdatera användare
-    // PUT /users/{id} - uppdatera användare
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id,
                                                    @Valid @RequestBody UserUpdateRequest request) {
