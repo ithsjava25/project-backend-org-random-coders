@@ -9,6 +9,8 @@ import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.ClinicRepository;
+import org.example.vet1177.repository.MedicalRecordRepository;
+import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,11 +27,17 @@ public class UserService {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final UserRepository userRepository;
     private final ClinicRepository clinicRepository;
+    private final PetRepository petRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
 
     public UserService(UserRepository userRepository,
-                       ClinicRepository clinicRepository){
+                       ClinicRepository clinicRepository,
+                       PetRepository petRepository,
+                       MedicalRecordRepository medicalRecordRepository) {
         this.userRepository = userRepository;
         this.clinicRepository = clinicRepository;
+        this.petRepository = petRepository;
+        this.medicalRecordRepository = medicalRecordRepository;
     }
 
     public UserResponse createUser(UserRequest request) {
@@ -97,6 +105,26 @@ public class UserService {
     public void deleteUser(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
+
+        if (petRepository.existsByOwner_Id(id)) {
+            throw new BusinessRuleException("Användaren har kopplade djur och kan inte raderas");
+        }
+        if (petRepository.existsByOwner_Id(id)) {
+            throw new BusinessRuleException("Användaren har kopplade djur och kan inte raderas");
+        }
+        if (medicalRecordRepository.existsByOwnerId(id)) {
+            throw new BusinessRuleException("Användaren är ägare på journalposter och kan inte raderas");
+        }
+        if (medicalRecordRepository.existsByAssignedVetId(id)) {
+            throw new BusinessRuleException("Användaren är tilldelad veterinär på journalposter och kan inte raderas");
+        }
+        if (medicalRecordRepository.existsByCreatedById(id)) {
+            throw new BusinessRuleException("Användaren har skapat journalposter och kan inte raderas");
+        }
+        if (medicalRecordRepository.existsByUpdatedById(id)) {
+            throw new BusinessRuleException("Användaren har uppdaterat journalposter och kan inte raderas");
+        }
+
         userRepository.delete(user);
     }
 
