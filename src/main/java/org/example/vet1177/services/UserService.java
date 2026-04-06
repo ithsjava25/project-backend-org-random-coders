@@ -12,6 +12,7 @@ import org.example.vet1177.repository.ClinicRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -49,7 +50,11 @@ public class UserService {
                 passwordHash,
                 request.getRole());
         applyClinicRules(user, request.getClinicId());
-        return mapToResponse(userRepository.save(user));
+        try {
+            return mapToResponse(userRepository.save(user));
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessRuleException("Email används redan");
+        }
     }
 
     // TODO: GET /users/search?email= - Sök användare på email, kräver ADMIN-roll (implementera när Spring Security är på plats)
@@ -97,8 +102,11 @@ public class UserService {
         if (request.getClinicId() != null) {
             applyClinicRulesForUpdate(user, request.getClinicId());
         }
-
-        return mapToResponse(userRepository.save(user));
+        try {
+            return mapToResponse(userRepository.save(user));
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessRuleException("Email används redan");
+        }
     }
 
     //Delete user
@@ -163,8 +171,11 @@ public class UserService {
                     .orElseThrow(() -> new ResourceNotFoundException("Clinic", clinicId));
             user.setClinic(clinic);
         } else {
-            user.setClinic(null);
+        if (clinicId != null) {
+            throw new BusinessRuleException("Endast veterinärer kan kopplas till en klinik");
         }
+        user.setClinic(null);
+    }
     }
 
     // Vid uppdatering — klinik ändras bara om clinicId skickas med
