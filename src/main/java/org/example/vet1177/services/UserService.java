@@ -117,9 +117,6 @@ public class UserService {
         if (petRepository.existsByOwner_Id(id)) {
             throw new BusinessRuleException("Användaren har kopplade djur och kan inte raderas");
         }
-        if (petRepository.existsByOwner_Id(id)) {
-            throw new BusinessRuleException("Användaren har kopplade djur och kan inte raderas");
-        }
         if (medicalRecordRepository.existsByOwnerId(id)) {
             throw new BusinessRuleException("Användaren är ägare på journalposter och kan inte raderas");
         }
@@ -133,7 +130,11 @@ public class UserService {
             throw new BusinessRuleException("Användaren har uppdaterat journalposter och kan inte raderas");
         }
 
-        userRepository.delete(user);
+        try {
+            userRepository.delete(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessRuleException("Användaren kan inte raderas på grund av kopplade poster");
+        }
     }
 
     //Helper
