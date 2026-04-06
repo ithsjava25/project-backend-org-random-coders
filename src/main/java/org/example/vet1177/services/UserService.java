@@ -10,6 +10,8 @@ import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.ClinicRepository;
 import org.example.vet1177.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
@@ -19,7 +21,8 @@ import java.util.UUID;
 
 @Service
 public class UserService {
-
+    // TODO: Implementera Spring Security för autentisering och auktorisering
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final UserRepository userRepository;
     private final ClinicRepository clinicRepository;
 
@@ -28,13 +31,14 @@ public class UserService {
         this.userRepository = userRepository;
         this.clinicRepository = clinicRepository;
     }
-    // TODO: Hasha lösenordet med BCrypt när Spring Security implementeras
+
     public UserResponse createUser(UserRequest request) {
         validateEmailUnique(request.getEmail());
+        String passwordHash = passwordEncoder.encode(request.getPassword());
         User user = new User(
                 request.getName(),
                 request.getEmail(),
-                request.getPassword(),
+                passwordHash,
                 request.getRole());
         applyClinicRules(user, request.getClinicId());
         return mapToResponse(userRepository.save(user));
@@ -144,5 +148,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Clinic", clinicId));
         user.setClinic(clinic);
     }
+
+
 
 }
