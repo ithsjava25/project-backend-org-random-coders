@@ -36,7 +36,6 @@ public class PetController {
                 saved.getBreed(),
                 saved.getDateOfBirth(),
                 saved.getWeightKg(),
-                saved.getInsuranceNumber(),
                 saved.getCreatedAt(),
                 saved.getUpdatedAt()
         );
