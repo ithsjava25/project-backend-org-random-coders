@@ -22,9 +22,6 @@ public class PetRequest {
     @Positive
     private BigDecimal weightKg;
 
-    @Size(max = 100)
-    private String insuranceNumber;
-
     public PetRequest() {
     }
 
@@ -68,11 +65,4 @@ public class PetRequest {
         this.weightKg = weightKg;
     }
 
-    public String getInsuranceNumber() {
-        return insuranceNumber;
-    }
-
-    public void setInsuranceNumber(String insuranceNumber) {
-        this.insuranceNumber = insuranceNumber;
-    }
 }
