@@ -12,6 +12,8 @@ import org.example.vet1177.repository.ClinicRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +26,9 @@ import java.util.UUID;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
     // TODO: Implementera Spring Security för autentisering och auktorisering
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final UserRepository userRepository;
@@ -50,21 +55,25 @@ public class UserService {
                 passwordHash,
                 request.getRole());
         applyClinicRules(user, request.getClinicId());
+        log.info("Creating user with email={}", request.getEmail());
         try {
             return mapToResponse(userRepository.save(user));
         } catch (DataIntegrityViolationException e) {
+            log.warn("Duplicate email on create: {}", request.getEmail());
             throw new BusinessRuleException("Email används redan");
         }
     }
 
     // TODO: GET /users/search?email= - Sök användare på email, kräver ADMIN-roll (implementera när Spring Security är på plats)
     public User getByEmail(String email){
+        log.debug("Fetching user by email={}", email);
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", email));
     }
 
     // Returnerar User-entiteten, används internt när andra services behöver ett User-objekt. OK? - annars
     public User getUserEntityById(UUID id) {
+        log.debug("Fetching user entity id={}", id);
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
@@ -72,6 +81,7 @@ public class UserService {
     // Returnerar UserResponse DTO, används av UserController för att exponera användardata till klienten.
     // Ändra anrop från getById() till getUserEntityById() i ActivityLogController
     public UserResponse getById(UUID id) {
+        log.debug("Fetching user id={}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
         return mapToResponse(user);
@@ -79,6 +89,7 @@ public class UserService {
 
     //Get all users
     public List<UserResponse> getAllUsers() {
+        log.debug("Fetching all users");
         return userRepository.findAll()
                 .stream()
                 .map(this::mapToResponse)
@@ -87,6 +98,7 @@ public class UserService {
 
     //Update user
     public UserResponse updateUser(UUID id, UserUpdateRequest request) {
+        log.debug("Updating user id={}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
 
@@ -102,15 +114,18 @@ public class UserService {
         if (request.getClinicId() != null) {
             applyClinicRulesForUpdate(user, request.getClinicId());
         }
+        log.info("Updated user id={}", id);
         try {
             return mapToResponse(userRepository.save(user));
         } catch (DataIntegrityViolationException e) {
+            log.warn("Duplicate email on update id={}", id);
             throw new BusinessRuleException("Email används redan");
         }
     }
 
     //Delete user
     public void deleteUser(UUID id) {
+        log.debug("Deleting user id={}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
 
@@ -132,7 +147,9 @@ public class UserService {
 
         try {
             userRepository.delete(user);
+            log.info("Deleted user id={}", id);
         } catch (DataIntegrityViolationException e) {
+            log.warn("Cannot delete user id={} due to related records", id);
             throw new BusinessRuleException("Användaren kan inte raderas på grund av kopplade poster");
         }
     }
