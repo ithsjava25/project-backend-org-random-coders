@@ -5,6 +5,8 @@ import org.example.vet1177.entities.*;
 import org.example.vet1177.policy.MedicalRecordPolicy;
 import org.example.vet1177.services.MedicalRecordService;
 import org.example.vet1177.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.example.vet1177.dto.request.medicalrecord.*;
 import org.example.vet1177.dto.response.medicalrecord.*;
@@ -19,6 +21,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/medical-records")
 public class MedicalRecordController {
+
+    private static final Logger log = LoggerFactory.getLogger(MedicalRecordController.class);
 
     private final MedicalRecordService medicalRecordService;
     private final MedicalRecordPolicy medicalRecordPolicy;
@@ -40,6 +44,7 @@ public class MedicalRecordController {
             @Valid @RequestBody CreateMedicalRecordRequest request,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("POST /api/medical-records - creating record for petId={}", request.petId());
         return ResponseEntity.ok(
                 MedicalRecordResponse.from(
                         medicalRecordService.create(
@@ -60,6 +65,7 @@ public class MedicalRecordController {
             @PathVariable UUID id,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("GET /api/medical-records/{}", id);
         MedicalRecord record = medicalRecordService.getById(id);
         medicalRecordPolicy.canView(currentUser, record);
         return ResponseEntity.ok(MedicalRecordResponse.from(record));
@@ -71,6 +77,7 @@ public class MedicalRecordController {
     public ResponseEntity<List<MedicalRecordSummaryResponse>> getMyRecords(
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("GET /api/medical-records/my-records");
         if (currentUser.getRole() != Role.OWNER) {
             throw new ForbiddenException("Endast djurägare kan se sina egna ärenden");
         }
@@ -90,6 +97,7 @@ public class MedicalRecordController {
             @PathVariable UUID ownerId,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("GET /api/medical-records/owner/{}", ownerId);
         if (currentUser.getRole() == Role.OWNER &&
                 !currentUser.getId().equals(ownerId)) {
             throw new ForbiddenException("Du kan bara se dina egna ärenden");
@@ -111,6 +119,7 @@ public class MedicalRecordController {
             @PathVariable UUID petId,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("GET /api/medical-records/pet/{}", petId);
         return ResponseEntity.ok(
                 medicalRecordService.getByPetAllowedForUser(petId, currentUser)
                         .stream()
@@ -126,6 +135,7 @@ public class MedicalRecordController {
             @PathVariable UUID clinicId,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("GET /api/medical-records/clinic/{}", clinicId);
         medicalRecordPolicy.canViewClinic(currentUser, clinicId);
         return ResponseEntity.ok(
                 medicalRecordService.getByClinic(clinicId)
@@ -143,6 +153,7 @@ public class MedicalRecordController {
             @PathVariable RecordStatus status,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("GET /api/medical-records/clinic/{}/status/{}", clinicId, status);
         medicalRecordPolicy.canViewClinic(currentUser, clinicId);
         return ResponseEntity.ok(
                 medicalRecordService.getByClinicAndStatus(clinicId, status)
@@ -160,6 +171,7 @@ public class MedicalRecordController {
             @Valid @RequestBody UpdateMedicalRecordRequest request,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("PUT /api/medical-records/{}", id);
         MedicalRecord record = medicalRecordService.getById(id);
         medicalRecordPolicy.canUpdate(currentUser, record);
 
@@ -183,6 +195,7 @@ public class MedicalRecordController {
             @Valid @RequestBody AssignVetRequest request,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("PUT /api/medical-records/{}/assign-vet vetId={}", id, request.vetId());
         MedicalRecord record = medicalRecordService.getById(id);
         User vetToAssign = userService.getUserEntityById(request.vetId());
         medicalRecordPolicy.canAssignVet(currentUser, record, vetToAssign);
@@ -202,6 +215,7 @@ public class MedicalRecordController {
             @Valid @RequestBody UpdateStatusRequest request,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("PUT /api/medical-records/{}/status status={}", id, request.status());
         MedicalRecord record = medicalRecordService.getById(id);
         medicalRecordPolicy.canUpdateStatus(currentUser, record, request.status());
 
@@ -223,6 +237,7 @@ public class MedicalRecordController {
             @PathVariable UUID id,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("PUT /api/medical-records/{}/close", id);
         MedicalRecord record = medicalRecordService.getById(id);
         medicalRecordPolicy.canClose(currentUser, record);
 
