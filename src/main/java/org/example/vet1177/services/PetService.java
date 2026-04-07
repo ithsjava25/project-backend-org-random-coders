@@ -5,6 +5,9 @@ import org.example.vet1177.dto.request.pet.PetRequest;
 import org.example.vet1177.entities.Pet;
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
+import org.example.vet1177.exception.BusinessRuleException;
+import org.example.vet1177.exception.ForbiddenException;
+import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
@@ -40,18 +43,17 @@ public class PetService {
         User currentUser = getUserById(currentUserId);
 
         if (!petPolicy.canCreate(currentUser)) {
-            throw new RuntimeException("Du kan inte lägga till ett djur");
+            throw new ForbiddenException("Du kan inte lägga till ett djur");
         }
-
         User owner;
 
         if (currentUser.getRole() == Role.ADMIN) {
             if (ownerId == null) {
-                throw new RuntimeException("Admin måste ange ownerId");
+                throw new BusinessRuleException("Admin måste ange ownerId");
             }
             owner = getUserById(ownerId);
             if (owner.getRole() != Role.OWNER) {
-                throw new RuntimeException("ownerId måste tillhöra en användare med rollen OWNER");
+                throw new BusinessRuleException("ownerId måste tillhöra en användare med rollen OWNER");
             }
         } else {
             owner = currentUser;
@@ -68,7 +70,7 @@ public class PetService {
     // - Måste vara ADMIN eller OWNER för att se pet
     public Pet getPetById(UUID petId, User currentUser) {
         Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new RuntimeException("Pet not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pet", petId));
 
         if (petPolicy.canView(currentUser, pet)) {
             return pet;
@@ -76,7 +78,7 @@ public class PetService {
 
         if (currentUser.getRole() == Role.VET) {
             if (currentUser.getClinic() == null) {
-                throw new RuntimeException("Veterinären saknar koppling till klinik");
+                throw new ForbiddenException("Veterinären saknar koppling till klinik");
             }
             boolean vetHasAccess = medicalRecordRepository
                     .existsByPetIdAndClinicId(petId, currentUser.getClinic().getId());
@@ -86,14 +88,14 @@ public class PetService {
             }
         }
 
-        throw new RuntimeException("Du har inte behörighet att se detta djur");
+        throw new ForbiddenException("Du har inte behörighet att se detta djur");
     }
 
     // Lista djur som tillhör ägaren
     public List<Pet> getPetsByOwner(UUID currentUserId, UUID ownerId) {
         User currentUser = getUserById(currentUserId);
         if (!petPolicy.canViewOwnerPets(currentUser, ownerId)){
-            throw new RuntimeException("Du saknar behörighet");
+            throw new ForbiddenException("Du saknar behörighet");
         }
         return petRepository.findByOwnerId(ownerId);
     }
@@ -104,7 +106,7 @@ public class PetService {
         Pet existingPet = getPetByIdOrThrow(petId);
 
         if (!petPolicy.canUpdate(currentUser, existingPet)) {
-            throw new RuntimeException("Du saknar behörighet för att uppdatera info om djuret");
+            throw new ForbiddenException("Du saknar behörighet för att uppdatera info om djuret");
         }
 
         existingPet.setName(request.getName());
@@ -121,16 +123,16 @@ public class PetService {
     @Transactional
     public void deletePet(UUID petId, User currentUser) {
         Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new RuntimeException("Djuret finns inte"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pet", petId));
 
         if (!petPolicy.canDelete(currentUser, pet)) {
-            throw new RuntimeException("Du har inte behörighet att radera detta djur");
+            throw new ForbiddenException("Du har inte behörighet att radera detta djur");
         }
         try {
             petRepository.delete(pet);
             petRepository.flush();
         } catch (DataIntegrityViolationException e) {
-            throw new RuntimeException("Djuret kan inte raderas eftersom journaler finns kopplade");
+            throw new BusinessRuleException("Djuret kan inte raderas eftersom journaler finns kopplade");
         }
     }
 
@@ -139,11 +141,11 @@ public class PetService {
     //HELPERS
     private User getUserById(UUID userId) {
         return userRepository.findById(userId)
-                .orElseThrow(()-> new RuntimeException("Användare ej hittad"));
+                .orElseThrow(()-> new ResourceNotFoundException("User", userId));
     }
     private Pet getPetByIdOrThrow(UUID petId) {
         return petRepository.findById(petId)
-                .orElseThrow(() -> new RuntimeException("Djuret ej hittat"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pet", petId));
 }
 
     private void applyPetRequest(Pet target, PetRequest request) {
