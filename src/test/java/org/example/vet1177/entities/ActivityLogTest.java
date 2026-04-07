@@ -44,13 +44,14 @@ public class ActivityLogTest {
                 record
         );
 
-        //Act(simulera JPA)
+        // Act (simulate JPA)
+        Instant before = Instant.now();
         log.onCreate();
+        Instant after = Instant.now();
 
-        //Assert
+        // Assert
         assertNotNull(log.getCreatedAt());
-
-        //extra check
-        assertTrue(log.getCreatedAt().isBefore(Instant.now().plusSeconds(1)));
+        assertTrue(!log.getCreatedAt().isBefore(before));
+        assertTrue(!log.getCreatedAt().isAfter(after));
     }
 }
