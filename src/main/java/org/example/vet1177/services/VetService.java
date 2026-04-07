@@ -9,6 +9,8 @@ import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.UserRepository;
 import org.example.vet1177.repository.VetRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,8 @@ import java.util.UUID;
 @Service
 @Transactional
 public class VetService {
+
+    private static final Logger log = LoggerFactory.getLogger(VetService.class);
 
     private final VetRepository vetRepository;
     private final UserRepository userRepository;
@@ -29,6 +33,7 @@ public class VetService {
 
     public VetResponse createVet(VetRequest request) {
 
+        log.info("Creating vet userId={}", request.userId());
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", request.userId()));
 
@@ -63,12 +68,14 @@ public class VetService {
 
 @Transactional(readOnly = true)
     public List<VetResponse> getAllVets() {
+        log.debug("Fetching all vets");
         return vetRepository.findAll().stream().map(VetResponse::from).toList();
 
 }
 
 @Transactional(readOnly = true)
     public VetResponse getVetById(UUID userId) {
+        log.debug("Fetching vet id={}", userId);
         return vetRepository.findById(userId).map(VetResponse::from)
                 .orElseThrow(() -> new ResourceNotFoundException("Vet", userId));
 }
