@@ -9,6 +9,8 @@ import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.UUID;
 @Service
 public class PetService {
 
+    private static final Logger log = LoggerFactory.getLogger(PetService.class);
 
     private final PetRepository petRepository;
     private final UserRepository userRepository;
@@ -37,6 +40,7 @@ public class PetService {
 
     // CREATE - OWNER kan skapa för sig själv, ADMIN kan skapa för en OWNER via ownerId.
     public Pet createPet(UUID currentUserId, UUID ownerId, PetRequest request) {
+        log.info("Creating pet currentUserId={} ownerId={}", currentUserId, ownerId);
         User currentUser = getUserById(currentUserId);
 
         if (!petPolicy.canCreate(currentUser)) {
@@ -67,6 +71,7 @@ public class PetService {
     // READ
     // - Måste vara ADMIN eller OWNER för att se pet
     public Pet getPetById(UUID petId, User currentUser) {
+        log.debug("Fetching pet id={}", petId);
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new RuntimeException("Pet not found"));
 
@@ -91,6 +96,7 @@ public class PetService {
 
     // Lista djur som tillhör ägaren
     public List<Pet> getPetsByOwner(UUID currentUserId, UUID ownerId) {
+        log.debug("Fetching pets ownerId={}", ownerId);
         User currentUser = getUserById(currentUserId);
         if (!petPolicy.canViewOwnerPets(currentUser, ownerId)){
             throw new RuntimeException("Du saknar behörighet");
@@ -100,6 +106,7 @@ public class PetService {
 
     // UPDATE
     public Pet updatePet(UUID currentUserId, UUID petId, PetRequest request) {
+        log.info("Updating pet id={}", petId);
         User currentUser = getUserById(currentUserId);
         Pet existingPet = getPetByIdOrThrow(petId);
 
@@ -120,6 +127,7 @@ public class PetService {
     // DELETE
     @Transactional
     public void deletePet(UUID petId, User currentUser) {
+        log.info("Deleting pet id={}", petId);
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new RuntimeException("Djuret finns inte"));
 
