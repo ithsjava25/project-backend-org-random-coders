@@ -28,7 +28,7 @@ public class ActivityLogController {
             @PathVariable UUID recordId,
             @RequestHeader("userId") UUID userId
     ) {
-        User user = userService.getById(userId);
+        User user = userService.getUserEntityById(userId);
 
         return activityLogService.getByRecord(recordId, user)
                 .stream()

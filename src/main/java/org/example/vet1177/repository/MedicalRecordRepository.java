@@ -33,4 +33,8 @@ public interface MedicalRecordRepository extends JpaRepository<MedicalRecord, UU
     List<MedicalRecord> findByAssignedVetId(UUID vetId);
     List<MedicalRecord> findByStatus(RecordStatus status);
     boolean existsByPetIdAndClinicId(UUID petId, UUID clinicId);
+    boolean existsByOwnerId(UUID ownerId);
+    boolean existsByAssignedVetId(UUID vetId);
+    boolean existsByCreatedById(UUID userId);
+    boolean existsByUpdatedById(UUID userId);
 }
