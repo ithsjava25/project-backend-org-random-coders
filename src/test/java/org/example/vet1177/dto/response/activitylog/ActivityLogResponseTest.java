@@ -23,6 +23,8 @@ public class ActivityLogResponseTest {
         UUID userId = UUID.randomUUID();
         UUID recordId = UUID.randomUUID();
 
+        Instant createdAt = Instant.parse("2026-01-01T00:00:00Z");
+
         User user = mock(User.class);
         MedicalRecord record = mock(MedicalRecord.class);
 
@@ -37,7 +39,7 @@ public class ActivityLogResponseTest {
         when(log.getDescription()).thenReturn("Update record");
         when(log.getPerformedBy()).thenReturn(user);
         when(log.getMedicalRecord()).thenReturn(record);
-        when(log.getCreatedAt()).thenReturn(Instant.now());
+        when(log.getCreatedAt()).thenReturn(createdAt);
 
         //Act
         ActivityLogResponse response = ActivityLogResponse.from(log);
@@ -49,7 +51,7 @@ public class ActivityLogResponseTest {
         assertEquals(userId, response.performedById());
         assertEquals("Alice", response.performedByName());
         assertEquals(recordId, response.recordId());
-        assertNotNull(response.createdAt());
+        assertEquals(createdAt, response.createdAt());
 
     }
 
