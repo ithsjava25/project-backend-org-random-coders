@@ -5,6 +5,8 @@ import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.CommentPolicy;
 import org.example.vet1177.repository.CommentRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,8 @@ import java.util.UUID;
 @Service
 @Transactional
 public class CommentService {
+
+    private static final Logger log = LoggerFactory.getLogger(CommentService.class);
 
     private final CommentRepository commentRepository;
     private final MedicalRecordRepository medicalRecordRepository;
@@ -32,6 +36,7 @@ public class CommentService {
     }
 
     public Comment create(UUID recordId, String body, User currentUser) {
+        log.info("Creating comment recordId={}", recordId);
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
 
@@ -56,6 +61,7 @@ public class CommentService {
 
     @Transactional(readOnly = true)
     public List<Comment> getByRecord(UUID recordId, User currentUser) {
+        log.debug("Fetching comments recordId={}", recordId);
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
 
@@ -65,6 +71,7 @@ public class CommentService {
     }
 
     public Comment update(UUID commentId, String body, User currentUser) {
+        log.info("Updating comment id={}", commentId);
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", commentId));
 
@@ -86,6 +93,7 @@ public class CommentService {
     }
 
     public void delete(UUID commentId, User currentUser) {
+        log.info("Deleting comment id={}", commentId);
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", commentId));
 
@@ -104,6 +112,7 @@ public class CommentService {
 
     @Transactional(readOnly = true)
     public long countByRecord(UUID recordId, User currentUser) {
+        log.debug("Counting comments recordId={}", recordId);
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
 

@@ -6,6 +6,8 @@ import org.example.vet1177.dto.request.comment.UpdateCommentRequest;
 import org.example.vet1177.dto.response.comment.CommentResponse;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.services.CommentService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/comments")
 public class CommentController {
+
+    private static final Logger log = LoggerFactory.getLogger(CommentController.class);
 
     private final CommentService commentService;
 
@@ -31,6 +35,7 @@ public class CommentController {
             @Valid @RequestBody CreateCommentRequest request,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("POST /api/comments recordId={}", request.recordId());
         return ResponseEntity.ok(
                 CommentResponse.from(
                         commentService.create(
@@ -49,6 +54,7 @@ public class CommentController {
             @PathVariable UUID recordId,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("GET /api/comments/record/{}", recordId);
         return ResponseEntity.ok(
                 commentService.getByRecord(recordId, currentUser)
                         .stream()
@@ -65,6 +71,7 @@ public class CommentController {
             @Valid @RequestBody UpdateCommentRequest request,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("PUT /api/comments/{}", id);
         return ResponseEntity.ok(
                 CommentResponse.from(
                         commentService.update(id, request.body(), currentUser)
@@ -78,6 +85,7 @@ public class CommentController {
             @PathVariable UUID id,
             @AuthenticationPrincipal User currentUser) {
 
+        log.info("DELETE /api/comments/{}", id);
         commentService.delete(id, currentUser);
         return ResponseEntity.noContent().build();
     }
@@ -88,6 +96,7 @@ public class CommentController {
     public ResponseEntity<Long> countByRecord(
             @PathVariable UUID recordId,
             @AuthenticationPrincipal User currentUser) {
+        log.info("GET /api/comments/record/{}/count", recordId);
         return ResponseEntity.ok(
                 commentService.countByRecord(recordId, currentUser)
         );
