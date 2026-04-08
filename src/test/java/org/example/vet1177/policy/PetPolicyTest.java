@@ -93,4 +93,25 @@ class PetPolicyTest {
         assertThat(policy.canView(owner, pet)).isFalse();
     }
 
+    //Can viewOwnerPets
+    @Test
+    void canViewOwnerPets_admin_shouldReturnTrue() {
+        assertThat(policy.canViewOwnerPets(admin, UUID.randomUUID())).isTrue();
+    }
+
+    @Test
+    void canViewOwnerPets_ownerViewingOwnPets_shouldReturnTrue() {
+        assertThat(policy.canViewOwnerPets(owner, owner.getId())).isTrue();
+    }
+
+    @Test
+    void canViewOwnerPets_ownerViewingOthersPets_shouldReturnFalse() {
+        assertThat(policy.canViewOwnerPets(owner, otherOwner.getId())).isFalse();
+    }
+
+    @Test
+    void canViewOwnerPets_vet_shouldReturnFalse() {
+        assertThat(policy.canViewOwnerPets(vet, owner.getId())).isFalse();
+    }
+
 }
