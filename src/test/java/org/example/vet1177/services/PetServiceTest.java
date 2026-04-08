@@ -72,10 +72,12 @@ public class PetServiceTest {
         setPrivateField(owner,"id", ownerId);
         otherOwner = new User("Annan Ägarsson", "annanägare@example.se", "lös123", Role.OWNER);
         setPrivateField(otherOwner,"id", otherOwnerId);
-        vet = new User("Vet Vetisson", "vet@example.se", "lösenordet123", Role.VET);
-        setPrivateField(vet,"id", vetId);
         clinic = new Clinic("Huvudkliniken", "storgatan 1", "+465872159125");
         setPrivateField(clinic,"id", UUID.randomUUID());
+        vet = new User("Dr. Erik Vet", "erik@vet.se", "hash", Role.VET);
+        setPrivateField(vet, "id", vetId);
+        setPrivateField(vet, "clinic", clinic);
+
         pet = new Pet(owner, "Molly", "Hund", "Labrador", LocalDate.of(2020, 1, 1), new BigDecimal("12.50"));
         setPrivateField(pet, "id", petId);
 
@@ -165,7 +167,75 @@ public class PetServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
-    //Get pet by ID
+    //GetPetByID
+
+    @Test
+    void getPetById_adminCanViewAnyPet_shouldReturnPet() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canView(admin, pet)).thenReturn(true);
+
+        Pet result = petService.getPetById(petId, admin);
+
+        assertThat(result).isEqualTo(pet);
+    }
+
+    @Test
+    void getPetById_ownerCanViewOwnPet_shouldReturnPet() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canView(owner, pet)).thenReturn(true);
+
+        Pet result = petService.getPetById(petId, owner);
+
+        assertThat(result).isEqualTo(pet);
+    }
+
+    @Test
+    void getPetById_vetWithClinicAndJournalAccess_shouldReturnPet() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canView(vet, pet)).thenReturn(false);
+        when(medicalRecordRepository.existsByPetIdAndClinicId(petId, clinic.getId())).thenReturn(true);
+
+        Pet result = petService.getPetById(petId, vet);
+
+        assertThat(result).isEqualTo(pet);
+    }
+
+    @Test
+    void getPetById_vetWithoutClinic_shouldThrowForbiddenException() throws Exception {
+        User vetNoClinic = new User("Dr. Ingen", "ingen@vet.se", "hash", Role.VET);
+        setPrivateField(vetNoClinic, "id", UUID.randomUUID());
+
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canView(vetNoClinic, pet)).thenReturn(false);
+
+        assertThatThrownBy(() -> petService.getPetById(petId, vetNoClinic))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void getPetById_vetWithNoJournalAccess_shouldThrowForbiddenException() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canView(vet, pet)).thenReturn(false);
+        assertThatThrownBy(() -> petService.getPetById(petId, vet))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void getPetById_ownerViewingOthersPet_shouldThrowForbiddenException() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canView(otherOwner, pet)).thenReturn(false);
+
+        assertThatThrownBy(() -> petService.getPetById(petId, otherOwner))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void getPetById_petNotFound_shouldThrowResourceNotFoundException() {
+        when(petRepository.findById(petId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> petService.getPetById(petId, owner))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
 
 
     //helper
