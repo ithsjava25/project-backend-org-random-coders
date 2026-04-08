@@ -151,4 +151,63 @@ public class UserEntityTest {
                 .containsExactly("ROLE_ADMIN");
     }
 
+    //addAttachment
+
+    @Test
+    void addAttachment_shouldAddToList() {
+        Attachment attachment = new Attachment();
+
+        user.addAttachment(attachment);
+
+        assertThat(user.getUploadedAttachments()).contains(attachment);
+    }
+
+    @Test
+    void addAttachment_shouldSetUploadedByOnAttachment() {
+        Attachment attachment = new Attachment();
+
+        user.addAttachment(attachment);
+
+        assertThat(attachment.getUploadedBy()).isSameAs(user);
+    }
+
+    @Test
+    void addAttachment_nullAttachment_shouldNotAddToList() {
+        user.addAttachment(null);
+
+        assertThat(user.getUploadedAttachments()).isEmpty();
+    }
+
+    // removeAttachment
+
+    @Test
+    void removeAttachment_shouldRemoveFromList() {
+        Attachment attachment = new Attachment();
+        user.addAttachment(attachment);
+
+        user.removeAttachment(attachment);
+
+        assertThat(user.getUploadedAttachments()).doesNotContain(attachment);
+    }
+
+    @Test
+    void removeAttachment_shouldSetUploadedByToNull() {
+        Attachment attachment = new Attachment();
+        user.addAttachment(attachment);
+
+        user.removeAttachment(attachment);
+
+        assertThat(attachment.getUploadedBy()).isNull();
+    }
+
+    @Test
+    void removeAttachment_nullAttachment_shouldNotThrow() {
+        user.addAttachment(new Attachment());
+
+        user.removeAttachment(null);
+
+        assertThat(user.getUploadedAttachments()).hasSize(1);
+    }
+
+
 }
