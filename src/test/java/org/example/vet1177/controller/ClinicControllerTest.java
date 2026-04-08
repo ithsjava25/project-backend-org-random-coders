@@ -10,6 +10,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,7 +31,8 @@ class ClinicControllerTest {
         // Arrange
         Clinic clinic = new Clinic("Vet", "Street", "123");
 
-        when(clinicService.create(any(), any(), any())).thenReturn(clinic);
+        when(clinicService.create("Vet", "Street", "123"))
+                .thenReturn(clinic);
 
         String json = """
         {
@@ -48,5 +50,8 @@ class ClinicControllerTest {
                 .andExpect(jsonPath("$.name").value("Vet"))
                 .andExpect(jsonPath("$.address").value("Street"))
                 .andExpect(jsonPath("$.phoneNumber").value("123"));
+
+        // 🔥 viktigt
+        verify(clinicService).create("Vet", "Street", "123");
     }
 }
