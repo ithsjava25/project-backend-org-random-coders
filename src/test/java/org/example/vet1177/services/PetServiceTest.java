@@ -1,15 +1,16 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.dto.request.pet.PetRequest;
-import org.example.vet1177.entities.Clinic;
-import org.example.vet1177.entities.Pet;
-import org.example.vet1177.entities.Role;
-import org.example.vet1177.entities.User;
+import org.example.vet1177.entities.*;
+import org.example.vet1177.exception.BusinessRuleException;
+import org.example.vet1177.exception.ForbiddenException;
+import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -18,12 +19,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PetServiceTest {
 
-    @Mock
+    @Mock(answer = org.mockito.Answers.RETURNS_DEEP_STUBS)
     private PetRepository petRepository;
 
     @Mock
@@ -80,6 +87,85 @@ public class PetServiceTest {
         petRequest.setWeightKg(new BigDecimal("12.50"));
 
     }
+    // createPet
+    @Test
+    void createPet_ownerCreatingForThemself_shouldSaveAndReturnPet() {
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+        when(petPolicy.canCreate(owner)).thenReturn(true);
+        when(petRepository.save(any(Pet.class))).thenReturn(pet);
+
+        Pet result = petService.createPet(ownerId, null, petRequest);
+
+        assertThat(result).isEqualTo(pet);
+        verify(petRepository).save(any(Pet.class));
+    }
+
+    @Test
+    void createPet_ownerCreatingForThemself_shouldSetOwnerToCurrentUser() {
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+        when(petPolicy.canCreate(owner)).thenReturn(true);
+        when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Pet result = petService.createPet(ownerId, null, petRequest);
+
+        assertThat(result.getOwner()).isEqualTo(owner);
+    }
+
+    @Test
+    void createPet_adminCreatingForOwner_shouldSetCorrectOwner() {
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+        when(petPolicy.canCreate(admin)).thenReturn(true);
+        when(petRepository.save(any(Pet.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Pet result = petService.createPet(adminId, ownerId, petRequest);
+
+        assertThat(result.getOwner()).isEqualTo(owner);
+    }
+
+    @Test
+    void createPet_adminWithoutOwnerId_shouldThrowBusinessRuleException() {
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(petPolicy.canCreate(admin)).thenReturn(true);
+
+        assertThatThrownBy(() -> petService.createPet(adminId, null, petRequest))
+                .isInstanceOf(BusinessRuleException.class);
+
+        verify(petRepository, never()).save(any());
+    }
+
+    @Test
+    void createPet_adminWithOwnerIdThatIsNotOwnerRole_shouldThrowBusinessRuleException() {
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(userRepository.findById(vetId)).thenReturn(Optional.of(vet));
+        when(petPolicy.canCreate(admin)).thenReturn(true);
+
+        assertThatThrownBy(() -> petService.createPet(adminId, vetId, petRequest))
+                .isInstanceOf(BusinessRuleException.class);
+
+        verify(petRepository, never()).save(any());
+    }
+
+    @Test
+    void createPet_userWithoutPermission_shouldThrowForbiddenException() {
+        when(userRepository.findById(vetId)).thenReturn(Optional.of(vet));
+        when(petPolicy.canCreate(vet)).thenReturn(false);
+
+        assertThatThrownBy(() -> petService.createPet(vetId, null, petRequest))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(petRepository, never()).save(any());
+    }
+
+    @Test
+    void createPet_userNotFound_shouldThrowResourceNotFoundException() {
+        when(userRepository.findById(ownerId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> petService.createPet(ownerId, null, petRequest))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    //Get pet by ID
 
 
     //helper
