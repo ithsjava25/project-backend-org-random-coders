@@ -65,5 +65,32 @@ class PetPolicyTest {
         assertThat(policy.canCreate(vet)).isFalse();
     }
 
+    // canView
+    @Test
+    void canView_admin_shouldReturnTrue() {
+        assertThat(policy.canView(admin, pet)).isTrue();
+    }
+
+    @Test
+    void canView_ownerOfPet_shouldReturnTrue() {
+        assertThat(policy.canView(owner, pet)).isTrue();
+    }
+
+    @Test
+    void canView_ownerOfOtherPet_shouldReturnFalse() {
+        assertThat(policy.canView(otherOwner, pet)).isFalse();
+    }
+
+    @Test
+    void canView_vet_shouldReturnFalse() {
+        assertThat(policy.canView(vet, pet)).isFalse();
+    }
+
+    @Test
+    void canView_ownerWithNullPetOwner_shouldReturnFalse() {
+        pet.setOwner(null);
+
+        assertThat(policy.canView(owner, pet)).isFalse();
+    }
 
 }
