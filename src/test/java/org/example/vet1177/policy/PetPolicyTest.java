@@ -4,9 +4,12 @@ import org.example.vet1177.entities.Pet;
 import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.UUID;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class PetPolicyTest {
 
@@ -44,5 +47,23 @@ class PetPolicyTest {
         field.setAccessible(true);
         field.set(target, value);
     }
+
+    //Test canCreate
+
+    @Test
+    void canCreate_owner_shouldReturnTrue() {
+        assertThat(policy.canCreate(owner)).isTrue();
+    }
+
+    @Test
+    void canCreate_admin_shouldReturnTrue() {
+        assertThat(policy.canCreate(admin)).isTrue();
+    }
+
+    @Test
+    void canCreate_vet_shouldReturnFalse() {
+        assertThat(policy.canCreate(vet)).isFalse();
+    }
+
 
 }
