@@ -42,6 +42,7 @@ class PetPolicyTest {
         pet.setOwner(owner);
     }
 
+    //helper
     private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
@@ -112,6 +113,35 @@ class PetPolicyTest {
     @Test
     void canViewOwnerPets_vet_shouldReturnFalse() {
         assertThat(policy.canViewOwnerPets(vet, owner.getId())).isFalse();
+    }
+
+    // canDelete
+
+    @Test
+    void canDelete_admin_shouldReturnTrue() {
+        assertThat(policy.canDelete(admin, pet)).isTrue();
+    }
+
+    @Test
+    void canDelete_ownerOfPet_shouldReturnTrue() {
+        assertThat(policy.canDelete(owner, pet)).isTrue();
+    }
+
+    @Test
+    void canDelete_ownerOfOtherPet_shouldReturnFalse() {
+        assertThat(policy.canDelete(otherOwner, pet)).isFalse();
+    }
+
+    @Test
+    void canDelete_vet_shouldReturnFalse() {
+        assertThat(policy.canDelete(vet, pet)).isFalse();
+    }
+
+    @Test
+    void canDelete_ownerWithNullPetOwner_shouldReturnFalse() {
+        pet.setOwner(null);
+
+        assertThat(policy.canDelete(owner, pet)).isFalse();
     }
 
 }
