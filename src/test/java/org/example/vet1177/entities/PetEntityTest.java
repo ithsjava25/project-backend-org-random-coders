@@ -43,7 +43,7 @@ public class PetEntityTest {
 
     @Test
     void setDateOfBirth_shouldStorAndReturnCorrectValue(){
-        LocalDate dob = LocalDate.of(2025, 04, 02);
+        LocalDate dob = LocalDate.of(2025, 12, 21);
         pet.setDateOfBirth(dob);
 
         assertThat(pet.getDateOfBirth()).isEqualTo(dob);
@@ -51,7 +51,7 @@ public class PetEntityTest {
 
     @Test
     void setWeigthKg_shouldStoreAndReturnCorrectValue(){
-        BigDecimal weight = new BigDecimal(13.50);
+        BigDecimal weight = new BigDecimal("13.50");
         pet.setWeightKg(weight);
 
         assertThat(pet.getWeightKg()).isEqualByComparingTo(weight);
@@ -66,8 +66,8 @@ public class PetEntityTest {
     //Konstruktorn med alla fält
     @Test
     void fullConstructor_shouldSetAllFields(){
-        LocalDate dob = LocalDate.of(2025,03,03);
-        BigDecimal weight = new BigDecimal(12.20);
+        LocalDate dob = LocalDate.of(2025,12,23);
+        BigDecimal weight = new BigDecimal("12.20");
 
         Pet constructed = new Pet(owner, "Harry", "hund", "pudel", dob, weight);
 
@@ -105,6 +105,25 @@ public class PetEntityTest {
     }
 
     //onUpdate() uppdaterar updatedAt men rör inte createdAt
+
+    @Test
+    void onUpdate_shouldRefreshUpdatedAt() {
+        pet.onCreate();
+
+        pet.onUpdate();
+
+        assertThat(pet.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void onUpdate_shouldNotModifyCreatedAt() {
+        pet.onCreate();
+        Instant originalCreatedAt = pet.getCreatedAt();
+
+        pet.onUpdate();
+
+        assertThat(pet.getCreatedAt()).isEqualTo(originalCreatedAt);
+    }
 
 
     //Standardvärden är null innan persist
