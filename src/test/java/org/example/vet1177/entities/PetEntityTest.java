@@ -27,7 +27,7 @@ public class PetEntityTest {
     }
 
     @Test
-    void setSpeices_shouldStoreAndReturnCorrectValue(){
+    void setSpecies_shouldStoreAndReturnCorrectValue(){
         pet.setSpecies("hund");
 
         assertThat(pet.getSpecies()).isEqualTo("hund");
@@ -35,14 +35,14 @@ public class PetEntityTest {
 
 
     @Test
-    void setBread_shouldStoreAndReturnCorrectValue(){
+    void setBreed_shouldStoreAndReturnCorrectValue(){
         pet.setBreed("Labrador");
 
         assertThat(pet.getBreed()).isEqualTo("Labrador");
     }
 
     @Test
-    void setDateOfBirth_shouldStorAndReturnCorrectValue(){
+    void setDateOfBirth_shouldStoreAndReturnCorrectValue(){
         LocalDate dob = LocalDate.of(2025, 12, 21);
         pet.setDateOfBirth(dob);
 
@@ -50,7 +50,7 @@ public class PetEntityTest {
     }
 
     @Test
-    void setWeigthKg_shouldStoreAndReturnCorrectValue(){
+    void setWeightKg_shouldStoreAndReturnCorrectValue(){
         BigDecimal weight = new BigDecimal("13.50");
         pet.setWeightKg(weight);
 
