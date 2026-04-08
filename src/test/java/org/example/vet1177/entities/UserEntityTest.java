@@ -3,6 +3,8 @@ package org.example.vet1177.entities;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class UserEntityTest {
@@ -40,6 +42,43 @@ public class UserEntityTest {
         assertThat(user.getUpdatedAt()).isNull();
     }
 
+    //livscykel: onCreate
+    @Test
+    void onCreate_shouldSetBothTimestampsToNonNull() {
+        user.onCreate();
 
+        assertThat(user.getCreatedAt()).isNotNull();
+        assertThat(user.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void onCreate_shouldSetTimestampsCloseToNow() {
+        Instant before = Instant.now();
+        user.onCreate();
+        Instant after = Instant.now();
+
+        assertThat(user.getCreatedAt()).isBetween(before, after);
+        assertThat(user.getUpdatedAt()).isBetween(before, after);
+    }
+
+    //livscykel på onUpdate
+    @Test
+    void onUpdate_shouldRefreshUpdatedAt() {
+        user.onCreate();
+
+        user.onUpdate();
+
+        assertThat(user.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void onUpdate_shouldNotModifyCreatedAt() {
+        user.onCreate();
+        Instant originalCreatedAt = user.getCreatedAt();
+
+        user.onUpdate();
+
+        assertThat(user.getCreatedAt()).isEqualTo(originalCreatedAt);
+    }
 
 }
