@@ -127,6 +127,49 @@ public class PetEntityTest {
 
 
     //Standardvärden är null innan persist
+    @Test
+    void getId_shouldBeNullBeforePersist() {
+        assertThat(pet.getId()).isNull();
+    }
 
+    @Test
+    void getName_shouldBeNullWhenNotSet() {
+        assertThat(pet.getName()).isNull();
+    }
+
+    @Test
+    void getSpecies_shouldBeNullWhenNotSet() {
+        assertThat(pet.getSpecies()).isNull();
+    }
+
+    @Test
+    void getBreed_shouldBeNullWhenNotSet() {
+        assertThat(pet.getBreed()).isNull();
+    }
+
+    @Test
+    void getDateOfBirth_shouldBeNullWhenNotSet() {
+        assertThat(pet.getDateOfBirth()).isNull();
+    }
+
+    @Test
+    void getWeightKg_shouldBeNullWhenNotSet() {
+        assertThat(pet.getWeightKg()).isNull();
+    }
+
+    @Test
+    void getOwner_shouldBeNullWhenNotSet() {
+        assertThat(pet.getOwner()).isNull();
+    }
+
+    @Test
+    void getCreatedAt_shouldBeNullBeforeOnCreate() {
+        assertThat(pet.getCreatedAt()).isNull();
+    }
+
+    @Test
+    void getUpdatedAt_shouldBeNullBeforeOnCreate() {
+        assertThat(pet.getUpdatedAt()).isNull();
+    }
 
 }
