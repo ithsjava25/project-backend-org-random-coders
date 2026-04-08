@@ -2,10 +2,14 @@ package org.example.vet1177.entities;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class UserEntityTest {
     private User user;
@@ -116,5 +120,35 @@ public class UserEntityTest {
         assertThat(user.isAccountNonLocked()).isFalse();
     }
 
+    //GetAuthorties
+    @Test
+    void getAuthorities_ownerRole_shouldReturnRoleOwner() {
+        User owner = new User("Anna", "anna@mail.se", "hash", Role.OWNER);
+        Collection<? extends GrantedAuthority> authorities = owner.getAuthorities();
+
+        assertThat(new ArrayList<>(authorities))
+                .extracting(a -> a.getAuthority())
+                .containsExactly("ROLE_OWNER");
+    }
+
+    @Test
+    void getAuthorities_vetRole_shouldReturnRoleVet() {
+        User vet = new User("Dr. Erik", "erik@vet.se", "hash", Role.VET);
+        Collection<? extends GrantedAuthority> authorities = vet.getAuthorities();
+
+        assertThat(new ArrayList<>(authorities))
+                .extracting(a -> a.getAuthority())
+                .containsExactly("ROLE_VET");
+    }
+
+    @Test
+    void getAuthorities_adminRole_shouldReturnRoleAdmin() {
+        User admin = new User("Admin", "admin@vet.se", "hash", Role.ADMIN);
+        Collection<? extends GrantedAuthority> authorities = admin.getAuthorities();
+
+        assertThat(new ArrayList<>(authorities))
+                .extracting(a -> a.getAuthority())
+                .containsExactly("ROLE_ADMIN");
+    }
 
 }
