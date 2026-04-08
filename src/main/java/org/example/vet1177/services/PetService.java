@@ -43,7 +43,7 @@ public class PetService {
 
     // CREATE - OWNER kan skapa för sig själv, ADMIN kan skapa för en OWNER via ownerId.
     public Pet createPet(UUID currentUserId, UUID ownerId, PetRequest request) {
-        log.info("Creating pet currentUserId={} ownerId={}", currentUserId, ownerId);
+        log.debug("Creating pet currentUserId={} ownerId={}", currentUserId, ownerId);
         User currentUser = getUserById(currentUserId);
 
         if (!petPolicy.canCreate(currentUser)) {
@@ -67,7 +67,9 @@ public class PetService {
         applyPetRequest(pet, request);
         pet.setOwner(owner);
 
-        return petRepository.save(pet);
+        Pet saved = petRepository.save(pet);
+        log.info("Created pet id={} ownerId={}", saved.getId(), owner.getId());
+        return saved;
     }
 
     // READ
@@ -108,7 +110,7 @@ public class PetService {
 
     // UPDATE
     public Pet updatePet(UUID currentUserId, UUID petId, PetRequest request) {
-        log.info("Updating pet id={}", petId);
+        log.debug("Updating pet id={}", petId);
         User currentUser = getUserById(currentUserId);
         Pet existingPet = getPetByIdOrThrow(petId);
 
@@ -123,13 +125,15 @@ public class PetService {
         existingPet.setWeightKg(request.getWeightKg());
 
 
-        return petRepository.save(existingPet);
+        Pet saved = petRepository.save(existingPet);
+        log.info("Updated pet id={}", saved.getId());
+        return saved;
     }
 
     // DELETE
     @Transactional
     public void deletePet(UUID petId, User currentUser) {
-        log.info("Deleting pet id={}", petId);
+        log.debug("Deleting pet id={}", petId);
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pet", petId));
 
@@ -139,6 +143,7 @@ public class PetService {
         try {
             petRepository.delete(pet);
             petRepository.flush();
+            log.info("Deleted pet id={}", petId);
         } catch (DataIntegrityViolationException e) {
             throw new BusinessRuleException("Djuret kan inte raderas eftersom journaler finns kopplade");
         }
