@@ -144,4 +144,27 @@ class PetPolicyTest {
         assertThat(policy.canDelete(owner, pet)).isFalse();
     }
 
+    //canUpdate
+    @Test
+    void canUpdate_ownerOfPet_shouldReturnTrue() {
+        assertThat(policy.canUpdate(owner, pet)).isTrue();
+    }
+
+    @Test
+    void canUpdate_ownerOfOtherPet_shouldReturnFalse() {
+        assertThat(policy.canUpdate(otherOwner, pet)).isFalse();
+    }
+
+    @Test
+    void canUpdate_vet_shouldReturnFalse() {
+        assertThat(policy.canUpdate(vet, pet)).isFalse();
+    }
+
+    @Test
+    void canUpdate_ownerWithNullPetOwner_shouldReturnFalse() {
+        pet.setOwner(null);
+
+        assertThat(policy.canUpdate(owner, pet)).isFalse();
+    }
+
 }
