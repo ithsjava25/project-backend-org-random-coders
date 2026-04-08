@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -235,6 +236,41 @@ public class PetServiceTest {
 
         assertThatThrownBy(() -> petService.getPetById(petId, owner))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    //GetPetByOwner
+
+    @Test
+    void getPetsByOwner_ownerViewingOwnPets_shouldReturnList() {
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+        when(petPolicy.canViewOwnerPets(owner, ownerId)).thenReturn(true);
+        when(petRepository.findByOwnerId(ownerId)).thenReturn(List.of(pet));
+
+        List<Pet> result = petService.getPetsByOwner(ownerId, ownerId);
+
+        assertThat(result).containsExactly(pet);
+    }
+
+    @Test
+    void getPetsByOwner_ownerViewingOthersPets_shouldThrowForbiddenException() {
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+        when(petPolicy.canViewOwnerPets(owner, otherOwnerId)).thenReturn(false);
+
+        assertThatThrownBy(() -> petService.getPetsByOwner(ownerId, otherOwnerId))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(petRepository, never()).findByOwnerId(any());
+    }
+
+    @Test
+    void getPetsByOwner_admin_shouldReturnList() {
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(petPolicy.canViewOwnerPets(admin, ownerId)).thenReturn(true);
+        when(petRepository.findByOwnerId(ownerId)).thenReturn(List.of(pet));
+
+        List<Pet> result = petService.getPetsByOwner(adminId, ownerId);
+
+        assertThat(result).containsExactly(pet);
     }
 
 
