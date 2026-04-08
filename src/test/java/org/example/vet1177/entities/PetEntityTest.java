@@ -63,7 +63,26 @@ public class PetEntityTest {
     }
 
     //Konstruktorn med alla fält
+    @Test
+    void fullConstructor_shouldSetAllFields(){
+        LocalDate dob = LocalDate.of(2025,03,03);
+        BigDecimal weight = new BigDecimal(12.20);
 
+        Pet constructed = new Pet(owner, "Harry", "hund", "pudel", dob, weight);
+
+        assertThat(constructed.getOwner()).isSameAs(owner);
+        assertThat(constructed.getName()).isEqualTo("Harry");
+        assertThat(constructed.getSpecies()).isEqualTo("hund");
+        assertThat(constructed.getBreed()).isEqualTo("pudel");
+        assertThat(constructed.getDateOfBirth()).isEqualTo(dob);
+        assertThat(constructed.getWeightKg()).isEqualByComparingTo(weight);
+    }
+
+    @Test
+    void fullConstructor_shouldAllowNullBreed(){
+        Pet constructed = new Pet(owner, "Max", "Katt", null, LocalDate.now(), new BigDecimal("5.00"));
+        assertThat(constructed.getBreed()).isNull();
+    }
 
     //onCreate() sätter createdAt och updatedAt
 
