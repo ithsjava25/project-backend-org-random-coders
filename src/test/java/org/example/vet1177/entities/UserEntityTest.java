@@ -223,5 +223,4 @@ public class UserEntityTest {
     void getUploadedAttachments_shouldBeEmptyByDefault() {
         assertThat(user.getUploadedAttachments()).isEmpty();
     }
-
 }
