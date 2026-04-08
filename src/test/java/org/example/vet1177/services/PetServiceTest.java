@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -308,6 +309,48 @@ public class PetServiceTest {
         assertThatThrownBy(() -> petService.updatePet(ownerId, petId, petRequest))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
+
+    //DeletePet
+
+    @Test
+    void deletePet_ownerDeletingOwnPet_shouldCallDelete() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canDelete(owner, pet)).thenReturn(true);
+
+        petService.deletePet(petId, owner);
+
+        verify(petRepository).delete(pet);
+    }
+
+    @Test
+    void deletePet_ownerDeletingOthersPet_shouldThrowForbiddenException() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canDelete(otherOwner, pet)).thenReturn(false);
+
+        assertThatThrownBy(() -> petService.deletePet(petId, otherOwner))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(petRepository, never()).delete(any());
+    }
+
+    @Test
+    void deletePet_petNotFound_shouldThrowResourceNotFoundException() {
+        when(petRepository.findById(petId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> petService.deletePet(petId, owner))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deletePet_withLinkedJournals_shouldThrowBusinessRuleException() {
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canDelete(owner, pet)).thenReturn(true);
+        doThrow(DataIntegrityViolationException.class).when(petRepository).flush();
+
+        assertThatThrownBy(() -> petService.deletePet(petId, owner))
+                .isInstanceOf(BusinessRuleException.class);
+    }
+
     //helper
     private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(fieldName);
