@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -85,7 +86,23 @@ public class PetEntityTest {
     }
 
     //onCreate() sätter createdAt och updatedAt
+    @Test
+    void onCreate_shouldSetBothTimestampsToNonNull() {
+        pet.onCreate();
 
+        assertThat(pet.getCreatedAt()).isNotNull();
+        assertThat(pet.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void onCreate_shouldSetTimestampsCloseToNow() {
+        Instant before = Instant.now();
+        pet.onCreate();
+        Instant after = Instant.now();
+
+        assertThat(pet.getCreatedAt()).isBetween(before, after);
+        assertThat(pet.getUpdatedAt()).isBetween(before, after);
+    }
 
     //onUpdate() uppdaterar updatedAt men rör inte createdAt
 
