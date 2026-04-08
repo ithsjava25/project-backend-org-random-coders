@@ -80,5 +80,41 @@ public class UserEntityTest {
 
         assertThat(user.getCreatedAt()).isEqualTo(originalCreatedAt);
     }
+    //UserDetails
+
+    @Test
+    void getUsername_shouldReturnEmail() {
+        assertThat(user.getUsername()).isEqualTo("Frida@example.se");
+    }
+
+    @Test
+    void getPassword_shouldReturnPasswordHash() {
+        assertThat(user.getPassword()).isEqualTo("lösenord!");
+    }
+
+    @Test
+    void isEnabled_shouldReturnTrueWhenActive() {
+        assertThat(user.isEnabled()).isTrue();
+    }
+
+    @Test
+    void isEnabled_shouldReturnFalseWhenInactive() {
+        user.setActive(false);
+
+        assertThat(user.isEnabled()).isFalse();
+    }
+
+    @Test
+    void isAccountNonLocked_shouldReturnTrueWhenActive() {
+        assertThat(user.isAccountNonLocked()).isTrue();
+    }
+
+    @Test
+    void isAccountNonLocked_shouldReturnFalseWhenInactive() {
+        user.setActive(false);
+
+        assertThat(user.isAccountNonLocked()).isFalse();
+    }
+
 
 }
