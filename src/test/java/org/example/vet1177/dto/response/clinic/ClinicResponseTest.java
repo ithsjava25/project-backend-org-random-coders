@@ -14,13 +14,11 @@ class ClinicResponseTest {
         // Arrange
         Clinic clinic = new Clinic("Vet", "Street", "123");
 
-        // Hack: sätt id via reflection (eller ignorera id)
-        UUID id = UUID.randomUUID();
-
         // Act
         ClinicResponse response = ClinicResponse.from(clinic);
 
         // Assert
+        assertEquals(clinic.getId(), response.id()); // ✔️ viktig rad
         assertEquals(clinic.getName(), response.name());
         assertEquals(clinic.getAddress(), response.address());
         assertEquals(clinic.getPhoneNumber(), response.phoneNumber());
