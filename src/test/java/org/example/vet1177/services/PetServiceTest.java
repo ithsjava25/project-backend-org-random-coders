@@ -273,7 +273,41 @@ public class PetServiceTest {
         assertThat(result).containsExactly(pet);
     }
 
+    // UpdatePet
 
+    @Test
+    void updatePet_ownerUpdatingOwnPet_shouldSaveAndReturnUpdatedPet() {
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canUpdate(owner, pet)).thenReturn(true);
+        when(petRepository.save(pet)).thenReturn(pet);
+
+        Pet result = petService.updatePet(ownerId, petId, petRequest);
+
+        assertThat(result.getName()).isEqualTo(petRequest.getName());
+        verify(petRepository).save(pet);
+    }
+
+    @Test
+    void updatePet_ownerUpdatingOthersPet_shouldThrowForbiddenException() {
+        when(userRepository.findById(otherOwnerId)).thenReturn(Optional.of(otherOwner));
+        when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+        when(petPolicy.canUpdate(otherOwner, pet)).thenReturn(false);
+
+        assertThatThrownBy(() -> petService.updatePet(otherOwnerId, petId, petRequest))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(petRepository, never()).save(any());
+    }
+
+    @Test
+    void updatePet_petNotFound_shouldThrowResourceNotFoundException() {
+        when(userRepository.findById(ownerId)).thenReturn(Optional.of(owner));
+        when(petRepository.findById(petId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> petService.updatePet(ownerId, petId, petRequest))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
     //helper
     private static void setPrivateField(Object target, String fieldName, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(fieldName);
