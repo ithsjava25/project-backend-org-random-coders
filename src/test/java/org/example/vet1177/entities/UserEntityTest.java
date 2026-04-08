@@ -208,6 +208,20 @@ public class UserEntityTest {
 
         assertThat(user.getUploadedAttachments()).hasSize(1);
     }
+    // getUploadedAttachments
 
+    @Test
+    void getUploadedAttachments_shouldReturnUnmodifiableList() {
+        Attachment attachment = new Attachment();
+        user.addAttachment(attachment);
+
+        assertThatThrownBy(() -> user.getUploadedAttachments().add(new Attachment()))
+                .isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    void getUploadedAttachments_shouldBeEmptyByDefault() {
+        assertThat(user.getUploadedAttachments()).isEmpty();
+    }
 
 }
