@@ -1,6 +1,7 @@
 package org.example.vet1177.services;
 
 import org.example.vet1177.dto.request.user.UserRequest;
+import org.example.vet1177.dto.request.user.UserUpdateRequest;
 import org.example.vet1177.dto.response.user.UserResponse;
 import org.example.vet1177.entities.Clinic;
 import org.example.vet1177.entities.Role;
@@ -153,6 +154,103 @@ public class UserServiceTest {
         when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException("dup"));
 
         assertThatThrownBy(() -> userService.createUser(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Email används redan");
+    }
+
+    //updateUser
+
+    @Test
+    void updateUser_changeName_updatesAndReturns() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setName("Nytt Namn");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(userRepository.save(ownerUser)).thenReturn(ownerUser);
+
+        UserResponse response = userService.updateUser(userId, request);
+
+        assertThat(ownerUser.getName()).isEqualTo("Nytt Namn");
+        verify(userRepository).save(ownerUser);
+    }
+
+    @Test
+    void updateUser_changeEmail_uniqueEmail_updatesAndReturns() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setEmail("ny@example.se");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(userRepository.existsByEmailAndIdNot("ny@example.se", userId)).thenReturn(false);
+        when(userRepository.save(ownerUser)).thenReturn(ownerUser);
+
+        userService.updateUser(userId, request);
+
+        assertThat(ownerUser.getEmail()).isEqualTo("ny@example.se");
+    }
+
+    @Test
+    void updateUser_changeEmail_duplicateEmail_throwsBusinessRuleException() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setEmail("tagen@example.se");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(userRepository.existsByEmailAndIdNot("tagen@example.se", userId)).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.updateUser(userId, request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Email används redan");
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateUser_vet_changeClinic_updatesClinic() {
+        UUID newClinicId = UUID.randomUUID();
+        Clinic newClinic = new Clinic("Ny Klinik", "Nya gatan 2", "+4670000000");
+
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setClinicId(newClinicId);
+
+        when(userRepository.findById(vetUser.getId())).thenReturn(Optional.of(vetUser));
+        when(clinicRepository.findById(newClinicId)).thenReturn(Optional.of(newClinic));
+        when(userRepository.save(vetUser)).thenReturn(vetUser);
+
+        userService.updateUser(vetUser.getId(), request);
+
+        assertThat(vetUser.getClinic()).isEqualTo(newClinic);
+    }
+
+    @Test
+    void updateUser_owner_setClinic_throwsBusinessRuleException() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setClinicId(clinicId);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+
+        assertThatThrownBy(() -> userService.updateUser(userId, request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Endast veterinärer kan kopplas till en klinik");
+    }
+
+    @Test
+    void updateUser_unknownId_throwsResourceNotFoundException() {
+        UUID unknownId = UUID.randomUUID();
+        when(userRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.updateUser(unknownId, new UserUpdateRequest()))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateUser_dataIntegrityViolation_throwsBusinessRuleException() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setEmail("ny@example.se");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(userRepository.existsByEmailAndIdNot("ny@example.se", userId)).thenReturn(false);
+        when(userRepository.save(any())).thenThrow(new DataIntegrityViolationException("dup"));
+
+        assertThatThrownBy(() -> userService.updateUser(userId, request))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Email används redan");
     }
