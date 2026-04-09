@@ -1,4 +1,5 @@
 package org.example.vet1177.controller;
+import org.example.vet1177.exception.ResourceNotFoundException;
 import tools.jackson.databind.ObjectMapper;
 import org.example.vet1177.dto.request.pet.PetRequest;
 import org.example.vet1177.entities.Pet;
@@ -109,6 +110,43 @@ public class PetControllerTest {
                         .header("currentUserId", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
+                .andExpect(status().isForbidden());
+    }
+    // GET /pets/{petId}
+
+    @Test
+    void getPetById_shouldReturn200WithPetResponse() throws Exception {
+        when(userService.getUserEntityById(any())).thenReturn(owner);
+        when(petService.getPetById(any(), any())).thenReturn(pet);
+
+        mockMvc.perform(get("/pets/{petId}", petId)
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Molly"));
+    }
+
+    @Test
+    void getPetById_whenNotFound_shouldReturn404() throws Exception {
+        when(userService.getUserEntityById(any())).thenReturn(owner);
+        when(petService.getPetById(any(), any()))
+                .thenThrow(new ResourceNotFoundException("Pet", petId));
+
+        mockMvc.perform(get("/pets/{petId}", petId)
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getPetById_whenForbidden_shouldReturn403() throws Exception {
+        when(userService.getUserEntityById(any())).thenReturn(vet);
+        when(petService.getPetById(any(), any()))
+                .thenThrow(new ForbiddenException("Du har inte behörighet att se detta djur"));
+
+        mockMvc.perform(get("/pets/{petId}", petId)
+                        .with(authenticatedAs(vet))
+                        .header("currentUserId", UUID.randomUUID()))
                 .andExpect(status().isForbidden());
     }
 
