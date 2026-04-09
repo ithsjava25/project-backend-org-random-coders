@@ -9,6 +9,8 @@ import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.repository.ClinicRepository;
+import org.example.vet1177.repository.MedicalRecordRepository;
+import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,10 +39,10 @@ public class UserServiceTest {
     private ClinicRepository clinicRepository;
 
     @Mock
-    private PetService petService;
+    private PetRepository petRepository;
 
     @Mock
-    private MedicalRecordService medicalRecordService;
+    private MedicalRecordRepository medicalRecordRepository;
 
     @InjectMocks
     private UserService userService;
@@ -255,6 +257,117 @@ public class UserServiceTest {
                 .hasMessageContaining("Email används redan");
     }
 
+    //DeleteUser
+
+    @Test
+    void deleteUser_noConstraints_deletesSuccessfully() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(petRepository.existsByOwner_Id(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByOwnerId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByAssignedVetId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByCreatedById(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByUpdatedById(userId)).thenReturn(false);
+
+        userService.deleteUser(userId);
+
+        verify(userRepository).delete(ownerUser);
+    }
+
+    @Test
+    void deleteUser_unknownId_throwsResourceNotFoundException() {
+        UUID unknownId = UUID.randomUUID();
+        when(userRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.deleteUser(unknownId))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_userHasPets_throwsBusinessRuleException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(petRepository.existsByOwner_Id(userId)).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.deleteUser(userId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("kopplade djur");
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_userIsRecordOwner_throwsBusinessRuleException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(petRepository.existsByOwner_Id(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByOwnerId(userId)).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.deleteUser(userId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("ägare på journalposter");
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_userIsAssignedVet_throwsBusinessRuleException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(petRepository.existsByOwner_Id(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByOwnerId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByAssignedVetId(userId)).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.deleteUser(userId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("tilldelad veterinär");
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_userCreatedRecords_throwsBusinessRuleException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(petRepository.existsByOwner_Id(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByOwnerId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByAssignedVetId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByCreatedById(userId)).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.deleteUser(userId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("skapat journalposter");
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_userUpdatedRecords_throwsBusinessRuleException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(petRepository.existsByOwner_Id(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByOwnerId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByAssignedVetId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByCreatedById(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByUpdatedById(userId)).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.deleteUser(userId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("uppdaterat journalposter");
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_dataIntegrityViolation_throwsBusinessRuleException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(petRepository.existsByOwner_Id(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByOwnerId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByAssignedVetId(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByCreatedById(userId)).thenReturn(false);
+        when(medicalRecordRepository.existsByUpdatedById(userId)).thenReturn(false);
+        doThrow(new DataIntegrityViolationException("fk")).when(userRepository).delete(ownerUser);
+
+        assertThatThrownBy(() -> userService.deleteUser(userId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("kopplade poster");
+    }
 
     //Helper
     private void setPrivateField(Object target, String fieldName, Object value) throws Exception {
