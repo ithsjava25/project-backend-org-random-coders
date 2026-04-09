@@ -7,6 +7,8 @@ import org.example.vet1177.policy.MedicalRecordPolicy;
 import org.example.vet1177.repository.ClinicRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,8 @@ import java.util.UUID;
 @Service
 @Transactional
 public class MedicalRecordService {
+
+    private static final Logger log = LoggerFactory.getLogger(MedicalRecordService.class);
 
     private final MedicalRecordRepository medicalRecordRepository;
     private final PetRepository petRepository;
@@ -45,6 +49,7 @@ public class MedicalRecordService {
             UUID clinicId,
             User currentUser) {
 
+        log.info("Creating medical record petId={} clinicId={}", petId, clinicId);
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pet", petId));
 
@@ -80,32 +85,38 @@ public class MedicalRecordService {
 
     @Transactional(readOnly = true)
     public MedicalRecord getById(UUID id) {
+        log.debug("Fetching medical record id={}", id);
         return medicalRecordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", id));  // ← rad 49
     }
 
     @Transactional(readOnly = true)
     public List<MedicalRecord> getByPet(UUID petId) {
+        log.debug("Fetching medical records petId={}", petId);
         return medicalRecordRepository.findByPetId(petId);
     }
 
     @Transactional(readOnly = true)
     public List<MedicalRecord> getByOwner(UUID ownerId) {
+        log.debug("Fetching medical records ownerId={}", ownerId);
         return medicalRecordRepository.findByOwnerId(ownerId);
     }
 
     @Transactional(readOnly = true)
     public List<MedicalRecord> getByClinic(UUID clinicId) {
+        log.debug("Fetching medical records clinicId={}", clinicId);
         return medicalRecordRepository.findByClinicId(clinicId);
     }
 
     @Transactional(readOnly = true)
     public List<MedicalRecord> getByClinicAndStatus(UUID clinicId, RecordStatus status) {
+        log.debug("Fetching medical records clinicId={} status={}", clinicId, status);
         return medicalRecordRepository.findByClinicIdAndStatus(clinicId, status);
     }
 
     @Transactional(readOnly = true)
     public List<MedicalRecord> getByPetAllowedForUser(UUID petId, User currentUser) {
+        log.debug("Fetching allowed medical records petId={}", petId);
         List<MedicalRecord> all = medicalRecordRepository.findByPetId(petId);
 
         return all.stream()
@@ -115,6 +126,7 @@ public class MedicalRecordService {
 
     @Transactional(readOnly = true)
     public List<MedicalRecord> getByOwnerAllowedForUser(UUID ownerId, User currentUser) {
+        log.debug("Fetching allowed medical records ownerId={}", ownerId);
         List<MedicalRecord> all = medicalRecordRepository.findByOwnerId(ownerId);
 
         return all.stream()
@@ -125,6 +137,7 @@ public class MedicalRecordService {
     // ── Uppdatera ─────────────────────────────────────────────
 
     public MedicalRecord update(UUID id, String title, String description, User updatedBy) {
+        log.info("Updating medical record id={}", id);
         MedicalRecord record = getById(id);
 
         if (record.getStatus().isFinal()) {
@@ -150,6 +163,7 @@ public class MedicalRecordService {
     }
 
     public MedicalRecord assignVet(UUID recordId, User vetToAssign, User updatedBy) {
+        log.info("Assigning vet id={} to record id={}", vetToAssign.getId(), recordId);
         MedicalRecord record = getById(recordId);
         if (record.getStatus().isFinal()) {
             throw new BusinessRuleException(
@@ -183,6 +197,7 @@ public class MedicalRecordService {
     }
 
     public MedicalRecord updateStatus(UUID recordId, RecordStatus newStatus, User updatedBy) {
+        log.info("Updating status of record id={} to {}", recordId, newStatus);
         MedicalRecord record = getById(recordId);
 
         if (record.getStatus().isFinal()) {
@@ -213,6 +228,7 @@ public class MedicalRecordService {
     // ── Stänga ────────────────────────────────────────────────
 
     public MedicalRecord close(UUID recordId, User closedBy) {
+        log.info("Closing medical record id={}", recordId);
         MedicalRecord record = getById(recordId);
 
         if (record.getStatus().isFinal()) {                                               // ← rad 108

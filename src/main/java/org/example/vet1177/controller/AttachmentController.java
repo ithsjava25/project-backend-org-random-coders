@@ -7,6 +7,8 @@ import org.example.vet1177.dto.request.attachment.AttachmentRequest;
 import org.example.vet1177.dto.response.attachment.AttachmentResponse;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.services.AttachmentService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/attachments")
 public class AttachmentController {
+
+    private static final Logger log = LoggerFactory.getLogger(AttachmentController.class);
 
     private final AttachmentService attachmentService;
     private final Validator validator;
@@ -39,6 +43,7 @@ public class AttachmentController {
             @RequestPart(value = "description", required = false) String description)  {
 
 
+        log.info("POST /api/attachments/record/{} - uploading attachment", recordId);
         AttachmentRequest request = new AttachmentRequest(recordId, description);
 
         var violations = validator.validate(request);
@@ -56,6 +61,7 @@ public class AttachmentController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID recordId) {
 
+        log.info("GET /api/attachments/record/{}", recordId);
         List<AttachmentResponse> responses = attachmentService.getAttachmentsByRecord(currentUser, recordId);
         return ResponseEntity.ok(responses);
     }
@@ -66,6 +72,7 @@ public class AttachmentController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
 
+        log.info("GET /api/attachments/{}/download", id);
         AttachmentResponse response = attachmentService.getAttachment(currentUser, id);
         return ResponseEntity.ok(response);
     }
@@ -76,6 +83,7 @@ public class AttachmentController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
 
+        log.info("DELETE /api/attachments/{}", id);
         attachmentService.deleteAttachment(currentUser, id);
         return ResponseEntity.noContent().build();
     }

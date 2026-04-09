@@ -4,6 +4,8 @@ import org.example.vet1177.dto.response.activitylog.ActivityLogResponse;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.services.ActivityLogService;
 import org.example.vet1177.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +14,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/activity-logs")
 public class ActivityLogController {
+
+    private static final Logger log = LoggerFactory.getLogger(ActivityLogController.class);
 
     private final ActivityLogService activityLogService;
     private final UserService userService;
@@ -28,6 +32,7 @@ public class ActivityLogController {
             @PathVariable UUID recordId,
             @RequestHeader("userId") UUID userId
     ) {
+        log.info("GET /api/activity-logs/record/{}", recordId);
         User user = userService.getUserEntityById(userId);
 
         return activityLogService.getByRecord(recordId, user)

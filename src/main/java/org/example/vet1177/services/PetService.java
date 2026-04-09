@@ -12,6 +12,8 @@ import org.example.vet1177.policy.PetPolicy;
 import org.example.vet1177.repository.MedicalRecordRepository;
 import org.example.vet1177.repository.PetRepository;
 import org.example.vet1177.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,7 @@ import java.util.UUID;
 @Service
 public class PetService {
 
+    private static final Logger log = LoggerFactory.getLogger(PetService.class);
 
     private final PetRepository petRepository;
     private final UserRepository userRepository;
@@ -40,6 +43,7 @@ public class PetService {
 
     // CREATE - OWNER kan skapa för sig själv, ADMIN kan skapa för en OWNER via ownerId.
     public Pet createPet(UUID currentUserId, UUID ownerId, PetRequest request) {
+        log.debug("Creating pet currentUserId={} ownerId={}", currentUserId, ownerId);
         User currentUser = getUserById(currentUserId);
 
         if (!petPolicy.canCreate(currentUser)) {
@@ -63,12 +67,15 @@ public class PetService {
         applyPetRequest(pet, request);
         pet.setOwner(owner);
 
-        return petRepository.save(pet);
+        Pet saved = petRepository.save(pet);
+        log.info("Created pet id={} ownerId={}", saved.getId(), owner.getId());
+        return saved;
     }
 
     // READ
     // - Måste vara ADMIN eller OWNER för att se pet
     public Pet getPetById(UUID petId, User currentUser) {
+        log.debug("Fetching pet id={}", petId);
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pet", petId));
 
@@ -93,6 +100,7 @@ public class PetService {
 
     // Lista djur som tillhör ägaren
     public List<Pet> getPetsByOwner(UUID currentUserId, UUID ownerId) {
+        log.debug("Fetching pets ownerId={}", ownerId);
         User currentUser = getUserById(currentUserId);
         if (!petPolicy.canViewOwnerPets(currentUser, ownerId)){
             throw new ForbiddenException("Du saknar behörighet");
@@ -102,6 +110,7 @@ public class PetService {
 
     // UPDATE
     public Pet updatePet(UUID currentUserId, UUID petId, PetRequest request) {
+        log.debug("Updating pet id={}", petId);
         User currentUser = getUserById(currentUserId);
         Pet existingPet = getPetByIdOrThrow(petId);
 
@@ -116,12 +125,15 @@ public class PetService {
         existingPet.setWeightKg(request.getWeightKg());
 
 
-        return petRepository.save(existingPet);
+        Pet saved = petRepository.save(existingPet);
+        log.info("Updated pet id={}", saved.getId());
+        return saved;
     }
 
     // DELETE
     @Transactional
     public void deletePet(UUID petId, User currentUser) {
+        log.debug("Deleting pet id={}", petId);
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pet", petId));
 
@@ -131,6 +143,7 @@ public class PetService {
         try {
             petRepository.delete(pet);
             petRepository.flush();
+            log.info("Deleted pet id={}", petId);
         } catch (DataIntegrityViolationException e) {
             throw new BusinessRuleException("Djuret kan inte raderas eftersom journaler finns kopplade");
         }

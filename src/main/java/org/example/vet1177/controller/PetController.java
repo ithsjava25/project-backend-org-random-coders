@@ -6,6 +6,8 @@ import org.example.vet1177.dto.response.pet.PetResponse;
 import org.example.vet1177.entities.Pet;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.services.PetService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.example.vet1177.services.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/pets")
 public class PetController {
+
+    private static final Logger log = LoggerFactory.getLogger(PetController.class);
 
     private final PetService petService;
     private final UserService userService;
@@ -33,6 +37,7 @@ public class PetController {
             @RequestParam(required = false) UUID ownerId,
             @Valid @RequestBody PetRequest request
     ) {
+        log.info("POST /pets - creating pet for currentUserId={} ownerId={}", currentUserId, ownerId);
         Pet saved = petService.createPet(currentUserId, ownerId, request);
         return toResponse(saved);
     }
