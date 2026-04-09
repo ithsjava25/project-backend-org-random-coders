@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -149,5 +150,71 @@ public class PetControllerTest {
                         .header("currentUserId", UUID.randomUUID()))
                 .andExpect(status().isForbidden());
     }
+    // GET /pets/owner/{ownerId}
+
+    @Test
+    void getPetsByOwner_shouldReturn200WithList() throws Exception {
+        when(petService.getPetsByOwner(any(), any())).thenReturn(List.of(pet));
+
+        mockMvc.perform(get("/pets/owner/{ownerId}", ownerId)
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Molly"));
+    }
+
+    @Test
+    void getPetsByOwner_whenForbidden_shouldReturn403() throws Exception {
+        when(petService.getPetsByOwner(any(), any()))
+                .thenThrow(new ForbiddenException("Du saknar behörighet"));
+
+        mockMvc.perform(get("/pets/owner/{ownerId}", ownerId)
+                        .with(authenticatedAs(vet))
+                        .header("currentUserId", UUID.randomUUID()))
+                .andExpect(status().isForbidden());
+    }
+
+    // PUT /pets/{petId}
+
+    @Test
+    void updatePet_shouldReturn200WithUpdatedPetResponse() throws Exception {
+        Pet updated = new Pet(owner, "Harry", "Katt", "Siamese", LocalDate.of(2021, 3, 5), new BigDecimal("5.00"));
+        when(petService.updatePet(any(), any(), any())).thenReturn(updated);
+
+        mockMvc.perform(put("/pets/{petId}", petId)
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validPetRequest())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Harry"));
+    }
+
+    @Test
+    void updatePet_whenNotFound_shouldReturn404() throws Exception {
+        when(petService.updatePet(any(), any(), any()))
+                .thenThrow(new ResourceNotFoundException("Pet", petId));
+
+        mockMvc.perform(put("/pets/{petId}", petId)
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validPetRequest())))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updatePet_whenForbidden_shouldReturn403() throws Exception {
+        when(petService.updatePet(any(), any(), any()))
+                .thenThrow(new ForbiddenException("Du saknar behörighet"));
+
+        mockMvc.perform(put("/pets/{petId}", petId)
+                        .with(authenticatedAs(vet))
+                        .header("currentUserId", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validPetRequest())))
+                .andExpect(status().isForbidden());
+    }
+
 
 }
