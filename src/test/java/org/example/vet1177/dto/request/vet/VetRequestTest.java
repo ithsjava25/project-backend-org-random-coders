@@ -19,6 +19,11 @@ class VetRequestTest {
         validator = factory.getValidator();
     }
 
+    private void assertHasViolation(Set<ConstraintViolation<VetRequest>> violations, String field) {
+        assertTrue( violations.stream()
+                .anyMatch(v -> v.getPropertyPath()
+                        .toString().equals(field)), "Expected violation on field: " + field ); }
+
     @Test
     void should_pass_validation_when_valid_input() {
         VetRequest request = new VetRequest(
@@ -44,7 +49,7 @@ class VetRequestTest {
 
         Set<ConstraintViolation<VetRequest>> violations = validator.validate(request);
 
-        assertFalse(violations.isEmpty());
+        assertHasViolation(violations, "userId");
     }
 
     @Test
@@ -58,7 +63,7 @@ class VetRequestTest {
 
         Set<ConstraintViolation<VetRequest>> violations = validator.validate(request);
 
-        assertFalse(violations.isEmpty());
+        assertHasViolation(violations, "licenseId");
     }
 
     @Test
@@ -74,6 +79,6 @@ class VetRequestTest {
 
         Set<ConstraintViolation<VetRequest>> violations = validator.validate(request);
 
-        assertFalse(violations.isEmpty());
+        assertHasViolation(violations, "licenseId");
     }
 }
