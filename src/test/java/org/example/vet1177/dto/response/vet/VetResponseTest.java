@@ -24,10 +24,7 @@ class VetResponseTest {
         user.setActive(true);
         user.setClinic(clinic);
 
-        // Set User ID
-        Field idField = User.class.getDeclaredField("id");
-        idField.setAccessible(true);
-        idField.set(user, userId);
+        setUserId(user, userId);
 
         Vet vet = new Vet();
         vet.setUser(user);
@@ -35,10 +32,7 @@ class VetResponseTest {
         vet.setSpecialization("Surgery");
         vet.setBookingInfo("Available weekdays");
 
-        // SÄTT userId PÅ Vet
-        Field vetUserIdField = Vet.class.getDeclaredField("userId");
-        vetUserIdField.setAccessible(true);
-        vetUserIdField.set(vet, userId);
+        setVetUserId(vet, userId);
 
         // Act
         VetResponse response = VetResponse.from(vet);
@@ -65,10 +59,7 @@ class VetResponseTest {
         user.setActive(false);
         user.setClinic(null);
 
-        // Reflection, i tester måste man simulera JPA, @MapsId styr ID automatiskt vet.userId = user.id
-        Field idField = User.class.getDeclaredField("id");
-        idField.setAccessible(true);
-        idField.set(user, userId);
+        setUserId(user, userId);
 
         Vet vet = new Vet();
         vet.setUser(user);
@@ -76,11 +67,34 @@ class VetResponseTest {
         vet.setSpecialization("Dentistry");
         vet.setBookingInfo("Weekends");
 
+        setVetUserId(vet, userId);
+
         // Act
         VetResponse response = VetResponse.from(vet);
 
         // Assert
+        assertEquals(userId, response.userId());
+        assertEquals("Dr. No Clinic", response.name());
+        assertEquals("noclinic@test.com", response.email());
+        assertEquals("LIC999", response.licenseId());
+        assertEquals("Dentistry", response.specialization());
+        assertEquals("Weekends", response.bookingInfo());
         assertNull(response.clinicName());
         assertFalse(response.isActive());
     }
+
+// Helper methods (gör testen renare och mer professionella)
+
+    private void setUserId(User user, UUID id) throws Exception {
+        Field field = User.class.getDeclaredField("id");
+        field.setAccessible(true);
+        field.set(user, id);
+    }
+
+    private void setVetUserId(Vet vet, UUID id) throws Exception {
+        Field field = Vet.class.getDeclaredField("userId");
+        field.setAccessible(true);
+        field.set(vet, id);
+    }
+
 }
