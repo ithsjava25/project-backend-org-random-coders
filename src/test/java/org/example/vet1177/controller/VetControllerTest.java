@@ -170,6 +170,4 @@ class VetControllerTest {
         mockMvc.perform(get("/api/vets/" + id))
                 .andExpect(status().isNotFound());
     }
-
-
 }
