@@ -69,10 +69,11 @@ public class UserEntityTest {
     @Test
     void onUpdate_shouldRefreshUpdatedAt() {
         user.onCreate();
+        Instant beforeUpdate = user.getUpdatedAt();
 
         user.onUpdate();
 
-        assertThat(user.getUpdatedAt()).isNotNull();
+        assertThat(user.getUpdatedAt()).isNotNull().isAfterOrEqualTo(beforeUpdate);
     }
 
     @Test
