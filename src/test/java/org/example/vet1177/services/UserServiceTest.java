@@ -15,12 +15,14 @@ import org.example.vet1177.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -87,7 +89,11 @@ public class UserServiceTest {
         assertThat(response.getEmail()).isEqualTo("anna@example.se");
         assertThat(response.getRole()).isEqualTo(Role.OWNER);
         assertThat(response.getClinicId()).isNull();
-        verify(userRepository).save(any(User.class));
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().getPassword())
+                .as("lösenordet ska vara hashat innan persist")
+                .isNotEqualTo(request.getPassword());
     }
 
     @Test
@@ -159,6 +165,93 @@ public class UserServiceTest {
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Email används redan");
     }
+
+    //getByEmail
+
+
+    @Test
+    void getByEmail_existingEmail_returnsUser() {
+        when(userRepository.findByEmail("anna@example.se")).thenReturn(Optional.of(ownerUser));
+
+        User result = userService.getByEmail("anna@example.se");
+
+        assertThat(result).isEqualTo(ownerUser);
+    }
+
+    @Test
+    void getByEmail_unknownEmail_throwsResourceNotFoundException() {
+        when(userRepository.findByEmail("okänd@example.se")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getByEmail("okänd@example.se"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+
+    // getUserEntityById
+
+    @Test
+    void getUserEntityById_existingId_returnsUserEntity() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+
+        User result = userService.getUserEntityById(userId);
+
+        assertThat(result).isEqualTo(ownerUser);
+    }
+
+    @Test
+    void getUserEntityById_unknownId_throwsResourceNotFoundException() {
+        UUID unknownId = UUID.randomUUID();
+        when(userRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getUserEntityById(unknownId))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+
+    // getById
+
+    @Test
+    void getById_existingId_returnsUserResponse() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+
+        UserResponse response = userService.getById(userId);
+
+        assertThat(response.getId()).isEqualTo(ownerUser.getId());
+        assertThat(response.getEmail()).isEqualTo("anna@example.se");
+        assertThat(response.getRole()).isEqualTo(Role.OWNER);
+    }
+
+    @Test
+    void getById_unknownId_throwsResourceNotFoundException() {
+        UUID unknownId = UUID.randomUUID();
+        when(userRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getById(unknownId))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // getAllUsers
+
+    @Test
+    void getAllUsers_returnsAllMappedResponses() {
+        when(userRepository.findAll()).thenReturn(List.of(ownerUser, vetUser, adminUser));
+
+        List<UserResponse> responses = userService.getAllUsers();
+
+        assertThat(responses).hasSize(3);
+        assertThat(responses).extracting(UserResponse::getRole)
+                .containsExactlyInAnyOrder(Role.OWNER, Role.VET, Role.ADMIN);
+    }
+
+    @Test
+    void getAllUsers_emptyRepo_returnsEmptyList() {
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        List<UserResponse> responses = userService.getAllUsers();
+
+        assertThat(responses).isEmpty();
+    }
+
 
     //updateUser
 
