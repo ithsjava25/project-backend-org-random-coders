@@ -83,7 +83,7 @@ class VetResponseTest {
         assertFalse(response.isActive());
     }
 
-// Helper methods (gör testen renare och mer professionella)
+// Helper methods
 
     private void setUserId(User user, UUID id) throws Exception {
         Field field = User.class.getDeclaredField("id");
