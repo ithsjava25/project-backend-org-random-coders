@@ -1,6 +1,7 @@
 package org.example.vet1177.integration.activitylog;
 
 import org.checkerframework.checker.units.qual.C;
+import org.example.vet1177.config.AwsS3Properties;
 import org.example.vet1177.entities.*;
 import org.example.vet1177.integration.TestDataFactory;
 import org.example.vet1177.repository.*;
@@ -49,6 +50,9 @@ public class ActivityLogIntegrationTest {
 
     @MockitoBean
     private FileStorageService fileStorageService;
+
+    @MockitoBean
+    private AwsS3Properties awsS3Properties;
 
 
 //    @Test
