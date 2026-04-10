@@ -4,12 +4,14 @@ import org.checkerframework.checker.units.qual.C;
 import org.example.vet1177.entities.*;
 import org.example.vet1177.integration.TestDataFactory;
 import org.example.vet1177.repository.*;
+import org.example.vet1177.services.FileStorageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -44,6 +46,9 @@ public class ActivityLogIntegrationTest {
     private MockMvc mockMvc;
     @Autowired
     private PetRepository petRepository;
+
+    @MockitoBean
+    private FileStorageService fileStorageService;
 
 
 //    @Test
