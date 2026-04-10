@@ -101,4 +101,16 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+    @ExceptionHandler(org.springframework.web.bind.MissingRequestHeaderException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMissingHeader(org.springframework.web.bind.MissingRequestHeaderException ex) {
+
+        log.warn("Missing header: {}", ex.getHeaderName());
+
+        return new ErrorResponse(
+                400,
+                "Missing required header: " + ex.getHeaderName(),
+                null
+        );
+    }
 }
