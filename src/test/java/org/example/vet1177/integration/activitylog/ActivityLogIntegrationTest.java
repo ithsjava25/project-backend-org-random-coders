@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -125,5 +126,72 @@ public class ActivityLogIntegrationTest {
                         .header("userId", owner.getId().toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void should_allow_vet_in_same_clinic_to_see_logs() throws Exception {
+
+        Clinic clinic = TestDataFactory.createClinic(clinicRepository);
+
+        User owner = TestDataFactory.createOwner(userRepository, clinic);
+        User vet = new User(
+                "Vet",
+                "vet@test.com",
+                "password",
+                Role.VET,
+                clinic
+        );
+        vet = userRepository.save(vet);
+
+        Pet pet = TestDataFactory.createPet(petRepository, owner);
+        MedicalRecord record = TestDataFactory.createRecord(
+                medicalRecordRepository, owner, clinic, pet
+        );
+
+        TestDataFactory.createLog(activityLogRepository, owner, record,
+                ActivityType.CASE_CREATED, "log");
+
+        mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
+                        .header("userId", vet.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void should_filter_out_logs_for_vet_in_other_clinic() throws Exception {
+
+        Clinic clinicA = TestDataFactory.createClinic(clinicRepository);
+        Clinic clinicB = TestDataFactory.createClinic(clinicRepository);
+
+        User owner = TestDataFactory.createOwner(userRepository, clinicA);
+
+        User vetOtherClinic = new User(
+                "Vet",
+                "vet2@test.com",
+                "password",
+                Role.VET,
+                clinicB
+        );
+        vetOtherClinic = userRepository.save(vetOtherClinic);
+
+        Pet pet = TestDataFactory.createPet(petRepository, owner);
+        MedicalRecord record = TestDataFactory.createRecord(
+                medicalRecordRepository, owner, clinicA, pet
+        );
+
+        TestDataFactory.createLog(activityLogRepository, owner, record,
+                ActivityType.CASE_CREATED, "log");
+
+        mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
+                        .header("userId", vetOtherClinic.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void should_return_400_if_userId_missing() throws Exception {
+
+        mockMvc.perform(get("/api/activity-logs/record/" + UUID.randomUUID()))
+                .andExpect(status().isBadRequest());
     }
 }
