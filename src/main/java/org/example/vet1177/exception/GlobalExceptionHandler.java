@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +79,15 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error occurred", ex);
 
         return new ErrorResponse(500, "Something went wrong", null);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMissingPart(MissingServletRequestPartException ex) {
+
+        log.warn("Missing request part: {}", ex.getRequestPartName());
+
+        return new ErrorResponse(400, "Missing required part: " + ex.getRequestPartName(), null);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
