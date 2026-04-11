@@ -1,6 +1,8 @@
 package org.example.vet1177.controller;
 
 import org.example.vet1177.entities.Clinic;
+import org.example.vet1177.security.CustomUserDetailsService;
+import org.example.vet1177.security.JwtService;
 import org.example.vet1177.services.ClinicService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,12 @@ class ClinicControllerTest {
 
     @MockitoBean
     private ClinicService clinicService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
     void shouldCreateClinic() throws Exception {
