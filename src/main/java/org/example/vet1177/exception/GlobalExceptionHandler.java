@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +81,15 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(500, "Something went wrong", null);
     }
 
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMissingPart(MissingServletRequestPartException ex) {
+
+        log.warn("Missing request part: {}", ex.getRequestPartName());
+
+        return new ErrorResponse(400, "Missing required part: " + ex.getRequestPartName(), null);
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
@@ -100,5 +110,17 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(org.springframework.web.bind.MissingRequestHeaderException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMissingHeader(org.springframework.web.bind.MissingRequestHeaderException ex) {
+
+        log.warn("Missing header: {}", ex.getHeaderName());
+
+        return new ErrorResponse(
+                400,
+                "Missing required header: " + ex.getHeaderName(),
+                null
+        );
     }
 }
