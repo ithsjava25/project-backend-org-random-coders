@@ -15,6 +15,8 @@ import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ForbiddenException;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.MedicalRecordPolicy;
+import org.example.vet1177.security.CustomUserDetailsService;
+import org.example.vet1177.security.JwtService;
 import org.example.vet1177.security.SecurityConfig;
 import org.example.vet1177.services.MedicalRecordService;
 import org.example.vet1177.services.UserService;
@@ -58,6 +60,12 @@ class MedicalRecordControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private User vetUser;
     private User ownerUser;

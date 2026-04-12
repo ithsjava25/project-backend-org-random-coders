@@ -1,6 +1,5 @@
 package org.example.vet1177.integration.activitylog;
 
-import org.checkerframework.checker.units.qual.C;
 import org.example.vet1177.config.AwsS3Properties;
 import org.example.vet1177.entities.*;
 import org.example.vet1177.integration.TestDataFactory;
@@ -10,15 +9,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.UUID;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -137,7 +136,10 @@ public class ActivityLogIntegrationTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
-                        .header("userId", owner.getId().toString()))
+                        .header("userId", owner.getId().toString())
+                        .with(authentication(new UsernamePasswordAuthenticationToken(
+                                owner, null, owner.getAuthorities()
+                        ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
@@ -166,7 +168,10 @@ public class ActivityLogIntegrationTest {
                 ActivityType.CASE_CREATED, "log");
 
         mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
-                        .header("userId", vet.getId().toString()))
+                        .header("userId", vet.getId().toString())
+                        .with(authentication(new UsernamePasswordAuthenticationToken(
+                                vet, null, vet.getAuthorities()
+                        ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
@@ -197,15 +202,21 @@ public class ActivityLogIntegrationTest {
                 ActivityType.CASE_CREATED, "log");
 
         mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
-                        .header("userId", vetOtherClinic.getId().toString()))
+                        .header("userId", vetOtherClinic.getId().toString())
+                        .with(authentication(new UsernamePasswordAuthenticationToken(
+                                vetOtherClinic, null, vetOtherClinic.getAuthorities()
+                        ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
     void should_return_400_if_userId_missing() throws Exception {
-
-        mockMvc.perform(get("/api/activity-logs/record/" + UUID.randomUUID()))
+        User anyUser = new User("Test", "test@test.com", "hash", Role.VET);
+        mockMvc.perform(get("/api/activity-logs/record/" + UUID.randomUUID())
+                        .with(authentication(new UsernamePasswordAuthenticationToken(
+                                anyUser, null, anyUser.getAuthorities()
+                        ))))
                 .andExpect(status().isBadRequest());
     }
 }

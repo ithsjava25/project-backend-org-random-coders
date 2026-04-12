@@ -5,6 +5,8 @@ import org.example.vet1177.entities.Role;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ForbiddenException;
 import org.example.vet1177.exception.ResourceNotFoundException;
+import org.example.vet1177.security.CustomUserDetailsService;
+import org.example.vet1177.security.JwtService;
 import org.example.vet1177.security.SecurityConfig;
 import org.example.vet1177.services.AttachmentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +40,12 @@ class AttachmentControllerTest {
 
     @MockitoBean
     private AttachmentService attachmentService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     private User vetUser;
     private UUID recordId;

@@ -1,6 +1,8 @@
 package org.example.vet1177.controller;
 
 import org.example.vet1177.entities.*;
+import org.example.vet1177.security.CustomUserDetailsService;
+import org.example.vet1177.security.JwtService;
 import org.example.vet1177.services.ActivityLogService;
 import org.example.vet1177.services.UserService;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,12 @@ class ActivityLogControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
     void shouldReturnLogsForRecord() throws Exception {
