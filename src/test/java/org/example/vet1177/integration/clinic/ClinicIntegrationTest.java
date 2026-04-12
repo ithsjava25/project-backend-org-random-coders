@@ -18,6 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -68,7 +70,7 @@ class ClinicIntegrationTest {
                 .andExpect(jsonPath("$.address").value("Address A"))
                 .andExpect(jsonPath("$.phoneNumber").value("0701234567"));
 
-        assert clinicRepository.findAll().size() == 1;
+        assertEquals(1, clinicRepository.findAll().size());
     }
 
     @Test
@@ -114,9 +116,9 @@ class ClinicIntegrationTest {
                 .andExpect(jsonPath("$.phoneNumber").value("222"));
 
         Clinic updated = clinicRepository.findById(clinic.getId()).orElseThrow();
-        assert updated.getName().equals("New");
-        assert updated.getAddress().equals("NewAddr");
-        assert updated.getPhoneNumber().equals("222");
+        assertEquals("New", updated.getName());
+        assertEquals("NewAddr", updated.getAddress());
+        assertEquals("222", updated.getPhoneNumber());
     }
 
     @Test
@@ -126,7 +128,7 @@ class ClinicIntegrationTest {
         mockMvc.perform(delete("/api/clinics/" + clinic.getId()))
                 .andExpect(status().isNoContent());
 
-        assert clinicRepository.findById(clinic.getId()).isEmpty();
+        assertTrue(clinicRepository.findById(clinic.getId()).isEmpty());
     }
 
     @Test
