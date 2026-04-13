@@ -116,10 +116,7 @@ class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-
     // POST /api/users
-
-
     @Test
     void createUser_shouldReturn201WithUserResponse() throws Exception {
         when(userService.createUser(any())).thenReturn(userResponse);
@@ -206,4 +203,35 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // DELETE /api/users/{id}
+
+    @Test
+    void deleteUser_shouldReturn204() throws Exception {
+        doNothing().when(userService).deleteUser(userId);
+
+        mockMvc.perform(delete("/api/users/{id}", userId)
+                        .with(authenticatedAs(currentUser)))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deleteUser_whenNotFound_shouldReturn404() throws Exception {
+        doThrow(new ResourceNotFoundException("User", userId))
+                .when(userService).deleteUser(any());
+
+        mockMvc.perform(delete("/api/users/{id}", userId)
+                        .with(authenticatedAs(currentUser)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteUser_whenHasLinkedResources_shouldReturn400() throws Exception {
+        doThrow(new BusinessRuleException("Användaren har kopplade djur och kan inte raderas"))
+                .when(userService).deleteUser(any());
+
+        mockMvc.perform(delete("/api/users/{id}", userId)
+                        .with(authenticatedAs(currentUser)))
+                .andExpect(status().isBadRequest());
+    }
 }
+
