@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -115,6 +116,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Vi loggar och släpper vidare — Spring Security returnerar 401 automatiskt
             // eftersom SecurityContext förblir tom.
             log.warn("Invalid JWT token: {}", e.getMessage());
+        } catch (UsernameNotFoundException e) {
+            // Token är giltig men användaren finns inte längre i databasen
+            // (t.ex. raderad av admin medan tokenen fortfarande gäller).
+            log.warn("User from JWT no longer exists: {}", e.getMessage());
         }
 
         // Släpp vidare requesten till nästa filter i kedjan (och sedan till controllern)
