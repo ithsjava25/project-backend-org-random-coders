@@ -1,6 +1,8 @@
 package org.example.vet1177.controller;
-import org.example.vet1177.exception.ResourceNotFoundException;
+
+//Används i commentControllerTest också, verkar funka där?
 import tools.jackson.databind.ObjectMapper;
+import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.dto.request.pet.PetRequest;
 import org.example.vet1177.entities.Pet;
 import org.example.vet1177.entities.Role;
@@ -112,6 +114,19 @@ public class PetControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void createPet_whenUnexpectedError_shouldReturn500() throws Exception {
+        when(petService.createPet(any(), any(), any()))
+                .thenThrow(new RuntimeException("Unexpected failure"));
+
+        mockMvc.perform(post("/pets")
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validPetRequest())))
+                .andExpect(status().isInternalServerError());
     }
     // GET /pets/{petId}
 
