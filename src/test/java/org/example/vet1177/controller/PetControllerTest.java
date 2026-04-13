@@ -216,5 +216,42 @@ public class PetControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    //DELETE /pets/{petId}
+
+
+    @Test
+    void deletePet_shouldReturn204() throws Exception {
+        when(userService.getUserEntityById(any())).thenReturn(owner);
+        doNothing().when(petService).deletePet(any(), any());
+
+        mockMvc.perform(delete("/pets/{petId}", petId)
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deletePet_whenNotFound_shouldReturn404() throws Exception {
+        when(userService.getUserEntityById(any())).thenReturn(owner);
+        doThrow(new ResourceNotFoundException("Pet", petId))
+                .when(petService).deletePet(any(), any());
+
+        mockMvc.perform(delete("/pets/{petId}", petId)
+                        .with(authenticatedAs(owner))
+                        .header("currentUserId", ownerId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deletePet_whenForbidden_shouldReturn403() throws Exception {
+        when(userService.getUserEntityById(any())).thenReturn(vet);
+        doThrow(new ForbiddenException("Du har inte behörighet att radera detta djur"))
+                .when(petService).deletePet(any(), any());
+
+        mockMvc.perform(delete("/pets/{petId}", petId)
+                        .with(authenticatedAs(vet))
+                        .header("currentUserId", UUID.randomUUID()))
+                .andExpect(status().isForbidden());
+    }
 
 }
