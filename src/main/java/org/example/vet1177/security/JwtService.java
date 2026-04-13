@@ -36,13 +36,13 @@ public class JwtService {
     private final long expirationMs;
 
     public JwtService(JwtProperties jwtProperties) {
-        // Skapar en kryptografisk nyckel från vår hemliga sträng i application.properties.
-        // SecretKeySpec tar emot byte-arrayen + algoritmen och ger oss ett SecretKey-objekt
-        // som Java:s krypto-API kan använda.
-        SecretKey key = new SecretKeySpec(
-                jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8),
-                "HmacSHA256"
-        );
+        byte[] keyBytes = jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException(
+                    "JWT secret key must be at least 32 bytes for HS256, got " + keyBytes.length);
+        }
+
+        SecretKey key = new SecretKeySpec(keyBytes, "HmacSHA256");
 
         // JwtEncoder — skapar nya tokens.
         // ImmutableSecret wrapprar vår nyckel så att Nimbus-biblioteket kan använda den.
