@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 /**
@@ -39,7 +40,7 @@ public class JwtService {
         // SecretKeySpec tar emot byte-arrayen + algoritmen och ger oss ett SecretKey-objekt
         // som Java:s krypto-API kan använda.
         SecretKey key = new SecretKeySpec(
-                jwtProperties.getSecretKey().getBytes(),
+                jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8),
                 "HmacSHA256"
         );
 
