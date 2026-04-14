@@ -119,7 +119,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (UsernameNotFoundException e) {
             // Token är giltig men användaren finns inte längre i databasen
             // (t.ex. raderad av admin medan tokenen fortfarande gäller).
-            log.warn("User from JWT no longer exists: {}", e.getMessage());
+            log.warn("User from JWT no longer exists in database");
         }
 
         // Släpp vidare requesten till nästa filter i kedjan (och sedan till controllern)

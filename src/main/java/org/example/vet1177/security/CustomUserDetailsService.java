@@ -43,8 +43,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("User not found email={}", email);
-                    return new UsernameNotFoundException("Användare hittades inte: " + email);
+                    log.warn("User not found during authentication");
+                    return new UsernameNotFoundException("Användare hittades inte");
                 });
     }
 }

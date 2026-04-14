@@ -12,6 +12,6 @@ public record RegisterRequest(
 ) {
     @Override
     public String toString() {
-        return "RegisterRequest[name=" + name + ", email=" + email + ", password=***]";
+        return "RegisterRequest[name=***, email=***, password=***]";
     }
 }
