@@ -11,6 +11,6 @@ public record AuthRequest(
 ) {
     @Override
     public String toString() {
-        return "AuthRequest[email=" + email + ", password=***]";
+        return "AuthRequest[email=***, password=***]";
     }
 }
