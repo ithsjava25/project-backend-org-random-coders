@@ -8,8 +8,8 @@ import org.example.vet1177.entities.User;
 import org.example.vet1177.services.PetService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.example.vet1177.services.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,44 +24,42 @@ public class PetController {
     private static final Logger log = LoggerFactory.getLogger(PetController.class);
 
     private final PetService petService;
-    private final UserService userService;
 
-    public PetController(PetService petService, UserService userService) {
+    public PetController(PetService petService) {
         this.petService = petService;
-        this.userService = userService;
     }
 
-    //POST / pets - skapa nytt djur
+    //POST /pets - skapa nytt djur
     @PostMapping
     public PetResponse createPet(
-            // TODO: Ersätt med användare från autentiserad kontext (t.ex. JWT / Spring Security)
-            @RequestHeader UUID currentUserId,
+            @AuthenticationPrincipal User currentUser,
             @RequestParam(required = false) UUID ownerId,
             @Valid @RequestBody PetRequest request
     ) {
-        log.info("POST /pets - creating pet for currentUserId={} ownerId={}", currentUserId, ownerId);
-        Pet saved = petService.createPet(currentUserId, ownerId, request);
+        log.info("POST /pets - creating pet for userId={} ownerId={}", currentUser.getId(), ownerId);
+        Pet saved = petService.createPet(currentUser.getId(), ownerId, request);
         return toResponse(saved);
     }
 
-    // GET / pets/{petId} - hämta ett specifikt djur
+    // GET /pets/{petId} - hämta ett specifikt djur
     @GetMapping("/{petId}")
     public ResponseEntity<PetResponse> getPetById(
-            @RequestHeader UUID currentUserId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable UUID petId
     ) {
-        User currentUser = userService.getUserEntityById(currentUserId);
+        log.info("GET /pets/{}", petId);
         Pet pet = petService.getPetById(petId, currentUser);
         return ResponseEntity.ok(toResponse(pet));
     }
 
-    // GET/pets/owner/{ownerId} - hämta alla djur för en ägare
+    // GET /pets/owner/{ownerId} - hämta alla djur för en ägare
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<List<PetResponse>> getPetsByOwner(
-            @RequestHeader UUID currentUserId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable UUID ownerId
     ) {
-        List<PetResponse> pets = petService.getPetsByOwner(currentUserId, ownerId)
+        log.info("GET /pets/owner/{}", ownerId);
+        List<PetResponse> pets = petService.getPetsByOwner(currentUser.getId(), ownerId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -71,21 +69,22 @@ public class PetController {
     // PUT /pets/{petId} - uppdatera ett djur
     @PutMapping("/{petId}")
     public ResponseEntity<PetResponse> updatePet(
-            @RequestHeader UUID currentUserId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable UUID petId,
             @Valid @RequestBody PetRequest request
     ) {
-        Pet updated = petService.updatePet(currentUserId, petId, request);
+        log.info("PUT /pets/{}", petId);
+        Pet updated = petService.updatePet(currentUser.getId(), petId, request);
         return ResponseEntity.ok(toResponse(updated));
     }
 
     // DELETE /pets/{petId} - radera ett djur
     @DeleteMapping("/{petId}")
     public ResponseEntity<Void> deletePet(
-            @RequestHeader UUID currentUserId,
+            @AuthenticationPrincipal User currentUser,
             @PathVariable UUID petId
     ) {
-        User currentUser = userService.getUserEntityById(currentUserId);
+        log.info("DELETE /pets/{}", petId);
         petService.deletePet(petId, currentUser);
         return ResponseEntity.noContent().build();
     }

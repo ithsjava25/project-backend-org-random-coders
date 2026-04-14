@@ -6,6 +6,8 @@ import org.example.vet1177.dto.response.vet.VetResponse;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ForbiddenException;
 import org.example.vet1177.exception.ResourceNotFoundException;
+import org.example.vet1177.security.CustomUserDetailsService;
+import org.example.vet1177.security.JwtService;
 import org.example.vet1177.policy.AdminPolicy;
 import org.example.vet1177.services.VetService;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,12 @@ class VetControllerTest {
 
     @MockitoBean
     private AdminPolicy adminPolicy;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
 // =========================
 // POST /api/vets
