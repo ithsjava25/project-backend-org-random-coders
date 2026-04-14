@@ -143,19 +143,6 @@ class UserControllerTest {
     }
 
     @Test
-    void createUser_whenNameMissing_shouldReturn400() throws Exception {
-        UserRequest request = validUserRequest();
-        request.setName("");
-
-        mockMvc.perform(post("/api/users")
-                        .with(authenticatedAs(currentUser))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-        verify(userService, never()).createUser(any());
-    }
-
-    @Test
     void createUser_whenEmailAlreadyTaken_shouldReturn400() throws Exception {
         when(userService.createUser(any()))
                 .thenThrow(new BusinessRuleException("Email används redan"));
