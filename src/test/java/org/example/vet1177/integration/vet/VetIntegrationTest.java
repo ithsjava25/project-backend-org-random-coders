@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL",
@@ -134,31 +134,36 @@ class VetIntegrationTest {
 
         User updatedUser = userRepository.findById(targetUser.getId()).orElseThrow();
         assertEquals(Role.VET, updatedUser.getRole());
+
+        verify(adminPolicy).requireAdmin(admin);
     }
-    // TODO: Enable when real authentication is implemented
-//    @Test
-//    void VT_P0_02_non_admin_cannot_create_vet_as_vet() throws Exception {
-//        Clinic clinic = TestDataFactory.createClinic(clinicRepository);
-//        User nonAdminVet = createVetUser(clinic);
-//        User targetUser = TestDataFactory.createOwner(userRepository, clinic);
-//
-//        String body = """
-//                {
-//                  "userId": "%s",
-//                  "licenseId": "LIC-1003",
-//                  "specialization": "Cardiology",
-//                  "bookingInfo": "Tue-Thu"
-//                }
-//                """.formatted(targetUser.getId());
-//
-//        mockMvc.perform(post("/api/vets")
-//                        .with(authentication(auth(nonAdminVet)))
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(body))
-//                .andExpect(status().isForbidden());
-//
-//        assertEquals(0, vetRepository.count());
-//    }
+    @Test
+    void VT_P0_02_non_admin_cannot_create_vet_as_vet() throws Exception {
+        Clinic clinic = TestDataFactory.createClinic(clinicRepository);
+        User nonAdminVet = createVetUser(clinic);
+        User targetUser = TestDataFactory.createOwner(userRepository, clinic);
+
+        doThrow(new ForbiddenException("Åtkomst nekad: Endast administratörer har behörighet"))
+                .when(adminPolicy).requireAdmin(any());
+
+        String body = """
+                {
+                  "userId": "%s",
+                  "licenseId": "LIC-1003",
+                  "specialization": "Cardiology",
+                  "bookingInfo": "Tue-Thu"
+                }
+                """.formatted(targetUser.getId());
+
+        mockMvc.perform(post("/api/vets")
+                        .with(authentication(auth(nonAdminVet)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isForbidden());
+
+        verify(adminPolicy, times(1)).requireAdmin(any());
+        assertEquals(0, vetRepository.count());
+    }
 
     @Test
     void VT_P0_03_duplicate_license_id_rejected() throws Exception {
@@ -221,7 +226,8 @@ class VetIntegrationTest {
         Vet vet = new Vet(user, "LIC-GET-ALL", "Orthopedics", "Mon-Wed");
         vetRepository.save(vet);
 
-        mockMvc.perform(get("/api/vets"))
+        mockMvc.perform(get("/api/vets")
+                        .with(authentication(auth(user))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].userId").value(user.getId().toString()))
                 .andExpect(jsonPath("$[0].licenseId").value("LIC-GET-ALL"))
@@ -236,7 +242,8 @@ class VetIntegrationTest {
         Vet vet = new Vet(user, "LIC-BY-ID", "Internal medicine", "Fri");
         vetRepository.save(vet);
 
-        mockMvc.perform(get("/api/vets/" + user.getId()))
+        mockMvc.perform(get("/api/vets/" + user.getId())
+                        .with(authentication(auth(user))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(user.getId().toString()))
                 .andExpect(jsonPath("$.licenseId").value("LIC-BY-ID"))
@@ -245,7 +252,11 @@ class VetIntegrationTest {
 
     @Test
     void VT_P0_06_get_vet_by_id_returns_404_for_unknown_id() throws Exception {
-        mockMvc.perform(get("/api/vets/" + UUID.randomUUID()))
+        Clinic clinic = TestDataFactory.createClinic(clinicRepository);
+        User user = createVetUser(clinic);
+
+        mockMvc.perform(get("/api/vets/" + UUID.randomUUID())
+                        .with(authentication(auth(user))))
                 .andExpect(status().isNotFound());
     }
 
