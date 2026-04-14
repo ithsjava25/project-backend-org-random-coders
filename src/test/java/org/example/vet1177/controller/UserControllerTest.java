@@ -3,6 +3,7 @@ package org.example.vet1177.controller;
 import org.example.vet1177.dto.request.user.UserUpdateRequest;
 import org.example.vet1177.exception.BusinessRuleException;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import tools.jackson.databind.ObjectMapper;
 import org.example.vet1177.dto.request.user.UserRequest;
 
@@ -32,8 +33,10 @@ import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 @WebMvcTest(UserController.class)
 @Import(SecurityConfig.class)
+@ActiveProfiles("test")
 class UserControllerTest {
 
     @Autowired
