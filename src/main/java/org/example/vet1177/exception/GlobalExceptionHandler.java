@@ -3,6 +3,7 @@ package org.example.vet1177.exception;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
@@ -122,5 +123,12 @@ public class GlobalExceptionHandler {
                 "Missing required header: " + ex.getHeaderName(),
                 null
         );
+    }
+    // Hanterar fel lösenord eller email vid inloggning
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Authentication failed: {}", ex.getMessage());
+        return new ErrorResponse(401, "Felaktigt email eller lösenord", null);
     }
 }
