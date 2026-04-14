@@ -1,9 +1,6 @@
 package org.example.vet1177.controller;
 
 //Används i commentControllerTest också, verkar funka där?
-import org.example.vet1177.security.CustomUserDetailsService;
-import org.example.vet1177.security.JwtService;
-import org.springframework.test.context.ActiveProfiles;
 import tools.jackson.databind.ObjectMapper;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.dto.request.pet.PetRequest;
@@ -38,7 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PetController.class)
 @Import(SecurityConfig.class)
-@ActiveProfiles("test")
 public class PetControllerTest {
 
     @Autowired
@@ -50,27 +46,24 @@ public class PetControllerTest {
     @MockitoBean
     private UserService userService;
 
-    @MockitoBean
-    private CustomUserDetailsService customUserDetailsService;
-
-    @MockitoBean
-    private JwtService jwtService;
-
     private User owner;
     private User vet;
     private Pet pet;
     private UUID ownerId;
     private UUID petId;
 
-
-
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         ownerId = UUID.randomUUID();
         petId = UUID.randomUUID();
         owner = new User("Anna Ägare", "anna@mail.se", "hash", Role.OWNER);
         vet = new User("Dr. Erik Vet", "erik@vet.se", "hash", Role.VET);
         pet = new Pet(owner, "Molly", "Hund", "Labrador", LocalDate.of(2020, 1, 1), new BigDecimal("12.50"));
+    }
+    private RequestPostProcessor authenticatedAs(User user) {
+        return authentication(new UsernamePasswordAuthenticationToken(
+                user, null, user.getAuthorities()
+        ));
     }
 
     private PetRequest validPetRequest() {
@@ -81,12 +74,6 @@ public class PetControllerTest {
         request.setDateOfBirth(LocalDate.of(2020, 1, 1));
         request.setWeightKg(new BigDecimal("12.50"));
         return request;
-    }
-
-    private RequestPostProcessor authenticatedAs(User user) {
-        return authentication(new UsernamePasswordAuthenticationToken(
-                user, null, user.getAuthorities()
-        ));
     }
 
     //POST /pets
