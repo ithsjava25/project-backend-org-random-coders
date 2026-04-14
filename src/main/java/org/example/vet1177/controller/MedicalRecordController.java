@@ -20,6 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/medical-records")
+@CrossOrigin(origins = "http://localhost:5173")
 public class MedicalRecordController {
 
     private static final Logger log = LoggerFactory.getLogger(MedicalRecordController.class);

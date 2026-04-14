@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+
 @RestController
-@RequestMapping("/pets")
+@RequestMapping("/api/pets")
+@CrossOrigin(origins = "http://localhost:5173")
 public class PetController {
 
     private static final Logger log = LoggerFactory.getLogger(PetController.class);
