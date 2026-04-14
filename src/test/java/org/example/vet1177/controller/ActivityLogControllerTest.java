@@ -1,15 +1,15 @@
 package org.example.vet1177.controller;
 
 import org.example.vet1177.entities.*;
+import org.example.vet1177.security.CustomUserDetailsService;
+import org.example.vet1177.security.JwtService;
+import org.example.vet1177.security.SecurityConfig;
 import org.example.vet1177.services.ActivityLogService;
-import org.example.vet1177.services.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-// ✅ RÄTT (Boot 4)
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-
+import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -18,11 +18,12 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ActivityLogController.class)
-@AutoConfigureMockMvc(addFilters = false) // 🔥 stänger av security (fixar 401)
+@Import(SecurityConfig.class)
 class ActivityLogControllerTest {
 
     @Autowired
@@ -32,7 +33,10 @@ class ActivityLogControllerTest {
     private ActivityLogService activityLogService;
 
     @MockitoBean
-    private UserService userService;
+    private JwtService jwtService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
     void shouldReturnLogsForRecord() throws Exception {
@@ -47,6 +51,7 @@ class ActivityLogControllerTest {
         User user = mock(User.class);
         when(user.getId()).thenReturn(userId);
         when(user.getName()).thenReturn("Alice");
+        when(user.getAuthorities()).thenReturn(List.of());
 
         // Mock MedicalRecord
         MedicalRecord record = mock(MedicalRecord.class);
@@ -61,14 +66,15 @@ class ActivityLogControllerTest {
         when(log.getMedicalRecord()).thenReturn(record);
         when(log.getCreatedAt()).thenReturn(createdAt);
 
-        // Mock service responses
-        when(userService.getUserEntityById(userId)).thenReturn(user);
+        // Mock service
         when(activityLogService.getByRecord(recordId, user))
                 .thenReturn(List.of(log));
 
         // Act + Assert
         mockMvc.perform(get("/api/activity-logs/record/" + recordId)
-                        .header("userId", userId.toString()))
+                        .with(authentication(new UsernamePasswordAuthenticationToken(
+                                user, null, user.getAuthorities()
+                        ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].description").value("Created case"))
                 .andExpect(jsonPath("$[0].action").value("CASE_CREATED"))

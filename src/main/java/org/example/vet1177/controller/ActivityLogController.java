@@ -3,9 +3,9 @@ package org.example.vet1177.controller;
 import org.example.vet1177.dto.response.activitylog.ActivityLogResponse;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.services.ActivityLogService;
-import org.example.vet1177.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,24 +18,20 @@ public class ActivityLogController {
     private static final Logger log = LoggerFactory.getLogger(ActivityLogController.class);
 
     private final ActivityLogService activityLogService;
-    private final UserService userService;
 
-    public ActivityLogController(ActivityLogService activityLogService,
-                                 UserService userService) {
+    public ActivityLogController(ActivityLogService activityLogService) {
         this.activityLogService = activityLogService;
-        this.userService = userService;
     }
 
     // Hämta alla logs för ett MedicalRecord
     @GetMapping("/record/{recordId}")
     public List<ActivityLogResponse> getLogsByRecord(
             @PathVariable UUID recordId,
-            @RequestHeader("userId") UUID userId
+            @AuthenticationPrincipal User currentUser
     ) {
         log.info("GET /api/activity-logs/record/{}", recordId);
-        User user = userService.getUserEntityById(userId);
 
-        return activityLogService.getByRecord(recordId, user)
+        return activityLogService.getByRecord(recordId, currentUser)
                 .stream()
                 .map(ActivityLogResponse::from)
                 .toList();
