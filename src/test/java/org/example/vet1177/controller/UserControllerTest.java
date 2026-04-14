@@ -52,6 +52,12 @@ class UserControllerTest {
     private UserResponse userResponse;
     private UUID userId;
 
+    @MockitoBean
+    private org.example.vet1177.security.JwtService jwtService;
+    @MockitoBean
+    private org.example.vet1177.security.CustomUserDetailsService customUserDetailsService;
+
+
     @BeforeEach
     void setUp() {
         userId = UUID.randomUUID();
