@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode'; // Importera dekodaren
+import { jwtDecode } from 'jwt-decode';
 import Layout from './components/Layout';
 import OwnerDashboard from './pages/OwnerDashboard';
 import PetForm from './components/PetForm';
 import PetDetail from './pages/PetDetail';
 import CreateCase from './pages/CreateCase';
 import CaseDetail from './pages/CaseDetail';
-import Login from './pages/Login'; // Vi skapar denna i nästa steg
+import Login from './pages/Login';
 import { petService, medicalRecordService } from './services/api';
 
 function App() {
@@ -16,8 +16,6 @@ function App() {
     const [myPets, setMyPets] = useState([]);
     const [myRecords, setMyRecords] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    // NYTT: State för den inloggade användaren
     const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
@@ -26,7 +24,6 @@ function App() {
         if (token) {
             try {
                 const decoded = jwtDecode(token);
-                // Mappa data från JWT (userId och role kommer från din JwtService.java)
                 setCurrentUser({
                     id: decoded.userId,
                     role: decoded.role,
@@ -61,7 +58,7 @@ function App() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setCurrentUser(null);
-        setCurrentView('login');
+        setCurrentView('dashboard'); // Reset view for next login
     };
 
     const goBackToDashboard = () => {
@@ -70,15 +67,12 @@ function App() {
         setCurrentView('dashboard');
     };
 
-    // Rendera vyer baserat på inloggningsstatus och roll
-    const renderContent = () => {
-        if (!currentUser) {
-            return <Login onLoginSuccess={() => window.location.reload()} />;
-        }
-
+    // Rendera innehåll inuti Layouten
+    const renderAuthenticatedContent = () => {
         if (loading) return (
-            <div className="flex justify-center p-20 italic text-slate-400">
-                Ansluter till kliniken...
+            <div className="flex flex-col items-center justify-center p-20 text-slate-400">
+                <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                <p className="italic">Hämtar din journal...</p>
             </div>
         );
 
@@ -100,30 +94,40 @@ function App() {
                     />
                 );
             case 'add-pet':
-                return <PetForm onCancel={goBackToDashboard} onSave={goBackToDashboard} />;
+                return <PetForm onCancel={goBackToDashboard} onSave={fetchData} />;
             case 'pet-detail':
                 return <PetDetail pet={selectedPet} onBack={goBackToDashboard} />;
             case 'create-case':
-                return <CreateCase pets={myPets} existingCase={selectedRecord} onCancel={goBackToDashboard} onSave={goBackToDashboard} />;
+                return <CreateCase pets={myPets} existingCase={selectedRecord} onCancel={goBackToDashboard} onSave={fetchData} />;
             case 'case-detail':
                 return (
                     <CaseDetail
                         caseData={selectedRecord}
-                        currentUser={currentUser} // Skicka med inloggad användare till detaljvyn
+                        currentUser={currentUser}
                         onBack={goBackToDashboard}
                     />
                 );
         }
     };
 
+    // LOGIK FÖR HELSKÄRM (Login)
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+                <Login onLoginSuccess={() => window.location.reload()} />
+            </div>
+        );
+    }
+
+    // LOGIK FÖR INLOGGAT LÄGE (Med sidomeny/header)
     return (
         <Layout
-            userName={currentUser?.email || "Gäst"}
+            userName={currentUser?.email || "Användare"}
             userRole={currentUser?.role === 'ROLE_VET' ? 'Veterinär' : 'Djurägare'}
             onLogout={handleLogout}
         >
             <div className="container mx-auto px-4 py-8">
-                {renderContent()}
+                {renderAuthenticatedContent()}
             </div>
         </Layout>
     );
