@@ -226,6 +226,8 @@ class VetIntegrationTest {
         Vet vet = new Vet(user, "LIC-GET-ALL", "Orthopedics", "Mon-Wed");
         vetRepository.save(vet);
 
+        mockMvc.perform(get("/api/vets")
+                        .with(authentication(auth(user))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].userId").value(user.getId().toString()))
                 .andExpect(jsonPath("$[0].licenseId").value("LIC-GET-ALL"))
