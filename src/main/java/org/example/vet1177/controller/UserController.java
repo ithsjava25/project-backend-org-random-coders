@@ -47,7 +47,7 @@ public class UserController {
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> searchByEmail(@RequestParam String email) {
-        log.info("GET /api/users/search?email={}", email);
+        log.info("GET /api/users/search");
         UserResponse user = userService.searchByEmail(email);
         return ResponseEntity.ok(user);
     }
