@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,6 +28,8 @@ import java.util.List;
  * läsa jwt.secret-key och jwt.expiration-ms från application.properties och
  * skapa en JwtProperties-bean som kan injiceras i JwtService.
  */
+
+@EnableMethodSecurity
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
