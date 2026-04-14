@@ -29,7 +29,6 @@ public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
-    // TODO: Implementera Spring Security för autentisering och auktorisering
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final UserRepository userRepository;
     private final ClinicRepository clinicRepository;
@@ -64,7 +63,6 @@ public class UserService {
         }
     }
 
-    // TODO: GET /users/search?email= - Sök användare på email, kräver ADMIN-roll (implementera när Spring Security är på plats)
     public User getByEmail(String email){
         log.debug("Fetching user by email={}", email);
         return userRepository.findByEmail(email)
