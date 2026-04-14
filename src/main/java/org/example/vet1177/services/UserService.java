@@ -69,6 +69,14 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", email));
     }
 
+    // GET /users/search?email= - Returnerar UserResponse DTO till controller (admin only)
+    public UserResponse searchByEmail(String email) {
+        log.debug("Searching user by email={}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", email));
+        return mapToResponse(user);
+    }
+
     // Returnerar User-entiteten, används internt när andra services behöver ett User-objekt. OK? - annars
     public User getUserEntityById(UUID id) {
         log.debug("Fetching user entity id={}", id);
