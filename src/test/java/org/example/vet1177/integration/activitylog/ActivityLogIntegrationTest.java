@@ -136,7 +136,6 @@ public class ActivityLogIntegrationTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
-                        .header("userId", owner.getId().toString())
                         .with(authentication(new UsernamePasswordAuthenticationToken(
                                 owner, null, owner.getAuthorities()
                         ))))
@@ -168,7 +167,6 @@ public class ActivityLogIntegrationTest {
                 ActivityType.CASE_CREATED, "log");
 
         mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
-                        .header("userId", vet.getId().toString())
                         .with(authentication(new UsernamePasswordAuthenticationToken(
                                 vet, null, vet.getAuthorities()
                         ))))
@@ -202,7 +200,6 @@ public class ActivityLogIntegrationTest {
                 ActivityType.CASE_CREATED, "log");
 
         mockMvc.perform(get("/api/activity-logs/record/" + record.getId())
-                        .header("userId", vetOtherClinic.getId().toString())
                         .with(authentication(new UsernamePasswordAuthenticationToken(
                                 vetOtherClinic, null, vetOtherClinic.getAuthorities()
                         ))))
@@ -210,13 +207,4 @@ public class ActivityLogIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(0));
     }
 
-    @Test
-    void should_return_400_if_userId_missing() throws Exception {
-        User anyUser = new User("Test", "test@test.com", "hash", Role.VET);
-        mockMvc.perform(get("/api/activity-logs/record/" + UUID.randomUUID())
-                        .with(authentication(new UsernamePasswordAuthenticationToken(
-                                anyUser, null, anyUser.getAuthorities()
-                        ))))
-                .andExpect(status().isBadRequest());
-    }
 }
