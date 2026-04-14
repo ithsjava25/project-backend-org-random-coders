@@ -3,7 +3,7 @@ package org.example.vet1177.controller;
 import org.example.vet1177.dto.request.user.UserUpdateRequest;
 import org.example.vet1177.exception.BusinessRuleException;
 import org.springframework.http.MediaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.example.vet1177.dto.request.user.UserRequest;
 
 import org.example.vet1177.dto.response.user.UserResponse;

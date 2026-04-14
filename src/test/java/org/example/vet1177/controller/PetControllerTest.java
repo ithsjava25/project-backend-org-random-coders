@@ -4,7 +4,7 @@ package org.example.vet1177.controller;
 import org.example.vet1177.security.CustomUserDetailsService;
 import org.example.vet1177.security.JwtService;
 import org.springframework.test.context.ActiveProfiles;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.dto.request.pet.PetRequest;
 import org.example.vet1177.entities.Pet;
