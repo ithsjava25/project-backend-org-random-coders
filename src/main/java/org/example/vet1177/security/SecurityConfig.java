@@ -1,5 +1,7 @@
 package org.example.vet1177.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.util.List;
 
@@ -37,6 +40,11 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService userDetailsService;
 
+    // Null i prod — bara satt när dev-profilen är aktiv (injiceras från DevSecurityConfig)
+    @Autowired(required = false)
+    @Qualifier("devAuthFilter")
+    private OncePerRequestFilter devAuthFilter;
+
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           CustomUserDetailsService userDetailsService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -50,7 +58,7 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
+        http
                 // CORS — tillåter frontend (annan port/domän) att anropa vårt API.
                 // Utan detta blockerar webbläsaren alla cross-origin requests.
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -80,9 +88,15 @@ public class SecurityConfig {
                 // Registrera vårt JWT-filter FÖRE Springs inbyggda UsernamePasswordAuthenticationFilter.
                 // Det betyder att JWT-filtret körs först och sätter SecurityContext
                 // innan Spring kollar om användaren har rätt behörighet.
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-                .build();
+        // Dev-profil: X-Dev-User-filtret läggs inuti säkerhetskedjan FÖRE JWT-filtret.
+        // Måste vara inuti kedjan — annars skriver SecurityContextHolderFilter över SecurityContext.
+        if (devAuthFilter != null) {
+            http.addFilterBefore(devAuthFilter, JwtAuthenticationFilter.class);
+        }
+
+        return http.build();
     }
 
     /**
