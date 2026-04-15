@@ -189,7 +189,8 @@ class VetIntegrationTest {
                         .with(authentication(auth(admin)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
+
 
         assertEquals(1, vetRepository.count());
         assertTrue(vetRepository.existsByLicenseId("LIC-DUP-1"));
