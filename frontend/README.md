@@ -1,16 +1,51 @@
-# React + Vite
+# Vet1177 - Frontend (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Denna del av projektet är byggd med **React 18**, **Vite** och **Tailwind CSS**. Vi har nu implementerat ett säkert autentiseringsflöde med JWT (JSON Web Tokens).
 
-Currently, two official plugins are available:
+##  Kom igång
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+För att köra frontend lokalt behöver du ha **Node.js** installerat på din dator.
+Rekommenderad version: Node.js 22 LTS eller senare.
 
-## React Compiler
+### 1. Installera beroenden
+Första gången du kör projektet (eller efter att du gjort en `git pull`), kör följande kommando i frontend-mappen:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+```
+### 2. Starta utvecklingsservern
+För att starta appen med "Hot Module Replacement" (sidan uppdateras direkt när du sparar)
+Se till at du är i frontend-mappen när du kör detta:
+````Bash
+npm run dev
+````
+Appen körs normalt på: http://localhost:5173
 
-## Expanding the ESLint configuration
+### Autentisering & Säkerhet
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Vi använder JWT för att kommunicera säkert med backenden.
+
+Inloggning: Sker via /login. Vid lyckad inloggning sparas en token i webbläsarens localStorage.
+
+API-anrop: Vi använder en Axios-interceptor (se src/services/api.js) som automatiskt bifogar din token i Authorization-headern på varje anrop:
+Authorization: Bearer <din-token>
+
+Behörighet: Appen dekodar token (via jwt-decode) för att veta om användaren är en djurägare (ROLE_OWNER), veterinär (ROLE_VET) eller admin(ROLE_ADMIN).
+
+
+### Projektstruktur
+
+**src/components/:** Återanvändbara UI-komponenter (Layout, knappar, formulär).
+
+**src/pages/:** Huvudvyer (Dashboard, Login, PetDetails).
+
+**src/services/api.js:** All kommunikation med backend (Axios-instans).
+
+**App.jsx:** Appens huvudkomponent som styr vy-hantering och autentiseringsstatus.
+
+### Att tänka på vid utveckling
+Backend-anslutning: Frontenden förväntar sig att backenden körs på http://localhost:8080/api.
+
+Nya bibliotek: Om du installerar ett nytt bibliotek (npm install <namn>), se till att även pusha package.json och package-lock.json.
+
+Git: Mappen node_modules är ignorerad via .gitignore och ska aldrig laddas upp

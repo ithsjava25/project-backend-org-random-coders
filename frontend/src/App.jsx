@@ -76,6 +76,10 @@ function App() {
             </div>
         );
 
+        if (currentUser?.role === 'ROLE_ADMIN') {
+            return <AdminDashboard />;
+        }
+
         switch (currentView) {
             case 'dashboard':
             default:
@@ -123,7 +127,9 @@ function App() {
     return (
         <Layout
             userName={currentUser?.email || "Användare"}
-            userRole={currentUser?.role === 'ROLE_VET' ? 'Veterinär' : 'Djurägare'}
+            userRole={
+                currentUser?.role || 'ROLE_ADMIN' ? 'Administratör' :
+                currentUser?.role === 'ROLE_VET' ? 'Veterinär' : 'Djurägare'}
             onLogout={handleLogout}
         >
             <div className="container mx-auto px-4 py-8">

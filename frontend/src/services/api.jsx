@@ -39,16 +39,15 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        // Om backenden svarar med 401 Unauthorized betyder det oftast
-        // att din token har gått ut eller är ogiltig.
         if (error.response && error.response.status === 401) {
-            console.warn("Token ogiltig eller utgången. Loggar ut...");
-
-            // Rensa sparad data
+            // Logga ut vid ogiltig token (redan implementerat)
             localStorage.removeItem('token');
+            window.location.reload();
+        }
 
-            // Här kan du välja att skicka användaren till login-sidan
-            // window.location.href = '/login';
+        if (error.response && error.response.status === 403) {
+            alert("Du har inte behörighet att se denna sida.");
+            // Här kan du även navigera användaren tillbaka till dashboarden
         }
         return Promise.reject(error);
     }
