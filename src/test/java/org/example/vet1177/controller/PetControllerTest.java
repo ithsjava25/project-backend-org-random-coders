@@ -94,9 +94,9 @@ public class PetControllerTest {
     void createPet_shouldReturn200WithPetResponse() throws Exception {
         when(petService.createPet(any(), any(), any())).thenReturn(pet);
 
-        mockMvc.perform(post("/pets")
+        mockMvc.perform(post("/api/pets")
                         .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId)
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
                 .andExpect(status().isOk())
@@ -108,9 +108,9 @@ public class PetControllerTest {
         PetRequest request = validPetRequest();
         request.setName("");
 
-        mockMvc.perform(post("/pets")
+        mockMvc.perform(post("/api/pets")
                         .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId)
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -121,9 +121,9 @@ public class PetControllerTest {
         when(petService.createPet(any(), any(), any()))
                 .thenThrow(new ForbiddenException("Du kan inte lägga till ett djur"));
 
-        mockMvc.perform(post("/pets")
+        mockMvc.perform(post("/api/pets")
                         .with(authenticatedAs(vet))
-                        .header("currentUserId", UUID.randomUUID())
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
                 .andExpect(status().isForbidden());
@@ -134,9 +134,9 @@ public class PetControllerTest {
         when(petService.createPet(any(), any(), any()))
                 .thenThrow(new RuntimeException("Unexpected failure"));
 
-        mockMvc.perform(post("/pets")
+        mockMvc.perform(post("/api/pets")
                         .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId)
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
                 .andExpect(status().isInternalServerError());
@@ -145,37 +145,31 @@ public class PetControllerTest {
 
     @Test
     void getPetById_shouldReturn200WithPetResponse() throws Exception {
-        when(userService.getUserEntityById(any())).thenReturn(owner);
         when(petService.getPetById(any(), any())).thenReturn(pet);
 
-        mockMvc.perform(get("/pets/{petId}", petId)
-                        .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId))
+        mockMvc.perform(get("/api/pets/{petId}", petId)
+                        .with(authenticatedAs(owner)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Molly"));
     }
 
     @Test
     void getPetById_whenNotFound_shouldReturn404() throws Exception {
-        when(userService.getUserEntityById(any())).thenReturn(owner);
         when(petService.getPetById(any(), any()))
                 .thenThrow(new ResourceNotFoundException("Pet", petId));
 
-        mockMvc.perform(get("/pets/{petId}", petId)
-                        .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId))
+        mockMvc.perform(get("/api/pets/{petId}", petId)
+                        .with(authenticatedAs(owner)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getPetById_whenForbidden_shouldReturn403() throws Exception {
-        when(userService.getUserEntityById(any())).thenReturn(vet);
         when(petService.getPetById(any(), any()))
                 .thenThrow(new ForbiddenException("Du har inte behörighet att se detta djur"));
 
-        mockMvc.perform(get("/pets/{petId}", petId)
-                        .with(authenticatedAs(vet))
-                        .header("currentUserId", UUID.randomUUID()))
+        mockMvc.perform(get("/api/pets/{petId}", petId)
+                        .with(authenticatedAs(vet)))
                 .andExpect(status().isForbidden());
     }
     // GET /pets/owner/{ownerId}
@@ -184,9 +178,8 @@ public class PetControllerTest {
     void getPetsByOwner_shouldReturn200WithList() throws Exception {
         when(petService.getPetsByOwner(any(), any())).thenReturn(List.of(pet));
 
-        mockMvc.perform(get("/pets/owner/{ownerId}", ownerId)
-                        .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId))
+        mockMvc.perform(get("/api/pets/owner/{ownerId}", ownerId)
+                        .with(authenticatedAs(owner)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Molly"));
     }
@@ -196,9 +189,8 @@ public class PetControllerTest {
         when(petService.getPetsByOwner(any(), any()))
                 .thenThrow(new ForbiddenException("Du saknar behörighet"));
 
-        mockMvc.perform(get("/pets/owner/{ownerId}", ownerId)
-                        .with(authenticatedAs(vet))
-                        .header("currentUserId", UUID.randomUUID()))
+        mockMvc.perform(get("/api/pets/owner/{ownerId}", ownerId)
+                        .with(authenticatedAs(vet)))
                 .andExpect(status().isForbidden());
     }
 
@@ -209,9 +201,9 @@ public class PetControllerTest {
         Pet updated = new Pet(owner, "Harry", "Katt", "Siamese", LocalDate.of(2021, 3, 5), new BigDecimal("5.00"));
         when(petService.updatePet(any(), any(), any())).thenReturn(updated);
 
-        mockMvc.perform(put("/pets/{petId}", petId)
+        mockMvc.perform(put("/api/pets/{petId}", petId)
                         .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId)
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
                 .andExpect(status().isOk())
@@ -223,9 +215,9 @@ public class PetControllerTest {
         when(petService.updatePet(any(), any(), any()))
                 .thenThrow(new ResourceNotFoundException("Pet", petId));
 
-        mockMvc.perform(put("/pets/{petId}", petId)
+        mockMvc.perform(put("/api/pets/{petId}", petId)
                         .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId)
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
                 .andExpect(status().isNotFound());
@@ -236,9 +228,9 @@ public class PetControllerTest {
         when(petService.updatePet(any(), any(), any()))
                 .thenThrow(new ForbiddenException("Du saknar behörighet"));
 
-        mockMvc.perform(put("/pets/{petId}", petId)
+        mockMvc.perform(put("/api/pets/{petId}", petId)
                         .with(authenticatedAs(vet))
-                        .header("currentUserId", UUID.randomUUID())
+
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validPetRequest())))
                 .andExpect(status().isForbidden());
@@ -249,36 +241,30 @@ public class PetControllerTest {
 
     @Test
     void deletePet_shouldReturn204() throws Exception {
-        when(userService.getUserEntityById(any())).thenReturn(owner);
         doNothing().when(petService).deletePet(any(), any());
 
-        mockMvc.perform(delete("/pets/{petId}", petId)
-                        .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId))
+        mockMvc.perform(delete("/api/pets/{petId}", petId)
+                        .with(authenticatedAs(owner)))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void deletePet_whenNotFound_shouldReturn404() throws Exception {
-        when(userService.getUserEntityById(any())).thenReturn(owner);
         doThrow(new ResourceNotFoundException("Pet", petId))
                 .when(petService).deletePet(any(), any());
 
-        mockMvc.perform(delete("/pets/{petId}", petId)
-                        .with(authenticatedAs(owner))
-                        .header("currentUserId", ownerId))
+        mockMvc.perform(delete("/api/pets/{petId}", petId)
+                        .with(authenticatedAs(owner)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void deletePet_whenForbidden_shouldReturn403() throws Exception {
-        when(userService.getUserEntityById(any())).thenReturn(vet);
         doThrow(new ForbiddenException("Du har inte behörighet att radera detta djur"))
                 .when(petService).deletePet(any(), any());
 
-        mockMvc.perform(delete("/pets/{petId}", petId)
-                        .with(authenticatedAs(vet))
-                        .header("currentUserId", UUID.randomUUID()))
+        mockMvc.perform(delete("/api/pets/{petId}", petId)
+                        .with(authenticatedAs(vet)))
                 .andExpect(status().isForbidden());
     }
 
