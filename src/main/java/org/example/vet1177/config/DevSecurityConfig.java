@@ -1,9 +1,10 @@
 package org.example.vet1177.config;
 
-import org.example.vet1177.entities.User;
 import org.example.vet1177.repository.UserRepository;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,7 +27,12 @@ public class DevSecurityConfig {
         this.userRepository = userRepository;
     }
 
-    @Bean
+    /**
+     * Skapar dev-autentiseringsfiltret som läser X-Dev-User-headern.
+     * Registreras INTE automatiskt som servlet-filter (se devAuthFilterRegistration).
+     * Läggs istället till inuti Spring Security's filter-kedja via SecurityConfig.
+     */
+    @Bean("devAuthFilter")
     public OncePerRequestFilter devAuthFilter() {
         return new OncePerRequestFilter() {
             @Override
@@ -54,5 +60,18 @@ public class DevSecurityConfig {
                 filterChain.doFilter(request, response);
             }
         };
+    }
+
+    /**
+     * Förhindrar att Spring Boot auto-registrerar devAuthFilter som servlet-filter.
+     * Vi lägger till det manuellt i SecurityConfig istället, inuti säkerhetskedjan.
+     * (Måste vara inuti kedjan — annars skriver SecurityContextHolderFilter över SecurityContext.)
+     */
+    @Bean
+    public FilterRegistrationBean<OncePerRequestFilter> devAuthFilterRegistration(
+            @Lazy @Qualifier("devAuthFilter") OncePerRequestFilter devAuthFilter) {
+        FilterRegistrationBean<OncePerRequestFilter> registration = new FilterRegistrationBean<>(devAuthFilter);
+        registration.setEnabled(false);
+        return registration;
     }
 }
