@@ -150,7 +150,7 @@ class UserControllerTest {
     }
 
     @Test
-    void createUser_whenEmailAlreadyTaken_shouldReturn400() throws Exception {
+    void createUser_whenEmailAlreadyTaken_shouldReturn422() throws Exception {
         when(userService.createUser(any()))
                 .thenThrow(new BusinessRuleException("Email används redan"));
 
@@ -158,7 +158,7 @@ class UserControllerTest {
                         .with(authenticatedAs(currentUser))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validUserRequest())))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
     }
 
 
@@ -197,7 +197,7 @@ class UserControllerTest {
     }
 
     @Test
-    void updateUser_whenBusinessRuleViolation_shouldReturn400() throws Exception {
+    void updateUser_whenBusinessRuleViolation_shouldReturn422() throws Exception {
         when(userService.updateUser(any(), any()))
                 .thenThrow(new BusinessRuleException("Email används redan"));
 
@@ -208,7 +208,7 @@ class UserControllerTest {
                         .with(authenticatedAs(currentUser))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
     }
 
     // DELETE /api/users/{id}
@@ -233,13 +233,13 @@ class UserControllerTest {
     }
 
     @Test
-    void deleteUser_whenHasLinkedResources_shouldReturn400() throws Exception {
+    void deleteUser_whenHasLinkedResources_shouldReturn422() throws Exception {
         doThrow(new BusinessRuleException("Användaren har kopplade djur och kan inte raderas"))
                 .when(userService).deleteUser(any());
 
         mockMvc.perform(delete("/api/users/{id}", userId)
                         .with(authenticatedAs(currentUser)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
     }
 }
 
