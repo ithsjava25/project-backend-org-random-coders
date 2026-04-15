@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { authService } from '../services/api';
+import api from '../services/api';
 
-const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+const Register = ({ onSwitchToLogin }) => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'OWNER'
+    });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -13,15 +17,16 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         setLoading(true);
 
         try {
-            const response = await authService.login(email, password);
-            // Din backend skickar förmodligen token antingen som response.data eller response.data.token
+            const response = await api.post('/auth/register', formData);
             const token = response.data.token || response.data;
 
-            localStorage.setItem('token', token);
-            onLoginSuccess();
+            if (token) {
+                localStorage.setItem('token', token);
+                window.location.reload();
+            }
         } catch (err) {
-            console.error("Login error:", err);
-            setError('Fel e-post eller lösenord. Försök igen.');
+            const errorMessage = err.response?.data?.message || 'Registreringen misslyckades. Kontrollera dina uppgifter.';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -29,7 +34,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
     return (
         <div className="max-w-md w-full mx-auto mt-10">
-            {/* Logo sektion */}
+            {/* Logo sektion - Samma som Login */}
             <div className="text-center mb-8">
                 <span className="text-4xl font-extrabold text-[#003f5a] tracking-tighter italic">
                     Vet<span className="text-[#0ea5e9]">1177</span>
@@ -39,7 +44,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
             {/* Kort sektion */}
             <div className="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
                 <div className="p-10 md:p-12">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight">Logga in</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight">Skapa konto</h2>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
@@ -48,42 +53,50 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                             </div>
                         )}
 
+                        {/* NAMN - Nytt fält för register */}
                         <div>
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                                E-post eller användarnamn
+                                Fullständigt namn
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.name}
+                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#003f5a] focus:bg-white outline-none transition-all font-medium text-sm"
+                                placeholder="För- och efternamn"
+                            />
+                        </div>
+
+                        {/* E-POST */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                                E-postadress
                             </label>
                             <input
                                 type="email"
                                 required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                value={formData.email}
+                                onChange={(e) => setFormData({...formData, email: e.target.value})}
                                 className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#003f5a] focus:bg-white outline-none transition-all font-medium text-sm"
                                 placeholder="namn@exempel.se"
                             />
                         </div>
 
+                        {/* LÖSENORD */}
                         <div>
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                                Lösenord
+                                Välj lösenord
                             </label>
                             <input
                                 type="password"
                                 required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                minLength="6"
+                                value={formData.password}
+                                onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#003f5a] focus:bg-white outline-none transition-all font-medium text-sm"
                                 placeholder="••••••••"
                             />
-                        </div>
-
-                        <div className="flex items-center justify-between px-1 pt-2">
-                            <label className="flex items-center text-xs font-bold text-slate-400 cursor-pointer">
-                                <input type="checkbox" className="mr-2 rounded border-slate-300 text-[#003f5a] focus:ring-[#003f5a]" />
-                                Kom ihåg mig
-                            </label>
-                            <button type="button" className="text-xs font-bold text-[#0ea5e9] hover:underline bg-transparent border-none p-0 cursor-pointer">
-                                Glömt lösenord?
-                            </button>
                         </div>
 
                         <div className="pt-4">
@@ -92,7 +105,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                                 disabled={loading}
                                 className={`w-full flex items-center justify-center bg-[#003f5a] text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-[#003f5a]/20 hover:bg-slate-800 transition-all transform hover:-translate-y-0.5 active:scale-[0.98] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                {loading ? 'Validerar...' : 'Logga in'}
+                                {loading ? 'Skapar konto...' : 'Skapa konto'}
                             </button>
                         </div>
                     </form>
@@ -100,20 +113,20 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
                 {/* Footer sektion */}
                 <div className="bg-slate-50 px-10 py-5 border-t border-slate-100 flex items-center justify-center gap-2">
-                    <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none pt-0.5">
-                        Säker krypterad inloggning
+                        Din data skyddas enligt GDPR
                     </span>
                 </div>
             </div>
 
             <p className="mt-8 text-center text-xs font-bold text-slate-400 uppercase tracking-tighter">
-                Har du inget konto? <button onClick={onSwitchToRegister} className="text-[#003f5a] hover:underline ml-1 font-bold bg-transparent border-none p-0 cursor-pointer">Registrera dig här</button>
+                Har du redan ett konto? <button onClick={onSwitchToLogin} className="text-[#003f5a] hover:underline ml-1 font-bold bg-transparent border-none p-0 cursor-pointer">Logga in här</button>
             </p>
         </div>
     );
 };
 
-export default Login;
+export default Register;

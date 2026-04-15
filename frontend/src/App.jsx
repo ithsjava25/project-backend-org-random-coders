@@ -6,11 +6,14 @@ import PetForm from './components/PetForm';
 import PetDetail from './pages/PetDetail';
 import CreateCase from './pages/CreateCase';
 import CaseDetail from './pages/CaseDetail';
+import AdminDashboard from './pages/AdminDashboard'; // Ny import
 import Login from './pages/Login';
+import Register from './pages/Register'; // Ny import
 import { petService, medicalRecordService } from './services/api';
 
 function App() {
     const [currentView, setCurrentView] = useState('dashboard');
+    const [isRegistering, setIsRegistering] = useState(false); // Ny state för att växla vy
     const [selectedPet, setSelectedPet] = useState(null);
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [myPets, setMyPets] = useState([]);
@@ -26,7 +29,7 @@ function App() {
                 const decoded = jwtDecode(token);
                 setCurrentUser({
                     id: decoded.userId,
-                    role: decoded.role,
+                    role: decoded.role, // Kommer vara ROLE_OWNER, ROLE_VET, etc.
                     email: decoded.sub
                 });
                 fetchData();
@@ -58,7 +61,8 @@ function App() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setCurrentUser(null);
-        setCurrentView('dashboard'); // Reset view for next login
+        setCurrentView('dashboard');
+        setIsRegistering(false);
     };
 
     const goBackToDashboard = () => {
@@ -67,7 +71,6 @@ function App() {
         setCurrentView('dashboard');
     };
 
-    // Rendera innehåll inuti Layouten
     const renderAuthenticatedContent = () => {
         if (loading) return (
             <div className="flex flex-col items-center justify-center p-20 text-slate-400">
@@ -76,6 +79,7 @@ function App() {
             </div>
         );
 
+        // Om rollen är ADMIN, visa Admin-vyn direkt
         if (currentUser?.role === 'ROLE_ADMIN') {
             return <AdminDashboard />;
         }
@@ -114,22 +118,30 @@ function App() {
         }
     };
 
-    // LOGIK FÖR HELSKÄRM (Login)
+    // LOGIK FÖR HELSKÄRM (Login / Register)
     if (!currentUser) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-                <Login onLoginSuccess={() => window.location.reload()} />
+                {isRegistering ? (
+                    <Register onSwitchToLogin={() => setIsRegistering(false)} />
+                ) : (
+                    <Login
+                        onLoginSuccess={() => window.location.reload()}
+                        onSwitchToRegister={() => setIsRegistering(true)}
+                    />
+                )}
             </div>
         );
     }
 
-    // LOGIK FÖR INLOGGAT LÄGE (Med sidomeny/header)
+    // LOGIK FÖR INLOGGAT LÄGE
     return (
         <Layout
             userName={currentUser?.email || "Användare"}
             userRole={
-                currentUser?.role || 'ROLE_ADMIN' ? 'Administratör' :
-                currentUser?.role === 'ROLE_VET' ? 'Veterinär' : 'Djurägare'}
+                currentUser?.role === 'ROLE_ADMIN' ? 'Administratör' :
+                    currentUser?.role === 'ROLE_VET' ? 'Veterinär' : 'Djurägare'
+            }
             onLogout={handleLogout}
         >
             <div className="container mx-auto px-4 py-8">
