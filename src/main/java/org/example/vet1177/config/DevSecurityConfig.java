@@ -4,6 +4,7 @@ import org.example.vet1177.repository.UserRepository;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -68,7 +69,7 @@ public class DevSecurityConfig {
      */
     @Bean
     public FilterRegistrationBean<OncePerRequestFilter> devAuthFilterRegistration(
-            @Lazy OncePerRequestFilter devAuthFilter) {
+            @Lazy @Qualifier("devAuthFilter") OncePerRequestFilter devAuthFilter) {
         FilterRegistrationBean<OncePerRequestFilter> registration = new FilterRegistrationBean<>(devAuthFilter);
         registration.setEnabled(false);
         return registration;
