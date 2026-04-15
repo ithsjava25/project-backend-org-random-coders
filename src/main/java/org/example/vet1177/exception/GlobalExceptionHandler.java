@@ -62,15 +62,15 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(403, "Access denied", null);
     }
 
-    // Business rule violation
+    // Hanterar affärsregelbrott, t.ex. duplicate email eller ogiltiga operationer
     @ExceptionHandler(BusinessRuleException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ErrorResponse handleBusinessRule(BusinessRuleException ex) {
-
         log.warn("Business rule violation: {}", ex.getMessage());
-
-        return new ErrorResponse(400, "Business rule violation", null);
+        return new ErrorResponse(422, ex.getMessage(), null);
     }
+
+
 
     // Fallback (ALLA andra errors)
     @ExceptionHandler(Exception.class)
@@ -131,4 +131,6 @@ public class GlobalExceptionHandler {
         log.warn("Authentication failed: {}", ex.getMessage());
         return new ErrorResponse(401, "Felaktigt email eller lösenord", null);
     }
+
+
 }

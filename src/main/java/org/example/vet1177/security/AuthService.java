@@ -9,6 +9,7 @@ import org.example.vet1177.security.auth.dto.AuthResponse;
 import org.example.vet1177.security.auth.dto.RegisterRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -50,11 +51,6 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            log.warn("Registration failed - email already exists");
-            throw new BusinessRuleException("Email används redan");
-        }
-
         User user = new User(
                 request.name(),
                 request.email(),
@@ -62,9 +58,14 @@ public class AuthService {
                 Role.OWNER
         );
 
-        userRepository.save(user);
-        String token = jwtService.generateToken(user);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException ex) {
+            log.warn("Registration failed - email already exists");
+            throw new BusinessRuleException("Email används redan");
+        }
 
+        String token = jwtService.generateToken(user);
         log.info("User registered: id={} role={}", user.getId(), user.getRole());
         return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
