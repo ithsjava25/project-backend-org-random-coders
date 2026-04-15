@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.example.vet1177.dto.request.user.UserUpdateRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +40,15 @@ public class UserController {
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
         log.info("GET /api/users/{}", id);
         UserResponse user = userService.getById(id);
+        return ResponseEntity.ok(user);
+    }
+
+    // GET /users/search?email= - Sök användare på email (endast admin)
+    @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> searchByEmail(@RequestParam String email) {
+        log.info("GET /api/users/search");
+        UserResponse user = userService.searchByEmail(email);
         return ResponseEntity.ok(user);
     }
 

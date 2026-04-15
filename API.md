@@ -119,13 +119,13 @@ const getKliniker = async () => {
 
 Visar alla djur som tillhör den inloggade djurägaren.
 
-**`GET /pets/owner/{ownerId}`**
+**`GET /api/pets/owner/{ownerId}`**
 
 ```javascript
 const getMinaDjur = async () => {
   const ownerId = 'c3d4e5f6-a7b8-4c5d-0e1f-a2b3c4d5e6f7'; // Annas ID
 
-  const response = await fetch(`http://localhost:8080/pets/owner/${ownerId}`, {
+  const response = await fetch(`http://localhost:8080/api/pets/owner/${ownerId}`, {
     headers: {
       'X-Dev-User': 'anna@test.se'
     }
@@ -170,11 +170,11 @@ const getMinaDjur = async () => {
 
 Registrera ett nytt djur för den inloggade ägaren.
 
-**`POST /pets`**
+**`POST /api/pets`**
 
 ```javascript
 const skapaDjur = async () => {
-  const response = await fetch('http://localhost:8080/pets', {
+  const response = await fetch('http://localhost:8080/api/pets', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -657,15 +657,15 @@ Kolumnen "Auth" visar vem som kan anropa endpointen.
 { "id": "uuid", "name": "...", "address": "...", "phoneNumber": "..." }
 ```
 
-### Djur (`/pets`)
+### Djur (`/api/pets`)
 
 | Metod | URL | Auth | Beskrivning | Request body |
 |-------|-----|------|-------------|--------------|
-| POST | `/pets` | OWNER/ADMIN (Policy) | Skapa djur. Admin kan ange `?ownerId=uuid` | `{ name, species, breed, dateOfBirth, weightKg }` |
-| GET | `/pets/{petId}` | OWNER/VET/ADMIN (Policy) | Hamta ett djur | — |
-| GET | `/pets/owner/{ownerId}` | OWNER/ADMIN (Policy) | Hamta alla djur for en ägare | — |
-| PUT | `/pets/{petId}` | OWNER/ADMIN (Policy) | Uppdatera djurinfo | `{ name, species, breed, dateOfBirth, weightKg }` |
-| DELETE | `/pets/{petId}` | OWNER/ADMIN (Policy) | Ta bort djur | — |
+| POST | `/api/pets` | OWNER/ADMIN (Policy) | Skapa djur. Admin kan ange `?ownerId=uuid` | `{ name, species, breed, dateOfBirth, weightKg }` |
+| GET | `/api/pets/{petId}` | OWNER/VET/ADMIN (Policy) | Hamta ett djur | — |
+| GET | `/api/pets/owner/{ownerId}` | OWNER/ADMIN (Policy) | Hamta alla djur for en ägare | — |
+| PUT | `/api/pets/{petId}` | OWNER/ADMIN (Policy) | Uppdatera djurinfo | `{ name, species, breed, dateOfBirth, weightKg }` |
+| DELETE | `/api/pets/{petId}` | OWNER/ADMIN (Policy) | Ta bort djur | — |
 
 **Svar (PetResponse):**
 ```json
