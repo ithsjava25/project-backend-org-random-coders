@@ -17,14 +17,20 @@ public class ActivityLog {
     @Column(nullable = false)
     private ActivityType action;
 
-    @Column(nullable = false)
+    // Matchar schema.sql kolumnen "details"
+    @Column(name = "details")
     private String description;
+
+    // entity_type är NOT NULL i schema — sätts alltid till "MEDICAL_RECORD"
+    @Column(name = "entity_type", nullable = false)
+    private String entityType = "MEDICAL_RECORD";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "performed_by", nullable = false)
     private User performedBy;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    // Matchar schema.sql kolumnen "performed_at"
+    @Column(name = "performed_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
