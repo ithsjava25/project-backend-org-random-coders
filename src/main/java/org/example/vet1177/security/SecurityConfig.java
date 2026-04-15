@@ -147,6 +147,7 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);
+        source.registerCorsConfiguration("/pets/**", config);
         return source;
     }
 }
