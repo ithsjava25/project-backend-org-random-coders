@@ -17,14 +17,21 @@ public class ActivityLog {
     @Column(nullable = false)
     private ActivityType action;
 
-    @Column(nullable = false)
+
+    @Column(name = "details", nullable = false)
     private String description;
+
+    @Column(name = "entity_type", nullable = false)
+    private String entityType = "MEDICAL_RECORD";
+
+    @Column(name = "entity_id")
+    private UUID entityId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "performed_by", nullable = false)
     private User performedBy;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "performed_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,6 +45,8 @@ public class ActivityLog {
         this.description = description;
         this.performedBy = performedBy;
         this.medicalRecord = medicalRecord;
+        this.entityId = medicalRecord.getId();
+        this.entityType = "MEDICAL_RECORD";
     }
 
     @PrePersist

@@ -22,6 +22,7 @@ import java.util.UUID;
 
 
 @Service
+@Transactional
 public class PetService {
 
     private static final Logger log = LoggerFactory.getLogger(PetService.class);
