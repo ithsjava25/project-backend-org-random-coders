@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Vi skapar en instans av axios med din bas-URL
+// Skapa axios-instans med bas-konfiguration
 const api = axios.create({
     baseURL: 'http://localhost:8080/api',
     headers: {
@@ -9,61 +9,74 @@ const api = axios.create({
 });
 
 /**
- * INTERCEPTOR FÖR REQUESTS
- * Körs innan varje anrop lämnar din webbläsare.
+ * REQUEST INTERCEPTOR
+ * Bifogar JWT-token till alla anrop automatiskt
  */
 api.interceptors.request.use(
     (config) => {
-        // Hämta din JWT från localStorage
         const token = localStorage.getItem('token');
-
-        // Om token finns, lägg till den i Authorization-headern
-        // Din backend (JwtAuthenticationFilter) förväntar sig formatet "Bearer <token>"
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 /**
- * INTERCEPTOR FÖR RESPONSES
- * Körs när ett svar kommer tillbaka från backenden, innan det når din .then() eller await.
+ * RESPONSE INTERCEPTOR
+ * Hanterar globala fel som 401 (ogiltig token)
  */
 api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            // Logga ut vid ogiltig token (redan implementerat)
+        if (error.response?.status === 401) {
             localStorage.removeItem('token');
             window.location.reload();
-        }
-
-        if (error.response && error.response.status === 403) {
-            alert("Du har inte behörighet att se denna sida.");
-            // Här kan du även navigera användaren tillbaka till dashboarden
         }
         return Promise.reject(error);
     }
 );
 
-// --- DINA EXISTERANDE SERVICES ---
+// --- SERVICES ---
+
+export const authService = {
+    login: (email, password) => api.post('/auth/login', { email, password }),
+    register: (userData) => api.post('/auth/register', userData),
+};
 
 export const petService = {
     getAllPets: () => api.get('/pets'),
+    getPetsByOwner: (ownerId) => api.get(`/pets/owner/${ownerId}`),
     getPetById: (id) => api.get(`/pets/${id}`),
     createPet: (data) => api.post('/pets', data),
 };
 
 export const medicalRecordService = {
+    // För att skapa nya ärenden i CreateCase
+    createRecord: (data) => api.post('/medical-records', data),
+
+    // För att hämta listan till OwnerDashboard
     getMyRecords: () => api.get('/medical-records/my-records'),
+
+    // För detaljvyn
     getRecordById: (id) => api.get(`/medical-records/${id}`),
+
+    // För att uppdatera status (t.ex. stänga ärende)
+    updateStatus: (id, status) => api.put(`/medical-records/${id}/status`, { status }),
+    closeRecord: (id) => api.put(`/medical-records/${id}/close`),
+};
+
+export const attachmentService = {
+    // Viktig: multipart/form-data för filuppladdning till S3
+    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    }),
+    getByRecord: (recordId) => api.get(`/attachments/record/${recordId}`),
+    download: (id) => api.get(`/attachments/${id}/download`),
+    delete: (id) => api.delete(`/attachments/${id}`),
 };
 
 export const commentService = {
@@ -71,22 +84,14 @@ export const commentService = {
     createComment: (data) => api.post('/comments', data),
 };
 
-export const attachmentService = {
-    getByRecord: (recordId) => api.get(`/attachments/record/${recordId}`),
-    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-    delete: (id) => api.delete(`/attachments/${id}`),
-};
-
 export const activityService = {
+    // Denna krävs av CaseDetail för att visa historik
     getLogsByRecord: (recordId) => api.get(`/activity-logs/record/${recordId}`),
 };
 
-// Ny service för inloggning
-export const authService = {
-    login: (email, password) => api.post('/auth/login', { email, password }),
-    register: (userData) => api.post('/auth/register', userData),
+export const clinicService = {
+    getAll: () => api.get('/clinics'),
+    getById: (id) => api.get(`/clinics/${id}`),
 };
 
 export default api;

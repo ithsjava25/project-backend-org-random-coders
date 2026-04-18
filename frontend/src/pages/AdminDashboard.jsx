@@ -1,7 +1,6 @@
 import React from 'react';
 
 const AdminDashboard = () => {
-    // I framtiden kommer dessa siffror från useEffect + API-anrop
     const stats = [
         { label: 'Registrerade Kliniker', value: '12', border: false },
         { label: 'Totala Användare', value: '1,402', border: true },
@@ -57,7 +56,6 @@ const AdminDashboard = () => {
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 italic">
-                        {/* Här mappar vi sedan ut kliniker från backend */}
                         <tr className="hover:bg-slate-50/30 transition">
                             <td className="px-6 py-4 font-bold text-slate-900 not-italic">City-Veterinären</td>
                             <td className="px-6 py-4 text-slate-500 tracking-tight">Storgatan 12, Stockholm</td>

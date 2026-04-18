@@ -1,95 +1,116 @@
 import React from 'react';
+import { STATUS_MAP } from '../utils/statusHelper';
 
-const PetDetail = ({ pet, onBack }) => {
-    // Om vi inte har ett djur (för säkerhets skull)
-    if (!pet) return null;
+const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }) => {
+
+    // FELSÖKNING: Detta skrivs ut i webbläsarens konsol (F12)
+    console.log("PetDetail laddas med:", { pet, petRecords, STATUS_MAP });
+
+    if (!pet) {
+        return <div className="p-10 text-center italic text-slate-400">Ingen djurdata hittades.</div>;
+    }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
-            {/* TILLBAKA-KNAPP */}
+        <div className="animate-in slide-in-from-right-4 duration-500 pb-20">
+            {/* Navigering tillbaka */}
             <button
                 onClick={onBack}
-                className="flex items-center gap-2 text-slate-400 hover:text-vet-navy font-bold text-[10px] uppercase tracking-[0.2em] transition group"
+                className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold text-[10px] uppercase tracking-[0.2em] mb-8 transition group"
             >
-                <span className="group-hover:-translate-x-1 transition-transform">←</span> Tillbaka till mina djur
+                <span className="group-hover:-translate-x-1 transition-transform">← Tillbaka till mina djur</span>
             </button>
 
-            {/* DJURKORT - HEADER */}
-            <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-8 flex flex-col md:flex-row gap-8 items-center md:items-start">
-                    <div className="h-32 w-32 bg-slate-50 rounded-2xl flex items-center justify-center text-6xl shadow-inner border border-slate-100 relative group">
-                        {pet.species || '🐕'}
-                        <button className="absolute -bottom-2 -right-2 bg-white p-2 rounded-lg shadow-md border border-slate-100 opacity-0 group-hover:opacity-100 transition text-xs">📸</button>
-                    </div>
-
-                    <div className="flex-1 text-center md:text-left">
-                        <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-extrabold text-slate-900 italic tracking-tight">{pet.name}</h1>
-                            <span className="px-3 py-1 rounded-full bg-blue-50 text-vet-navy text-[10px] font-bold uppercase border border-blue-100 mx-auto md:mx-0">
-                                ID: #VET-{pet.id || '8821'}
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                            <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ras</p>
-                                <p className="font-bold text-slate-700 italic">{pet.breed}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ålder</p>
-                                <p className="font-bold text-slate-700 italic">5 år (2019-04-12)</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vikt</p>
-                                <p className="font-bold text-slate-700 italic">28.5 kg</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kön</p>
-                                <p className="font-bold text-slate-700 italic">Tik (Kastrerad)</p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* VÄNSTERKOLUMN: DJURPROFIL */}
+                <div className="lg:col-span-1">
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div className="bg-slate-900 h-32 relative">
+                            <div className="absolute -bottom-10 left-8 w-20 h-20 bg-white rounded-2xl shadow-lg border-4 border-white flex items-center justify-center text-3xl font-bold text-slate-900 uppercase italic">
+                                {pet?.name?.charAt(0) || '?'}
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex gap-4">
-                    <button className="text-xs font-bold text-vet-navy hover:text-vet-accent transition uppercase tracking-widest flex items-center gap-2">
-                        <span>+</span> Nytt ärende för {pet.name}
-                    </button>
-                    <button className="text-xs font-bold text-slate-400 hover:text-slate-600 transition uppercase tracking-widest ml-auto">
-                        Redigera profil
-                    </button>
-                </div>
-            </section>
+                        <div className="pt-14 p-8 pb-8">
+                            <h1 className="text-3xl font-black text-slate-900 italic tracking-tight uppercase">
+                                {pet?.name}
+                            </h1>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
+                                {pet?.species} • {pet?.breed || 'Okänd ras'}
+                            </p>
 
-            {/* JOURNALHISTORIK */}
-            <section className="space-y-6">
-                <div className="flex items-center justify-between px-2">
-                    <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Journalhistorik</h2>
-                    <button className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-sm">
-                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div className="relative pl-8 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                    {/* Pågående ärende */}
-                    <div className="relative">
-                        <div className="absolute -left-8 top-5 w-4 h-4 rounded-full bg-vet-navy border-4 border-white shadow-sm ring-4 ring-blue-50"></div>
-                        <div className="bg-white p-6 rounded-xl border-2 border-vet-navy/10 shadow-sm hover:border-vet-accent transition cursor-pointer group">
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="text-[10px] font-bold text-vet-accent uppercase italic">Pågående Ärende</span>
-                                <span className="text-[10px] text-slate-400 font-bold">Inlett: 2024-03-25</span>
+                            <div className="mt-8 space-y-4 border-t border-slate-100 pt-6">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Född</span>
+                                    <span className="font-bold text-slate-700">{pet?.dateOfBirth || 'Ej angivet'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vikt</span>
+                                    <span className="font-bold text-slate-700">
+                                        {pet?.weightKg ? `${pet.weightKg} kg` : 'Ej angivet'}
+                                    </span>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 italic group-hover:text-vet-navy transition">Hälta vänster framben</h3>
-                            <p className="text-sm text-slate-500 mt-2 italic leading-relaxed">Status: Väntar på kompletterande bild. Handläggs av Dr. Erik Berg.</p>
-                            <div className="mt-4 flex items-center gap-2 text-vet-navy font-bold text-xs uppercase tracking-tighter">
-                                Visa konversation och ladda upp filer →
-                            </div>
+
+                            <button
+                                onClick={() => onRegisterCase(pet)}
+                                className="w-full mt-8 bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-900 transition transform active:scale-95 italic text-sm uppercase tracking-widest"
+                            >
+                                Sök vård för {pet?.name}
+                            </button>
                         </div>
                     </div>
                 </div>
-            </section>
+
+                {/* HÖGERKOLUMN: JOURNALHISTORIK */}
+                <div className="lg:col-span-2 space-y-6">
+                    <h2 className="text-xl font-bold text-slate-900 flex items-center">
+                        <span className="w-2 h-6 bg-slate-300 mr-3 rounded-full"></span>
+                        Journalhistorik för {pet?.name}
+                    </h2>
+
+                    <div className="space-y-4">
+                        {Array.isArray(petRecords) && petRecords.length > 0 ? (
+                            petRecords.map(record => {
+                                // Trygg hämting av status från STATUS_MAP
+                                const statusKey = record?.status;
+                                const statusConfig = (STATUS_MAP && STATUS_MAP[statusKey]) || {
+                                    label: statusKey || 'Okänd',
+                                    color: 'bg-slate-100 text-slate-600 border-slate-200'
+                                };
+
+                                return (
+                                    <div
+                                        key={record.id}
+                                        onClick={() => onCaseClick && onCaseClick(record)}
+                                        className="p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md transition cursor-pointer group"
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border italic ${statusConfig.color}`}>
+                                                    {statusConfig.label}
+                                                </span>
+                                                <h3 className="text-lg font-bold text-slate-900 mt-2 group-hover:text-blue-700">
+                                                    {record.reasonForVisit || record.title || 'Journalanteckning'}
+                                                </h3>
+                                                <p className="text-sm text-slate-500 italic mt-1">
+                                                    {record.diagnosis || 'Ingen diagnos ställd än.'}
+                                                </p>
+                                            </div>
+                                            <div className="text-right text-xs text-slate-400 italic">
+                                                {record.createdAt ? new Date(record.createdAt).toLocaleDateString('sv-SE') : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-12 text-center">
+                                <h3 className="text-slate-900 font-bold italic uppercase tracking-tight text-sm">Ingen historik hittades</h3>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

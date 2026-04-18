@@ -53,7 +53,7 @@ const Register = ({ onSwitchToLogin }) => {
                             </div>
                         )}
 
-                        {/* NAMN - Nytt fält för register */}
+                        {/* NAMN */}
                         <div>
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
                                 Fullständigt namn

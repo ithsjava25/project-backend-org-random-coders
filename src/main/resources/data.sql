@@ -15,11 +15,11 @@ VALUES
     ('c3d4e5f6-a7b8-4c5d-0e1f-a2b3c4d5e6f7',
      'Anna Svensson',
      'anna@test.se',
-     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+     '$2a$10$VGOiZMqHRXy44lnflHbenutE9Il7Wf/uBcxKPVYMCgZRd45vVN/I6',
      'OWNER',
      true,
      NOW(), NOW())
-    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name;
+    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;
 --                                 ↑ viktigt — uppdaterar UUID:t om emailen finns
 
 -- Vet Erik
