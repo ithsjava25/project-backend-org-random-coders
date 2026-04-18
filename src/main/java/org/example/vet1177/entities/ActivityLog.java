@@ -17,10 +17,11 @@ public class ActivityLog {
     @Column(nullable = false)
     private ActivityType action;
 
-
-    @Column(name = "details", nullable = false)
+    // Matchar schema.sql kolumnen "details"
+    @Column(name = "details")
     private String description;
 
+    // entity_type är NOT NULL i schema — sätts alltid till "MEDICAL_RECORD"
     @Column(name = "entity_type", nullable = false)
     private String entityType = "MEDICAL_RECORD";
 
@@ -31,6 +32,7 @@ public class ActivityLog {
     @JoinColumn(name = "performed_by", nullable = false)
     private User performedBy;
 
+    // Matchar schema.sql kolumnen "performed_at"
     @Column(name = "performed_at", nullable = false, updatable = false)
     private Instant createdAt;
 

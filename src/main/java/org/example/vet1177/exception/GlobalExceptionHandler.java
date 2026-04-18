@@ -3,6 +3,7 @@ package org.example.vet1177.exception;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -71,6 +72,14 @@ public class GlobalExceptionHandler {
     }
 
 
+
+    // @PreAuthorize kastar AccessDeniedException — måste fångas innan den generiska handlern
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return new ErrorResponse(403, "Access denied", null);
+    }
 
     // Fallback (ALLA andra errors)
     @ExceptionHandler(Exception.class)
