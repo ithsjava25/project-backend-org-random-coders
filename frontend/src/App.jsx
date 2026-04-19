@@ -98,7 +98,7 @@ function App() {
             case 'add-pet':
                 return <PetForm onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
 
-            case 'pet-detail':
+            case 'pet-detail': { // <--- Öppna block här
                 const filteredRecords = myRecords.filter(r => {
                     const recordPetId = r.petId || (r.pet && r.pet.id);
                     if (recordPetId && selectedPet?.id && String(recordPetId) === String(selectedPet.id)) {
@@ -130,6 +130,7 @@ function App() {
                         }}
                     />
                 );
+            } // <--- Stäng block här
 
             case 'create-case':
                 return <CreateCase pets={myPets} preSelectedPet={selectedPet} existingCase={selectedRecord} onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
