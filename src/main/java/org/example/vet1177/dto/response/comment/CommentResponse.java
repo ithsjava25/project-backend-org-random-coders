@@ -1,6 +1,8 @@
 package org.example.vet1177.dto.response.comment;
 
 import org.example.vet1177.entities.Comment;
+import org.example.vet1177.entities.CommentType;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -10,6 +12,7 @@ public record CommentResponse(
         UUID authorId,
         String authorName,
         String body,
+        CommentType type,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -20,6 +23,7 @@ public record CommentResponse(
                 comment.getAuthor().getId(),
                 comment.getAuthor().getName(),
                 comment.getBody(),
+                comment.getType(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt()
         );
