@@ -92,24 +92,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/clinics/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/clinics/**").hasRole("ADMIN")
 
-                        // ─── VET/ADMIN: skapa/mutera ärenden ───
-                        .requestMatchers(HttpMethod.POST, "/api/medical-records").hasAnyRole("VET", "ADMIN")
+                        // ─── VET/ADMIN: ärende-status/tilldelning/stängning ───
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/close").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/assign-vet").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/status").hasAnyRole("VET", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/medical-records/*").hasAnyRole("VET", "ADMIN")
 
                         // ─── VET/ADMIN: klinik-vy ───
                         .requestMatchers(HttpMethod.GET, "/api/medical-records/clinic/**").hasAnyRole("VET", "ADMIN")
 
-                        // ─── VET/ADMIN: ladda upp/radera bilagor ───
-                        .requestMatchers(HttpMethod.POST, "/api/attachments/**").hasAnyRole("VET", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/attachments/**").hasAnyRole("VET", "ADMIN")
-
                         // ─── Alla inloggade + policy finjusterar ───
-                        // Här ligger medvetet: GET medical-records (egna), POST/PUT/DELETE /api/comments,
-                        // GET /api/attachments, GET /api/activity-logs och /api/pets/**.
-                        // URL-lagret kan inte uttrycka ägarskap eller "samma klinik" — det gör policy.
+                        // Här ligger medvetet: skapa/uppdatera egna ärenden, se/skapa/radera egna bilagor,
+                        // kommentarer, aktivitetsloggar, /api/pets/**. URL-lagret kan inte uttrycka ägarskap
+                        // eller "samma klinik" — det gör policy. OWNER kan skapa/uppdatera egna ärenden;
+                        // kliniska anteckningar döljs via CommentType-filter i CommentService.
                         .anyRequest().authenticated()
                 )
 
