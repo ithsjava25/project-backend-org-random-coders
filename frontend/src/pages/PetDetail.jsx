@@ -79,6 +79,7 @@ const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }
                                         type="button"
                                         key={record.id}
                                         onClick={() => onCaseClick && onCaseClick(record)}
+                                        aria-label={`Visa detaljer för journal: ${record.title || 'Journalanteckning'}`}
                                         className="w-full text-left p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md transition group focus:ring-2 focus:ring-blue-500 outline-none"
                                     >
                                         <div className="flex justify-between items-start">
