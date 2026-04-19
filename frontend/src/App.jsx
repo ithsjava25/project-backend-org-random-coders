@@ -95,43 +95,16 @@ function App() {
         }
 
         switch (currentView) {
-            case 'dashboard':
-            case 'my-pets':
-            case 'my-cases':
-            default:
-                return (
-                    <OwnerDashboard
-                        userName={currentUser?.name}
-                        pets={myPets}
-                        records={myRecords}
-                        viewMode={currentView} // Skickar med vilken vy som ska visas
-                        onAddPet={() => setCurrentView('add-pet')}
-                        onPetClick={(pet) => { setSelectedPet(pet); setCurrentView('pet-detail'); }}
-                        onRegisterCase={() => { setSelectedRecord(null); setCurrentView('create-case'); }}
-                        onCaseClick={async (record) => {
-                            try {
-                                const res = await medicalRecordService.getRecordById(record.id);
-                                setSelectedRecord(res.data);
-                                setCurrentView('case-detail');
-                            } catch (err) {
-                                alert("Kunde inte öppna journalen just nu.");
-                            }
-                        }}
-                    />
-                );
             case 'add-pet':
                 return <PetForm onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
-            // I App.jsx, leta upp case 'pet-detail'
+
             case 'pet-detail':
                 const filteredRecords = myRecords.filter(r => {
-                    // Metod 1: Kolla ID (mest säkert om det finns)
                     const recordPetId = r.petId || (r.pet && r.pet.id);
                     if (recordPetId && selectedPet?.id && String(recordPetId) === String(selectedPet.id)) {
                         return true;
                     }
 
-                    // Metod 2: Fallback - Kolla på namnet (eftersom vi vet att petName finns i myRecords)
-                    // Vi jämför namnen och gör dem små bokstäver för att vara säkra
                     if (r.petName && selectedPet?.name &&
                         r.petName.toLowerCase() === selectedPet.name.toLowerCase()) {
                         return true;
@@ -157,8 +130,10 @@ function App() {
                         }}
                     />
                 );
+
             case 'create-case':
                 return <CreateCase pets={myPets} preSelectedPet={selectedPet} existingCase={selectedRecord} onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
+
             case 'case-detail':
                 return (
                     <CaseDetail
@@ -167,11 +142,57 @@ function App() {
                         currentUserId={currentUser?.id}
                         onBack={goBackToDashboard}
                         onGoToPet={(petId) => {
-                            // Hitta djuret i listan och byt vy
                             const pet = myPets.find(p => p.id === petId);
                             if (pet) {
                                 setSelectedPet(pet);
                                 setCurrentView('pet-detail');
+                            }
+                        }}
+                    />
+                );
+
+            // Nytt case för att hantera veterinärvyn och undvika fallthrough till default
+            case 'vet-dashboard':
+                return (
+                    <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-slate-200 shadow-sm text-center">
+                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-800">Veterinärportal</h2>
+                        <p className="text-slate-500 mt-2 max-w-md">
+                            Denna vy är under utveckling och kommer snart att innehålla verktyg för att hantera inkommande ärenden.
+                        </p>
+                        <button
+                            onClick={() => setCurrentView('dashboard')}
+                            className="mt-6 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                        >
+                            Tillbaka till min översikt
+                        </button>
+                    </div>
+                );
+
+            case 'dashboard':
+            case 'my-pets':
+            case 'my-cases':
+            default:
+                return (
+                    <OwnerDashboard
+                        userName={currentUser?.name}
+                        pets={myPets}
+                        records={myRecords}
+                        viewMode={currentView}
+                        onAddPet={() => setCurrentView('add-pet')}
+                        onPetClick={(pet) => { setSelectedPet(pet); setCurrentView('pet-detail'); }}
+                        onRegisterCase={() => { setSelectedRecord(null); setCurrentView('create-case'); }}
+                        onCaseClick={async (record) => {
+                            try {
+                                const res = await medicalRecordService.getRecordById(record.id);
+                                setSelectedRecord(res.data);
+                                setCurrentView('case-detail');
+                            } catch (err) {
+                                alert("Kunde inte öppna journalen just nu.");
                             }
                         }}
                     />
