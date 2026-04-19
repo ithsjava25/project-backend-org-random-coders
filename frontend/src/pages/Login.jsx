@@ -13,15 +13,35 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         setLoading(true);
 
         try {
+            // Behåll din original-anropsmetod: två argument
             const response = await authService.login(email, password);
-            // Din backend skickar förmodligen token antingen som response.data eller response.data.token
-            const token = response.data.token || response.data;
+
+            // --- CodeRabbit fix: Säker extraktion ---
+            let token = null;
+
+            // Vi kollar i prioritetsordning vad backend skickar
+            if (response.data && typeof response.data.token === 'string') {
+                token = response.data.token;
+            } else if (typeof response.data === 'string') {
+                token = response.data;
+            } else if (response.data && typeof response.data.accessToken === 'string') {
+                token = response.data.accessToken;
+            }
+
+            // Om vi inte fick en sträng-token, kasta fel istället för att spara [object Object]
+            if (!token) {
+                throw new Error('Giltig inloggningsnyckel saknas i svaret från servern.');
+            }
 
             localStorage.setItem('token', token);
             onLoginSuccess();
+            // ----------------------------------------
+
         } catch (err) {
             console.error("Login error:", err);
-            setError('Fel e-post eller lösenord. Försök igen.');
+            // Visa det specifika felet från servern om det finns, annars ditt standardmeddelande
+            const errorMsg = err.response?.data?.message || 'Fel e-post eller lösenord. Försök igen.';
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
