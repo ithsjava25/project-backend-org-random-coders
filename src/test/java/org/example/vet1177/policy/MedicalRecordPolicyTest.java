@@ -70,14 +70,22 @@ class MedicalRecordPolicyTest {
     }
 
     // -------------------------------------------------------------------------
-    // canCreate — OWNER får inte skapa ärenden (1177-modell)
+    // canCreate — OWNER får skapa för eget djur
     // -------------------------------------------------------------------------
 
     @Test
-    void canCreate_owner_shouldThrowForbidden() {
-        assertThatThrownBy(() -> policy.canCreate(owner, pet, clinic))
+    void canCreate_ownerOfPet_shouldNotThrow() {
+        assertThatNoException().isThrownBy(() -> policy.canCreate(owner, pet, clinic));
+    }
+
+    @Test
+    void canCreate_ownerOfOtherPet_shouldThrowForbidden() throws Exception {
+        User otherOwner = new User("Bertil Annan", "b@mail.se", "hash", Role.OWNER);
+        setPrivateField(otherOwner, "id", UUID.randomUUID());
+
+        assertThatThrownBy(() -> policy.canCreate(otherOwner, pet, clinic))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Ägare får inte skapa ärenden");
+                .hasMessage("Du kan inte skapa ärende för någon annans djur");
     }
 
     @Test
@@ -98,14 +106,22 @@ class MedicalRecordPolicyTest {
     }
 
     // -------------------------------------------------------------------------
-    // canUpdate — OWNER får inte uppdatera ärenden
+    // canUpdate — OWNER får uppdatera eget ärende (öppet)
     // -------------------------------------------------------------------------
 
     @Test
-    void canUpdate_owner_shouldThrowForbidden() {
-        assertThatThrownBy(() -> policy.canUpdate(owner, openRecord))
+    void canUpdate_ownerOfRecord_shouldNotThrow() {
+        assertThatNoException().isThrownBy(() -> policy.canUpdate(owner, openRecord));
+    }
+
+    @Test
+    void canUpdate_ownerOfOtherRecord_shouldThrowForbidden() throws Exception {
+        User otherOwner = new User("Bertil Annan", "b@mail.se", "hash", Role.OWNER);
+        setPrivateField(otherOwner, "id", UUID.randomUUID());
+
+        assertThatThrownBy(() -> policy.canUpdate(otherOwner, openRecord))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Ägare får inte uppdatera ärenden");
+                .hasMessage("Du har inte tillgång till detta ärende");
     }
 
     @Test
