@@ -27,6 +27,24 @@ public class PetController {
         this.petService = petService;
     }
 
+    // --- NY METOD: GET /api/pets ---
+    // Denna metod fixar "TypeError: petService.getAllPets is not a function"
+    // och mappar mot anropet i din App.jsx
+    @GetMapping
+    public ResponseEntity<List<PetResponse>> getAllMyPets(@AuthenticationPrincipal User currentUser) {
+        log.info("GET /api/pets - Fetching all pets for user: {}", currentUser.getEmail());
+
+        // Vi använder din befintliga servicelogik:
+        // Vi skickar in currentUser.getId() både som "vem som frågar" och "vems djur vi vill ha"
+        List<PetResponse> pets = petService.getPetsByOwner(currentUser.getId(), currentUser.getId())
+                .stream()
+                .map(this::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(pets);
+    }
+
+
     //POST /pets - skapa nytt djur
     @PostMapping
     public PetResponse createPet(
