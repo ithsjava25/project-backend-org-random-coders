@@ -3,9 +3,6 @@ import { STATUS_MAP } from '../utils/statusHelper';
 
 const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }) => {
 
-    // FELSÖKNING: Detta skrivs ut i webbläsarens konsol (F12)
-    console.log("PetDetail laddas med:", { pet, petRecords, STATUS_MAP });
-
     if (!pet) {
         return <div className="p-10 text-center italic text-slate-400">Ingen djurdata hittades.</div>;
     }
@@ -71,7 +68,6 @@ const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }
                     <div className="space-y-4">
                         {Array.isArray(petRecords) && petRecords.length > 0 ? (
                             petRecords.map(record => {
-                                // Trygg hämting av status från STATUS_MAP
                                 const statusKey = record?.status;
                                 const statusConfig = (STATUS_MAP && STATUS_MAP[statusKey]) || {
                                     label: statusKey || 'Okänd',
@@ -79,10 +75,11 @@ const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }
                                 };
 
                                 return (
-                                    <div
+                                    <button
+                                        type="button"
                                         key={record.id}
                                         onClick={() => onCaseClick && onCaseClick(record)}
-                                        className="p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md transition cursor-pointer group"
+                                        className="w-full text-left p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md transition group focus:ring-2 focus:ring-blue-500 outline-none"
                                     >
                                         <div className="flex justify-between items-start">
                                             <div>
@@ -100,7 +97,7 @@ const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }
                                                 {record.createdAt ? new Date(record.createdAt).toLocaleDateString('sv-SE') : ''}
                                             </div>
                                         </div>
-                                    </div>
+                                    </button>
                                 );
                             })
                         ) : (
