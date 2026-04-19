@@ -38,8 +38,19 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedClinic) return alert("Vänligen välj en klinik");
 
+        // VALIDERINGS-GUARDS (CodeRabbit fix)
+        if (!selectedClinic) {
+            alert("Vänligen välj en klinik.");
+            return;
+        }
+
+        if (!selectedPet) {
+            alert("Vänligen välj ett djur för detta ärende.");
+            return;
+        }
+
+        // Starta inskickning först efter att valideringen har passerat
         setIsSubmitting(true);
 
         try {
@@ -47,7 +58,7 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
                 title: title,
                 description: description,
                 petId: selectedPet,
-                clinicId: selectedClinic, // Nu dynamisk!
+                clinicId: selectedClinic,
                 id: existingCase?.id
             };
 
@@ -118,7 +129,14 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {pets.map((pet) => (
                                 <label key={pet.id} className="cursor-pointer">
-                                    <input type="radio" name="petId" value={pet.id} checked={selectedPet === pet.id} onChange={() => setSelectedPet(pet.id)} className="peer sr-only" />
+                                    <input
+                                        type="radio"
+                                        name="petId"
+                                        value={pet.id}
+                                        checked={String(selectedPet) === String(pet.id)}
+                                        onChange={() => setSelectedPet(pet.id)}
+                                        className="peer sr-only"
+                                    />
                                     <div className="p-4 border border-slate-200 rounded-xl peer-checked:border-blue-600 peer-checked:bg-blue-50 text-center transition">
                                         <span className="block font-bold text-sm">{pet.name}</span>
                                     </div>
