@@ -66,4 +66,9 @@ public class CommentPolicy {
             throw new ForbiddenException("Du kan bara ta bort dina egna kommentarer");
         }
     }
+
+    public boolean isVisibleTo(User user, Comment comment) {
+        return !(comment.getType() == CommentType.VET_CLINICAL_NOTE
+                && user.getRole() == Role.OWNER);
+    }
 }

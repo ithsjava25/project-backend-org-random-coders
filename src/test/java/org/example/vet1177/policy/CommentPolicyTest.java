@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -226,6 +227,38 @@ class CommentPolicyTest {
         assertThatThrownBy(() -> policy.canDelete(other, comment))
                 .isInstanceOf(ForbiddenException.class)
                 .hasMessage("Du kan bara ta bort dina egna kommentarer");
+    }
+
+    // -------------------------------------------------------------------------
+    // isVisibleTo — VET_CLINICAL_NOTE döljs för OWNER
+    // -------------------------------------------------------------------------
+
+    @Test
+    void isVisibleTo_ownerAndClinicalNote_shouldReturnFalse() {
+        comment.setType(CommentType.VET_CLINICAL_NOTE);
+
+        assertThat(policy.isVisibleTo(owner, comment)).isFalse();
+    }
+
+    @Test
+    void isVisibleTo_ownerAndOwnerMessage_shouldReturnTrue() {
+        comment.setType(CommentType.OWNER_MESSAGE);
+
+        assertThat(policy.isVisibleTo(owner, comment)).isTrue();
+    }
+
+    @Test
+    void isVisibleTo_vetAndClinicalNote_shouldReturnTrue() {
+        comment.setType(CommentType.VET_CLINICAL_NOTE);
+
+        assertThat(policy.isVisibleTo(vet, comment)).isTrue();
+    }
+
+    @Test
+    void isVisibleTo_adminAndClinicalNote_shouldReturnTrue() {
+        comment.setType(CommentType.VET_CLINICAL_NOTE);
+
+        assertThat(policy.isVisibleTo(admin, comment)).isTrue();
     }
 
     // -------------------------------------------------------------------------

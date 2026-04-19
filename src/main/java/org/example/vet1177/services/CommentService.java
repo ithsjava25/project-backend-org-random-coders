@@ -40,13 +40,16 @@ public class CommentService {
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
 
-        commentPolicy.canCreate(currentUser, record);  // ← en rad istället för switch
+        commentPolicy.canCreate(currentUser, record);
 
         Comment comment = new Comment();
         comment.setMedicalRecord(record);
         comment.setAuthor(currentUser);
         comment.setBody(body);
-//        return commentRepository.save(comment);
+        comment.setType(switch (currentUser.getRole()) {
+            case OWNER -> CommentType.OWNER_MESSAGE;
+            case VET, ADMIN -> CommentType.VET_CLINICAL_NOTE;
+        });
 
         Comment saved = commentRepository.save(comment);
         // LOGGING
@@ -65,9 +68,12 @@ public class CommentService {
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
 
-        commentPolicy.canView(currentUser, record);  // ← en rad
+        commentPolicy.canView(currentUser, record);
 
-        return commentRepository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId);
+        return commentRepository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId)
+                .stream()
+                .filter(c -> commentPolicy.isVisibleTo(currentUser, c))
+                .toList();
     }
 
     public Comment update(UUID commentId, String body, User currentUser) {
@@ -116,8 +122,11 @@ public class CommentService {
         MedicalRecord record = medicalRecordRepository.findById(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", recordId));
 
-        commentPolicy.canView(currentUser, record);  // ← åtkomstkontroll
+        commentPolicy.canView(currentUser, record);
 
-        return commentRepository.countByMedicalRecordId(recordId);
+        return commentRepository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId)
+                .stream()
+                .filter(c -> commentPolicy.isVisibleTo(currentUser, c))
+                .count();
     }
 }

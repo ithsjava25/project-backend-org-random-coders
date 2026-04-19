@@ -76,12 +76,35 @@ public class SecurityConfig {
 
                 // Endpoint-regler — vilka URLs kräver vad.
                 // Ordningen spelar roll: första matchande regel vinner.
+                //
+                // URL-lagret är ett grovmaskigt rollfilter. Instansnivå-kontroll
+                // (ägarskap, samma klinik) sköts i policy-klasserna — båda lagren
+                // håller OWNER/VET/ADMIN konsekvent.
                 .authorizeHttpRequests(auth -> auth
-                        // Öppna endpoints — ingen token krävs
+                        // ─── Öppet för alla ───
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/clinics", "/api/clinics/**").permitAll()
 
-                        // Alla andra API-anrop kräver att man är inloggad
+                        // ─── ADMIN-only ───
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/vets").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/clinics").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/clinics/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/clinics/**").hasRole("ADMIN")
+
+                        // ─── VET/ADMIN: ärende-status/tilldelning/stängning ───
+                        .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/close").hasAnyRole("VET", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/assign-vet").hasAnyRole("VET", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/status").hasAnyRole("VET", "ADMIN")
+
+                        // ─── VET/ADMIN: klinik-vy ───
+                        .requestMatchers(HttpMethod.GET, "/api/medical-records/clinic/**").hasAnyRole("VET", "ADMIN")
+
+                        // ─── Alla inloggade + policy finjusterar ───
+                        // Här ligger medvetet: skapa/uppdatera egna ärenden, se/skapa/radera egna bilagor,
+                        // kommentarer, aktivitetsloggar, /api/pets/**. URL-lagret kan inte uttrycka ägarskap
+                        // eller "samma klinik" — det gör policy. OWNER kan skapa/uppdatera egna ärenden;
+                        // kliniska anteckningar döljs via CommentType-filter i CommentService.
                         .anyRequest().authenticated()
                 )
 
