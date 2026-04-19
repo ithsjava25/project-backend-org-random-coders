@@ -105,6 +105,27 @@ class CommentServiceTest {
         verify(commentRepository, never()).save(any());
     }
 
+    @Test
+    void create_asVet_shouldSetTypeToClinicalNote() {
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+        when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Comment result = commentService.create(recordId, "Anteckning.", currentUser);
+
+        assertThat(result.getType()).isEqualTo(CommentType.VET_CLINICAL_NOTE);
+    }
+
+    @Test
+    void create_asOwner_shouldSetTypeToOwnerMessage() {
+        User ownerUser = new User("Anna Ägare", "anna@mail.se", "hash", Role.OWNER);
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+        when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Comment result = commentService.create(recordId, "Fråga från ägaren.", ownerUser);
+
+        assertThat(result.getType()).isEqualTo(CommentType.OWNER_MESSAGE);
+    }
+
     // -------------------------------------------------------------------------
     // getByRecord
     // -------------------------------------------------------------------------
@@ -113,6 +134,7 @@ class CommentServiceTest {
     void getByRecord_shouldReturnCommentsForRecord() {
         when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
         when(commentRepository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId)).thenReturn(List.of(comment));
+        when(commentPolicy.isVisibleTo(currentUser, comment)).thenReturn(true);
 
         List<Comment> result = commentService.getByRecord(recordId, currentUser);
 
@@ -231,8 +253,13 @@ class CommentServiceTest {
 
     @Test
     void countByRecord_shouldReturnCount() {
+        Comment visible = new Comment();
+        Comment hidden = new Comment();
         when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
-        when(commentRepository.countByMedicalRecordId(recordId)).thenReturn(3L);
+        when(commentRepository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId))
+                .thenReturn(List.of(visible, visible, visible, hidden));
+        when(commentPolicy.isVisibleTo(currentUser, visible)).thenReturn(true);
+        when(commentPolicy.isVisibleTo(currentUser, hidden)).thenReturn(false);
 
         long result = commentService.countByRecord(recordId, currentUser);
 
@@ -242,7 +269,7 @@ class CommentServiceTest {
     @Test
     void countByRecord_shouldCallPolicyCanView() {
         when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
-        when(commentRepository.countByMedicalRecordId(recordId)).thenReturn(0L);
+        when(commentRepository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId)).thenReturn(List.of());
 
         commentService.countByRecord(recordId, currentUser);
 
@@ -256,6 +283,6 @@ class CommentServiceTest {
         assertThatThrownBy(() -> commentService.countByRecord(recordId, currentUser))
                 .isInstanceOf(ResourceNotFoundException.class);
 
-        verify(commentRepository, never()).countByMedicalRecordId(any());
+        verify(commentRepository, never()).findByMedicalRecordIdOrderByCreatedAtAsc(any());
     }
 }
