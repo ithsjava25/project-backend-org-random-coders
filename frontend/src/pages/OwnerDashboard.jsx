@@ -48,10 +48,11 @@ const OwnerDashboard = ({ userName, pets, records, onAddPet, onPetClick, onRegis
                                     records.map(record => {
                                         const statusConfig = STATUS_MAP[record.status] || { label: record.status, color: 'bg-slate-100 text-slate-600 border-slate-200' };
                                         return (
-                                            <div
+                                            <button
+                                                type="button"
                                                 key={record.id}
                                                 onClick={() => onCaseClick(record)}
-                                                className="p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md transition cursor-pointer group"
+                                                className="w-full text-left p-5 bg-white border border-slate-200 rounded-xl hover:shadow-md transition group focus:ring-2 focus:ring-blue-500 outline-none"
                                             >
                                                 <div className="flex justify-between items-start">
                                                     <div>
@@ -69,7 +70,7 @@ const OwnerDashboard = ({ userName, pets, records, onAddPet, onPetClick, onRegis
                                                         {record.createdAt ? new Date(record.createdAt).toLocaleDateString('sv-SE') : 'Datum saknas'}
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </button>
                                         );
                                     })
                                 ) : (
@@ -92,15 +93,16 @@ const OwnerDashboard = ({ userName, pets, records, onAddPet, onPetClick, onRegis
                             </h2>
                             <div className={`${isPetsView ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-3'}`}>
                                 {pets && pets.length > 0 && pets.map(pet => (
-                                    <div
+                                    <button
+                                        type="button"
                                         key={pet.id}
                                         onClick={() => onPetClick(pet)}
-                                        className="flex items-center p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm group cursor-pointer"
+                                        className="w-full flex items-center p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm group focus:ring-2 focus:ring-blue-500 outline-none"
                                     >
                                         <div className="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center text-slate-500 font-bold mr-4 group-hover:bg-slate-900 group-hover:text-white transition uppercase italic">
                                             {pet.name ? pet.name.charAt(0) : '?'}
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 text-left">
                                             <span className="block font-bold text-slate-900 italic">
                                                 {pet.name || 'Namnlös'}
                                             </span>
@@ -108,7 +110,7 @@ const OwnerDashboard = ({ userName, pets, records, onAddPet, onPetClick, onRegis
                                                 {pet.species || 'Okänd art'} • {pet.breed || 'Okänd ras'}
                                             </span>
                                         </div>
-                                    </div>
+                                    </button>
                                 ))}
 
                                 <button
