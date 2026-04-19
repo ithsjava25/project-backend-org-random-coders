@@ -21,7 +21,7 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
 
-    // Hämta användare från token vid start
+    // 1. Hämta användare från token vid start
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -42,6 +42,21 @@ function App() {
         } else {
             setLoading(false);
         }
+    }, []);
+
+    // 2. NYTT: Lyssna på globala utloggnings-events från API-interceptor (CodeRabbit fix)
+    useEffect(() => {
+        const handleGlobalLogout = () => {
+            handleLogout();
+            // Vi ger användaren en förklaring till varför de blev utloggade
+            alert("Din session har gått ut. Vänligen logga in igen.");
+        };
+
+        window.addEventListener('auth:logout', handleGlobalLogout);
+
+        return () => {
+            window.removeEventListener('auth:logout', handleGlobalLogout);
+        };
     }, []);
 
     const fetchInitialData = async () => {
@@ -72,7 +87,7 @@ function App() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setCurrentUser(null);
-        setCurrentView('login');
+        setCurrentView('dashboard'); // Reset till standardvy för inloggad profil
         setIsRegistering(false);
     };
 
@@ -98,7 +113,7 @@ function App() {
             case 'add-pet':
                 return <PetForm onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
 
-            case 'pet-detail': { // <--- Öppna block här
+            case 'pet-detail': {
                 const filteredRecords = myRecords.filter(r => {
                     const recordPetId = r.petId || (r.pet && r.pet.id);
                     if (recordPetId && selectedPet?.id && String(recordPetId) === String(selectedPet.id)) {
@@ -130,7 +145,7 @@ function App() {
                         }}
                     />
                 );
-            } // <--- Stäng block här
+            }
 
             case 'create-case':
                 return <CreateCase pets={myPets} preSelectedPet={selectedPet} existingCase={selectedRecord} onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
@@ -152,7 +167,6 @@ function App() {
                     />
                 );
 
-            // Nytt case för att hantera veterinärvyn och undvika fallthrough till default
             case 'vet-dashboard':
                 return (
                     <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-slate-200 shadow-sm text-center">

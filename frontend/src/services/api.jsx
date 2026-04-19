@@ -31,10 +31,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const isAuthEndpoint = error.config?.url?.includes('/auth/login') ||
+            error.config?.url?.includes('/auth/register');
+
+        if (error.response?.status === 401 && !isAuthEndpoint) {
+            console.warn("Sessionen har gått ut. Loggar ut...");
+
             localStorage.removeItem('token');
-            window.location.reload();
+
+            window.dispatchEvent(new CustomEvent('auth:logout'));
         }
+
         return Promise.reject(error);
     }
 );
