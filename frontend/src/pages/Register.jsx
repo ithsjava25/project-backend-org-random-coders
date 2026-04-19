@@ -18,13 +18,30 @@ const Register = ({ onSwitchToLogin }) => {
 
         try {
             const response = await api.post('/auth/register', formData);
-            const token = response.data.token || response.data;
+
+            // --- CodeRabbit fix: Robust token-extraktion ---
+            let token = null;
+
+            if (response.data && typeof response.data.token === 'string') {
+                token = response.data.token;
+            } else if (typeof response.data === 'string') {
+                token = response.data;
+            }
 
             if (token) {
+                // Om vi fick en giltig sträng-token, logga in direkt
                 localStorage.setItem('token', token);
                 window.location.reload();
+            } else {
+                // Om registreringen lyckades men ingen token returnerades
+                // (t.ex. vid krav på e-postbekräftelse), skicka till login.
+                alert("Kontot skapades framgångsrikt! Vänligen logga in.");
+                onSwitchToLogin();
             }
+            // -----------------------------------------------
+
         } catch (err) {
+            console.error("Register error:", err);
             const errorMessage = err.response?.data?.message || 'Registreringen misslyckades. Kontrollera dina uppgifter.';
             setError(errorMessage);
         } finally {
@@ -34,7 +51,7 @@ const Register = ({ onSwitchToLogin }) => {
 
     return (
         <div className="max-w-md w-full mx-auto mt-10">
-            {/* Logo sektion - Samma som Login */}
+            {/* Logo sektion */}
             <div className="text-center mb-8">
                 <span className="text-4xl font-extrabold text-[#003f5a] tracking-tighter italic">
                     Vet<span className="text-[#0ea5e9]">1177</span>
