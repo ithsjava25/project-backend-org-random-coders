@@ -26,10 +26,8 @@ public class MedicalRecordPolicy {
 
     public void canCreate(User user, Pet pet, Clinic clinic) {
         switch (user.getRole()) {
-            case OWNER -> {
-                if (!user.getId().equals(pet.getOwner().getId()))
-                    throw new ForbiddenException("Du kan inte skapa ärende för någon annans djur");
-            }
+            case OWNER ->
+                    throw new ForbiddenException("Ägare får inte skapa ärenden");
             case VET -> {
                 if (!user.getClinic().getId().equals(clinic.getId()))
                     throw new ForbiddenException("Du kan inte skapa ärende för en annan klinik");
@@ -43,10 +41,8 @@ public class MedicalRecordPolicy {
             throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
 
         switch (user.getRole()) {
-            case OWNER -> {
-                if (!user.getId().equals(record.getOwner().getId()))
-                    throw new ForbiddenException("Du har inte tillgång till detta ärende");
-            }
+            case OWNER ->
+                    throw new ForbiddenException("Ägare får inte uppdatera ärenden");
             case VET -> {
                 if (!sameClinic(user, record))
                     throw new ForbiddenException("Du har inte tillgång till ärenden på en annan klinik");
