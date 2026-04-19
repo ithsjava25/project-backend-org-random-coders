@@ -15,13 +15,11 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
 
     const fileInputRef = useRef(null);
 
-    // Hämta kliniker vid start
     useEffect(() => {
         const fetchClinics = async () => {
             try {
                 const res = await clinicService.getAll();
                 setClinics(res.data);
-                // Om vi inte redigerar och det finns kliniker, välj den första som default
                 if (!existingCase && res.data.length > 0) {
                     setSelectedClinic(res.data[0].id);
                 }
@@ -39,19 +37,12 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // VALIDERINGS-GUARDS (CodeRabbit fix)
-        if (!selectedClinic) {
-            alert("Vänligen välj en klinik.");
-            return;
-        }
+        // 1. Validering
+        if (!selectedClinic) return alert("Vänligen välj en klinik.");
+        if (!selectedPet) return alert("Vänligen välj ett djur för detta ärende.");
 
-        if (!selectedPet) {
-            alert("Vänligen välj ett djur för detta ärende.");
-            return;
-        }
-
-        // Starta inskickning först efter att valideringen har passerat
         setIsSubmitting(true);
+        let currentRecordId = null;
 
         try {
             const caseData = {
@@ -59,24 +50,39 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
                 description: description,
                 petId: selectedPet,
                 clinicId: selectedClinic,
-                id: existingCase?.id
             };
 
-            const recordRes = await medicalRecordService.createRecord(caseData);
-            const recordId = recordRes.data.id;
+            // 2. Skilj på UPDATE och CREATE
+            if (existingCase?.id) {
+                await medicalRecordService.updateRecord(existingCase.id, caseData);
+                currentRecordId = existingCase.id;
+            } else {
+                const recordRes = await medicalRecordService.createRecord(caseData);
+                currentRecordId = recordRes.data.id;
+            }
 
+            // 3. Hantera bilagor med intern try/catch för rollback
             if (files.length > 0) {
-                for (const file of files) {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('description', `Bilaga`);
-                    await attachmentService.upload(recordId, formData);
+                try {
+                    for (const file of files) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('description', `Bilaga`);
+                        await attachmentService.upload(currentRecordId, formData);
+                    }
+                } catch (uploadErr) {
+                    // 4. Rollback: Om det var ett NYTT ärende, radera det så vi inte får dubbletter vid retry
+                    if (!existingCase?.id && currentRecordId) {
+                        await medicalRecordService.deleteRecord(currentRecordId);
+                    }
+                    throw new Error("Bilagorna kunde inte laddas upp. Ärendet har inte sparats.");
                 }
             }
+
             onSave();
         } catch (err) {
             console.error("Fel:", err);
-            alert("Något gick fel vid sparning.");
+            alert(err.message || "Något gick fel vid sparning.");
         } finally {
             setIsSubmitting(false);
         }
@@ -97,33 +103,26 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-8">
-                    {/* KLINIKVÄLJARE */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 italic">
-                            Välj klinik *
-                        </label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 italic">Välj klinik *</label>
                         <select
                             value={selectedClinic}
                             onChange={(e) => setSelectedClinic(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition font-medium italic"
+                            className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 outline-none italic"
                             required
                         >
                             <option value="" disabled>Välj en klinik...</option>
                             {clinics.map(clinic => (
-                                <option key={clinic.id} value={clinic.id}>
-                                    {clinic.name} ({clinic.address})
-                                </option>
+                                <option key={clinic.id} value={clinic.id}>{clinic.name} ({clinic.address})</option>
                             ))}
                         </select>
                     </div>
 
-                    {/* RUBRIK */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 italic">Rubrik *</label>
                         <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 outline-none" required />
                     </div>
 
-                    {/* DJURVÄLJARE */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 italic">Vilket djur? *</label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -145,13 +144,11 @@ const CreateCase = ({ pets, onCancel, onSave, existingCase, preSelectedPet }) =>
                         </div>
                     </div>
 
-                    {/* BESKRIVNING */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 italic">Beskrivning *</label>
                         <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="4" className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 outline-none resize-none" required />
                     </div>
 
-                    {/* FILER */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 italic">Bilagor</label>
                         <div onClick={() => fileInputRef.current.click()} className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 cursor-pointer relative">

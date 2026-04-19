@@ -56,6 +56,12 @@ export const medicalRecordService = {
     // För att skapa nya ärenden i CreateCase
     createRecord: (data) => api.post('/medical-records', data),
 
+    // För att uppdatera befintliga ärenden
+    updateRecord: (id, data) => api.put(`/medical-records/${id}`, data),
+
+    // För att städa upp om bilagor misslyckas
+    deleteRecord: (id) => api.delete(`/medical-records/${id}`),
+
     // För att hämta listan till OwnerDashboard
     getMyRecords: () => api.get('/medical-records/my-records'),
 
