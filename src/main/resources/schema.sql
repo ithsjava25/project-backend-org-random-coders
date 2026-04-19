@@ -63,9 +63,12 @@ CREATE TABLE IF NOT EXISTS comment (
                                        record_id       UUID        NOT NULL REFERENCES medical_record(id),
                                        author_id       UUID        NOT NULL REFERENCES users(id),
                                        body            TEXT        NOT NULL,
+                                       comment_type    VARCHAR(32) NOT NULL DEFAULT 'OWNER_MESSAGE',
                                        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                                        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE comment ADD COLUMN IF NOT EXISTS comment_type VARCHAR(32) NOT NULL DEFAULT 'OWNER_MESSAGE';
 
 CREATE TABLE IF NOT EXISTS attachment (
                                           id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
