@@ -74,18 +74,18 @@ class MedicalRecordPolicyTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void canCreate_ownerOfPet_shouldNotThrow() {
+    void canCreate_ownerOfOwnPet_shouldNotThrow() {
         assertThatNoException().isThrownBy(() -> policy.canCreate(owner, pet, clinic));
     }
 
     @Test
-    void canCreate_ownerOfOtherPet_shouldThrowForbidden() throws Exception {
+    void canCreate_ownerOfOthersPet_shouldThrowForbidden() throws Exception {
         User otherOwner = new User("Bertil Annan", "b@mail.se", "hash", Role.OWNER);
         setPrivateField(otherOwner, "id", UUID.randomUUID());
 
         assertThatThrownBy(() -> policy.canCreate(otherOwner, pet, clinic))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Du kan inte skapa ärende för någon annans djur");
+                .hasMessage("Du kan bara skapa ärenden för egna djur");
     }
 
     @Test
@@ -106,22 +106,14 @@ class MedicalRecordPolicyTest {
     }
 
     // -------------------------------------------------------------------------
-    // canUpdate — OWNER får uppdatera eget ärende (öppet)
+    // canUpdate — OWNER blockerad helt; VET/ADMIN på samma klinik tillåtna
     // -------------------------------------------------------------------------
 
     @Test
-    void canUpdate_ownerOfRecord_shouldNotThrow() {
-        assertThatNoException().isThrownBy(() -> policy.canUpdate(owner, openRecord));
-    }
-
-    @Test
-    void canUpdate_ownerOfOtherRecord_shouldThrowForbidden() throws Exception {
-        User otherOwner = new User("Bertil Annan", "b@mail.se", "hash", Role.OWNER);
-        setPrivateField(otherOwner, "id", UUID.randomUUID());
-
-        assertThatThrownBy(() -> policy.canUpdate(otherOwner, openRecord))
+    void canUpdate_owner_shouldThrowForbidden() {
+        assertThatThrownBy(() -> policy.canUpdate(owner, openRecord))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Du har inte tillgång till detta ärende");
+                .hasMessage("Ägare får inte uppdatera journaler");
     }
 
     @Test
@@ -146,6 +138,14 @@ class MedicalRecordPolicyTest {
         assertThatThrownBy(() -> policy.canUpdate(vet, closedRecord))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessage("Stängda ärenden kan inte uppdateras");
+    }
+
+    // Auth-kontroll före isFinal-kontroll: en OWNER som ropar canUpdate på stängt ärende
+    // ska få 403 (ForbiddenException), inte 422 (BusinessRuleException).
+    @Test
+    void canUpdate_ownerOnClosedRecord_shouldThrowForbiddenNotBusinessRule() {
+        assertThatThrownBy(() -> policy.canUpdate(owner, closedRecord))
+                .isInstanceOf(ForbiddenException.class);
     }
 
     // -------------------------------------------------------------------------
