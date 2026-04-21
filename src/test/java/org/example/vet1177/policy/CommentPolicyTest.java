@@ -261,6 +261,13 @@ class CommentPolicyTest {
         assertThat(policy.isVisibleTo(admin, comment)).isTrue();
     }
 
+    @Test
+    void isVisibleTo_ownerAndNullType_shouldReturnFalse() {
+        comment.setType(null);
+
+        assertThat(policy.isVisibleTo(owner, comment)).isFalse();
+    }
+
     // -------------------------------------------------------------------------
     // Helper
     // -------------------------------------------------------------------------
