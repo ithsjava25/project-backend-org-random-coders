@@ -27,8 +27,8 @@ public class MedicalRecordPolicy {
     public void canCreate(User user, Pet pet, Clinic clinic) {
         switch (user.getRole()) {
             case OWNER -> {
-                if (!user.getId().equals(pet.getOwner().getId()))
-                    throw new ForbiddenException("Du kan inte skapa ärende för någon annans djur");
+                if (!pet.getOwner().getId().equals(user.getId()))
+                    throw new ForbiddenException("Du kan bara skapa ärenden för egna djur");
             }
             case VET -> {
                 if (!user.getClinic().getId().equals(clinic.getId()))
@@ -38,27 +38,25 @@ public class MedicalRecordPolicy {
         }
     }
 
+    // Auth-kontroll (roll/ägarskap) körs före isFinal-kontrollen — annars skulle en
+    // OWNER som försöker uppdatera någon annans stängda ärende få "Stängda ärenden
+    // kan inte uppdateras" i stället för 403 (CodeRabbit-kommentar på #216).
     public void canUpdate(User user, MedicalRecord record) {
-        if (record.getStatus().isFinal())
-            throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
-
         switch (user.getRole()) {
-            case OWNER -> {
-                if (!user.getId().equals(record.getOwner().getId()))
-                    throw new ForbiddenException("Du har inte tillgång till detta ärende");
-            }
+            case OWNER ->
+                    throw new ForbiddenException("Ägare får inte uppdatera journaler");
             case VET -> {
                 if (!sameClinic(user, record))
                     throw new ForbiddenException("Du har inte tillgång till ärenden på en annan klinik");
             }
             case ADMIN -> {}
         }
+
+        if (record.getStatus().isFinal())
+            throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
     }
 
     public void canUpdateStatus(User user, MedicalRecord record, RecordStatus newStatus) {
-        if (record.getStatus().isFinal())
-            throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
-
         switch (user.getRole()) {
             case OWNER ->
                     throw new ForbiddenException("Ägare får inte ändra status på ärenden");
@@ -68,6 +66,9 @@ public class MedicalRecordPolicy {
             }
             case ADMIN -> {}
         }
+
+        if (record.getStatus().isFinal())
+            throw new BusinessRuleException("Stängda ärenden kan inte uppdateras");
     }
 
 
@@ -95,9 +96,6 @@ public class MedicalRecordPolicy {
     }
 
     public void canClose(User user, MedicalRecord record) {
-        if (record.getStatus().isFinal())
-            throw new BusinessRuleException("Ärendet är redan stängt");
-
         switch (user.getRole()) {
             case OWNER ->
                     throw new ForbiddenException("Ägare får inte stänga ärenden");
@@ -107,6 +105,9 @@ public class MedicalRecordPolicy {
             }
             case ADMIN -> {}
         }
+
+        if (record.getStatus().isFinal())
+            throw new BusinessRuleException("Ärendet är redan stängt");
     }
 
     public void canViewClinic(User user, UUID clinicId) {
