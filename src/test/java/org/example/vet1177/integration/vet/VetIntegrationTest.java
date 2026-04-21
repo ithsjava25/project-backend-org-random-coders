@@ -101,7 +101,7 @@ class VetIntegrationTest {
     }
 
     private UsernamePasswordAuthenticationToken auth(User user) {
-        return new UsernamePasswordAuthenticationToken(user, null, List.of());
+        return new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
     }
 
     @Test
@@ -143,9 +143,6 @@ class VetIntegrationTest {
         User nonAdminVet = createVetUser(clinic);
         User targetUser = TestDataFactory.createOwner(userRepository, clinic);
 
-        doThrow(new ForbiddenException("Åtkomst nekad: Endast administratörer har behörighet"))
-                .when(adminPolicy).requireAdmin(any());
-
         String body = """
                 {
                   "userId": "%s",
@@ -161,7 +158,7 @@ class VetIntegrationTest {
                         .content(body))
                 .andExpect(status().isForbidden());
 
-        verify(adminPolicy, times(1)).requireAdmin(any());
+        verify(adminPolicy, never()).requireAdmin(any());
         assertEquals(0, vetRepository.count());
     }
 

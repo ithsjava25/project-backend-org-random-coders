@@ -57,15 +57,13 @@ public class AttachmentPolicy {
             case ADMIN -> {
                 // Admin har fulla rättigheter att radera.
             }
-            case VET -> {
-                // En veterinär får endast radera bilagor som de själva har laddat upp.
+            case VET, OWNER -> {
+                // VET och OWNER får endast radera bilagor de själva har laddat upp.
                 if (attachment.getUploadedBy() == null ||
                         !attachment.getUploadedBy().getId().equals(user.getId())) {
                     throw new ForbiddenException("Du kan endast radera bilagor du själv har laddat upp.");
                 }
             }
-            case OWNER ->
-                    throw new ForbiddenException("Djurägare har inte behörighet att radera medicinsk dokumentation.");
         }
     }
 

@@ -66,4 +66,11 @@ public class CommentPolicy {
             throw new ForbiddenException("Du kan bara ta bort dina egna kommentarer");
         }
     }
+
+    public boolean isVisibleTo(User user, Comment comment) {
+        if (user.getRole() == Role.OWNER) {
+            return comment.getType() == CommentType.OWNER_MESSAGE;
+        }
+        return true;
+    }
 }
