@@ -24,7 +24,12 @@ VALUES
      'OWNER',
      true,
      NOW(), NOW())
-ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;
+ON CONFLICT (email) DO UPDATE SET
+                                  name = EXCLUDED.name,
+                                  password_hash = EXCLUDED.password_hash,
+                                  role = EXCLUDED.role,
+                                  is_active = EXCLUDED.is_active,
+                                  updated_at = NOW();
 
 -- Owner Lars
 INSERT INTO users (id, name, email, password_hash, role, is_active, created_at, updated_at)
@@ -36,7 +41,12 @@ VALUES
      'OWNER',
      true,
      NOW(), NOW())
-ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;
+ON CONFLICT (email) DO UPDATE SET
+                                  name = EXCLUDED.name,
+                                  password_hash = EXCLUDED.password_hash,
+                                  role = EXCLUDED.role,
+                                  is_active = EXCLUDED.is_active,
+                                  updated_at = NOW();
 
 -- Vet Erik
 INSERT INTO users (id, name, email, password_hash, role, clinic_id, is_active, created_at, updated_at)
@@ -49,7 +59,13 @@ VALUES
      'a1b2c3d4-e5f6-4a5b-8c9d-e0f1a2b3c4d5',
      true,
      NOW(), NOW())
-ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;
+ON CONFLICT (email) DO UPDATE SET
+                                  name = EXCLUDED.name,
+                                  password_hash = EXCLUDED.password_hash,
+                                  role = EXCLUDED.role,
+                                  clinic_id = EXCLUDED.clinic_id,
+                                  is_active = EXCLUDED.is_active,
+                                  updated_at = NOW();
 
 -- Admin Sara
 INSERT INTO users (id, name, email, password_hash, role, is_active, created_at, updated_at)
@@ -61,7 +77,12 @@ VALUES
      'ADMIN',
      true,
      NOW(), NOW())
-ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;
+ON CONFLICT (email) DO UPDATE SET
+                                  name = EXCLUDED.name,
+                                  password_hash = EXCLUDED.password_hash,
+                                  role = EXCLUDED.role,
+                                  is_active = EXCLUDED.is_active,
+                                  updated_at = NOW();
 
 -- Djur (Annas)
 INSERT INTO pet (id, owner_id, clinic_id, name, species, breed, created_at, updated_at)
