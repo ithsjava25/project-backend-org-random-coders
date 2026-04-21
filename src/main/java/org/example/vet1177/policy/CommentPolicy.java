@@ -68,7 +68,9 @@ public class CommentPolicy {
     }
 
     public boolean isVisibleTo(User user, Comment comment) {
-        return !(comment.getType() == CommentType.VET_CLINICAL_NOTE
-                && user.getRole() == Role.OWNER);
+        if (user.getRole() == Role.OWNER) {
+            return comment.getType() == CommentType.OWNER_MESSAGE;
+        }
+        return true;
     }
 }
