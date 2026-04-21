@@ -92,19 +92,25 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/clinics/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/clinics/**").hasRole("ADMIN")
 
-                        // ─── VET/ADMIN: ärende-status/tilldelning/stängning ───
+                        // ─── VET/ADMIN: journal-mutation (status/tilldelning/stängning/uppdatering) ───
+                        // Ordningen matters: mer specifika paths (*/close, */status, */assign-vet) före /* så
+                        // att Spring matchar dem innan den generella PUT /api/medical-records/* regeln.
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/close").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/assign-vet").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/status").hasAnyRole("VET", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/medical-records/*").hasAnyRole("VET", "ADMIN")
 
                         // ─── VET/ADMIN: klinik-vy ───
                         .requestMatchers(HttpMethod.GET, "/api/medical-records/clinic/**").hasAnyRole("VET", "ADMIN")
 
+                        // ─── VET/ADMIN: radera bilagor ───
+                        .requestMatchers(HttpMethod.DELETE, "/api/attachments/**").hasAnyRole("VET", "ADMIN")
+
                         // ─── Alla inloggade + policy finjusterar ───
-                        // Här ligger medvetet: skapa/uppdatera egna ärenden, se/skapa/radera egna bilagor,
-                        // kommentarer, aktivitetsloggar, /api/pets/**. URL-lagret kan inte uttrycka ägarskap
-                        // eller "samma klinik" — det gör policy. OWNER kan skapa/uppdatera egna ärenden;
-                        // kliniska anteckningar döljs via CommentType-filter i CommentService.
+                        // Här ligger medvetet: POST /api/medical-records (OWNER får skapa för eget djur),
+                        // POST /api/attachments/** (OWNER får ladda upp på egna öppna case), GET /api/medical-records,
+                        // GET /api/attachments, kommentarer, aktivitetsloggar, /api/pets/**. URL-lagret kan inte
+                        // uttrycka ägarskap eller "samma klinik" — det gör MedicalRecordPolicy/AttachmentPolicy.
                         .anyRequest().authenticated()
                 )
 
