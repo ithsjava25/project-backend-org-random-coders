@@ -6,14 +6,14 @@ import {
     Users,
     Stethoscope,
     LogOut,
-    PlusCircle
+    PlusCircle,
+    Hospital,
+    History as HistoryIcon
 } from 'lucide-react';
 
 const Layout = ({ children, userRole, userName, onLogout, onNavigate, currentView }) => {
 
-
     const getLinkStyle = (viewNames) => {
-
         const isActive = Array.isArray(viewNames)
             ? viewNames.includes(currentView)
             : currentView === viewNames;
@@ -25,6 +25,17 @@ const Layout = ({ children, userRole, userName, onLogout, onNavigate, currentVie
             : baseStyle + "text-slate-300 hover:bg-white/5 hover:text-white";
     };
 
+    // Hjälpfunktion för att hantera "Hem"-klick baserat på roll
+    const handleHomeClick = () => {
+        if (userRole === 'ROLE_VET') {
+            onNavigate('vet-dashboard');
+        } else if (userRole === 'ROLE_ADMIN') {
+            onNavigate('admin-dashboard');
+        } else {
+            onNavigate('dashboard');
+        }
+    };
+
     return (
         <div className="min-h-screen flex bg-slate-50">
             {/* SIDEBAR */}
@@ -32,7 +43,7 @@ const Layout = ({ children, userRole, userName, onLogout, onNavigate, currentVie
                 <div className="flex flex-col flex-grow pt-6 pb-4 overflow-y-auto">
 
                     {/* LOGO */}
-                    <div className="flex items-center gap-3 px-6 mb-10">
+                    <div className="flex items-center gap-3 px-6 mb-10 cursor-pointer" onClick={handleHomeClick}>
                         <div className="bg-vet-accent p-2 rounded-lg shadow-lg shadow-vet-accent/20 rotate-12">
                             <PawPrint size={20} className="text-white" />
                         </div>
@@ -49,15 +60,15 @@ const Layout = ({ children, userRole, userName, onLogout, onNavigate, currentVie
                     <nav className="flex-1 px-3 space-y-1">
                         {/* HEM */}
                         <button
-                            onClick={() => onNavigate('dashboard')}
-                            className={getLinkStyle('dashboard')}
+                            onClick={handleHomeClick}
+                            className={getLinkStyle(['dashboard', 'vet-dashboard', 'admin-dashboard'])}
                         >
-                            <Home size={18} className={currentView === 'dashboard' ? "text-vet-accent" : "group-hover:text-vet-accent"} />
+                            <Home size={18} className={['dashboard', 'vet-dashboard', 'admin-dashboard'].includes(currentView) ? "text-vet-accent" : "group-hover:text-vet-accent"} />
                             Hem
                         </button>
 
-                        {/* PATIENT-SEKTION (Djurägare & Vets) */}
-                        {(userRole?.includes('OWNER') || userRole?.includes('VET')) && (
+                        {/* PATIENT-SEKTION (ENDAST för Djurägare) */}
+                        {userRole === 'ROLE_OWNER' && (
                             <div className="mt-8 pt-4">
                                 <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">
                                     Patientportal
@@ -83,22 +94,46 @@ const Layout = ({ children, userRole, userName, onLogout, onNavigate, currentVie
 
                         {/* KLINIK-SEKTION (Endast Veterinär) */}
                         {userRole === 'ROLE_VET' && (
-                            <div className="mt-8 pt-4 border-t border-white/5">
-                                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">Klinikarbete</p>
-                                <button onClick={() => onNavigate('vet-dashboard')} className={getLinkStyle('vet-dashboard')}>
-                                    <Stethoscope size={18} />
-                                    Mina Patienter
+                            <div className="mt-8 pt-4">
+                                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3 border-t border-white/5 pt-4">Klinikarbete</p>
+
+                                <button
+                                    onClick={() => onNavigate('my-assigned-cases')}
+                                    className={getLinkStyle('my-assigned-cases')}
+                                >
+                                    <ClipboardList size={18} className={currentView === 'my-assigned-cases' ? "text-vet-accent" : "group-hover:text-vet-accent"} />
+                                    Mina ärenden
                                 </button>
+
                             </div>
                         )}
 
                         {/* ADMIN-SEKTION */}
                         {userRole === 'ROLE_ADMIN' && (
                             <div className="mt-8 pt-4 border-t border-white/5">
-                                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">Systemkontroll</p>
-                                <button onClick={() => onNavigate('admin-dashboard')} className={getLinkStyle('admin-dashboard')}>
-                                    <Users size={18} />
-                                    Användarlista
+                                <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">Administration</p>
+
+                                <button
+                                    onClick={() => onNavigate('admin-users')}
+                                    className={getLinkStyle('admin-users')}
+                                >
+                                    <Users size={18} className={currentView === 'admin-users' ? "text-vet-accent" : "group-hover:text-vet-accent"} />
+                                    Användare
+                                </button>
+
+                                <button
+                                    onClick={() => onNavigate('admin-clinics')}
+                                    className={getLinkStyle('admin-clinics')}
+                                >
+                                    <Hospital size={18} className={currentView === 'admin-clinics' ? "text-vet-accent" : "group-hover:text-vet-accent"} />
+                                    Kliniker
+                                </button>
+                                <button
+                                    onClick={() => onNavigate('admin-logs')}
+                                    className={getLinkStyle('admin-logs')}
+                                >
+                                    <HistoryIcon size={18} className={currentView === 'admin-logs' ? "text-vet-accent" : "group-hover:text-vet-accent"} />
+                                    Aktivitetslogg
                                 </button>
                             </div>
                         )}

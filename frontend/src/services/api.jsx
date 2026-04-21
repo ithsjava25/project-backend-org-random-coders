@@ -11,7 +11,6 @@ const api = axios.create({
 
 /**
  * REQUEST INTERCEPTOR
- * Bifogar JWT-token till alla anrop automatiskt
  */
 api.interceptors.request.use(
     (config) => {
@@ -26,7 +25,6 @@ api.interceptors.request.use(
 
 /**
  * RESPONSE INTERCEPTOR
- * Hanterar globala fel som 401 (ogiltig token)
  */
 api.interceptors.response.use(
     (response) => response,
@@ -34,12 +32,17 @@ api.interceptors.response.use(
         const isAuthEndpoint = error.config?.url?.includes('/auth/login') ||
             error.config?.url?.includes('/auth/register');
 
+        // 401: Token utgången
         if (error.response?.status === 401 && !isAuthEndpoint) {
-            console.warn("Sessionen har gått ut. Loggar ut...");
-
             localStorage.removeItem('token');
-
             window.dispatchEvent(new CustomEvent('auth:logout'));
+        }
+
+        // 403: Behörighet saknas (Visa toast/meddelande)
+        if (error.response?.status === 403) {
+            window.dispatchEvent(new CustomEvent('app:error', {
+                detail: "Du saknar behörighet för att utföra denna åtgärd."
+            }));
         }
 
         return Promise.reject(error);
@@ -53,6 +56,13 @@ export const authService = {
     register: (userData) => api.post('/auth/register', userData),
 };
 
+export const activityService = {
+    getAll: () => api.get('/activity-logs/all'),
+    getLogsByRecord: (recordId) => api.get(`/activity-logs/record/${recordId}`),
+    getByRecord: (recordId) => api.get(`/activity-logs/record/${recordId}`),
+};
+
+
 export const petService = {
     getAllPets: () => api.get('/pets'),
     getPetsByOwner: (ownerId) => api.get(`/pets/owner/${ownerId}`),
@@ -61,32 +71,27 @@ export const petService = {
 };
 
 export const medicalRecordService = {
-    // För att skapa nya ärenden i CreateCase
+    // Grundläggande hantering
     createRecord: (data) => api.post('/medical-records', data),
-
-    // För att uppdatera befintliga ärenden
-    updateRecord: (id, data) => api.put(`/medical-records/${id}`, data),
-
-    // För att städa upp om bilagor misslyckas
-    deleteRecord: (id) => api.delete(`/medical-records/${id}`),
-
-    // För att hämta listan till OwnerDashboard
-    getMyRecords: () => api.get('/medical-records/my-records'),
-
-    // För detaljvyn
     getRecordById: (id) => api.get(`/medical-records/${id}`),
+    update: (id, data) => api.put(`/medical-records/${id}`, data),
 
-    // För att uppdatera status (t.ex. stänga ärende)
+    // Listor för olika roller
+    getMyRecords: () => api.get('/medical-records/my-records'),
+    getRecordsByClinic: (clinicId) => api.get(`/medical-records/clinic/${clinicId}`),
+    getRecordsByClinicAndStatus: (clinicId, status) => api.get(`/medical-records/clinic/${clinicId}/status/${status}`),
+    getRecordsByPet: (petId) => api.get(`/medical-records/pet/${petId}`),
+
+    // Arbetsflöde (Veterinär)
+    assignVet: (id, vetId) => api.put(`/medical-records/${id}/assign-vet`, { vetId }),
     updateStatus: (id, status) => api.put(`/medical-records/${id}/status`, { status }),
     closeRecord: (id) => api.put(`/medical-records/${id}/close`),
+    getMyAssignedRecords: () => api.get('/medical-records/my-assigned'),
 };
 
 export const attachmentService = {
-    // Viktig: multipart/form-data för filuppladdning till S3
     upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
     }),
     getByRecord: (recordId) => api.get(`/attachments/record/${recordId}`),
     download: (id) => api.get(`/attachments/${id}/download`),
@@ -98,14 +103,28 @@ export const commentService = {
     createComment: (data) => api.post('/comments', data),
 };
 
-export const activityService = {
-    // Denna krävs av CaseDetail för att visa historik
-    getLogsByRecord: (recordId) => api.get(`/activity-logs/record/${recordId}`),
-};
 
 export const clinicService = {
     getAll: () => api.get('/clinics'),
     getById: (id) => api.get(`/clinics/${id}`),
+    create: (data) => api.post('/clinics', data),
+    update: (id, data) => api.put(`/clinics/${id}`, data),
+    delete: (id) => api.delete(`/clinics/${id}`),
+};
+
+export const userService = {
+    getAll: () => api.get('/users'),
+    getById: (id) => api.get(`/users/${id}`),
+    create: (data) => api.post('/users', data),
+    update: (id, data) => api.put(`/users/${id}`, data),
+    delete: (id) => api.delete(`/users/${id}`),
+    searchByEmail: (email) => api.get(`/users/search?email=${email}`),
+};
+
+export const vetService = {
+    create: (vetData) => api.post('/vets', vetData),
+    getAll: () => api.get('/vets'),
+    getById: (id) => api.get(`/vets/${id}`),
 };
 
 export default api;

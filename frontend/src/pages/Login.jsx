@@ -13,13 +13,11 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         setLoading(true);
 
         try {
-            // Behåll din original-anropsmetod: två argument
+
             const response = await authService.login(email, password);
 
-            // --- CodeRabbit fix: Säker extraktion ---
             let token = null;
 
-            // Vi kollar i prioritetsordning vad backend skickar
             if (response.data && typeof response.data.token === 'string') {
                 token = response.data.token;
             } else if (typeof response.data === 'string') {
@@ -28,7 +26,6 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                 token = response.data.accessToken;
             }
 
-            // Om vi inte fick en sträng-token, kasta fel istället för att spara [object Object]
             if (!token) {
                 throw new Error('Giltig inloggningsnyckel saknas i svaret från servern.');
             }

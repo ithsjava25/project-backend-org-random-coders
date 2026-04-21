@@ -7,6 +7,7 @@ import PetDetail from './pages/PetDetail';
 import CreateCase from './pages/CreateCase';
 import CaseDetail from './pages/CaseDetail';
 import AdminDashboard from './pages/AdminDashboard';
+import VetDashboard from './pages/VetDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { petService, medicalRecordService } from './services/api';
@@ -21,64 +22,73 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
 
-    // 1. Hämta användare från token vid start
+    // 1. Initialisering: Hämta användare från token vid start
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
+        const initializeAuth = () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
             try {
                 const decoded = jwtDecode(token);
                 const user = {
                     id: decoded.userId || decoded.id,
                     role: decoded.role,
                     email: decoded.sub,
-                    name: decoded.name
+                    name: decoded.name,
+                    // Hämtas nu direkt från den uppdaterade JWT-token!
+                    clinicId: decoded.clinicId
                 };
+
                 setCurrentUser(user);
-                fetchInitialData();
+
+                // Styr vy baserat på roll
+                if (user.role === 'ROLE_VET') {
+                    setCurrentView('vet-dashboard');
+                } else if (user.role === 'ROLE_ADMIN') {
+                    setCurrentView('admin-dashboard');
+                } else {
+                    setCurrentView('dashboard');
+                    fetchData(user); // Endast för OWNER
+                }
             } catch (error) {
-                console.error("Ogiltig token", error);
+                console.error("Ogiltig token vid start:", error);
                 handleLogout();
+            } finally {
+                setLoading(false);
             }
-        } else {
-            setLoading(false);
-        }
+        };
+
+        initializeAuth();
     }, []);
 
-    // 2. NYTT: Lyssna på globala utloggnings-events från API-interceptor (CodeRabbit fix)
+    // 2. Global utloggnings-lyssnare
     useEffect(() => {
         const handleGlobalLogout = () => {
             handleLogout();
-            // Vi ger användaren en förklaring till varför de blev utloggade
             alert("Din session har gått ut. Vänligen logga in igen.");
         };
 
         window.addEventListener('auth:logout', handleGlobalLogout);
-
-        return () => {
-            window.removeEventListener('auth:logout', handleGlobalLogout);
-        };
+        return () => window.removeEventListener('auth:logout', handleGlobalLogout);
     }, []);
 
-    const fetchInitialData = async () => {
-        await fetchData();
-    };
+    // 3. Datahämtning: Endast för OWNER-rollen
+    const fetchData = async (user = currentUser) => {
+        if (!user || user.role !== 'ROLE_OWNER') return;
 
-    const fetchData = async () => {
         setLoading(true);
         try {
-            const petRes = await petService.getAllPets();
+            const [petRes, recordRes] = await Promise.all([
+                petService.getAllPets(),
+                medicalRecordService.getMyRecords()
+            ]);
             setMyPets(petRes.data);
-        } catch (error) {
-            console.error("Kunde inte hämta djur:", error);
-            setMyPets([]);
-        }
-
-        try {
-            const recordRes = await medicalRecordService.getMyRecords();
             setMyRecords(recordRes.data);
         } catch (error) {
-            console.error("Kunde inte hämta journaler:", error);
-            setMyRecords([]);
+            console.error("Kunde inte hämta personlig data:", error);
         } finally {
             setLoading(false);
         }
@@ -87,65 +97,103 @@ function App() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setCurrentUser(null);
-        setCurrentView('dashboard'); // Reset till standardvy för inloggad profil
+        setCurrentView('dashboard');
         setIsRegistering(false);
+        setMyPets([]);
+        setMyRecords([]);
     };
 
     const goBackToDashboard = () => {
         setSelectedPet(null);
         setSelectedRecord(null);
-        setCurrentView('dashboard');
+        if (currentUser?.role === 'ROLE_VET') {
+            setCurrentView('vet-dashboard');
+        } else if (currentUser?.role === 'ROLE_ADMIN') {
+            setCurrentView('admin-dashboard');
+        } else {
+            setCurrentView('dashboard');
+        }
     };
 
     const renderAuthenticatedContent = () => {
-        if (loading && myPets.length === 0) return (
+        if (loading) return (
             <div className="flex flex-col items-center justify-center p-20 text-slate-400">
                 <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-                <p className="italic">Laddar din information...</p>
+                <p className="italic text-sm font-bold uppercase tracking-widest">Synkroniserar data...</p>
             </div>
         );
 
+        // Hjälpfunktion för att hämta och öppna en journal
+        const handleCaseClick = async (record) => {
+            try {
+                // Vi hämtar den fullständiga journalen (inkl. beskrivning etc) från servern
+                const res = await medicalRecordService.getRecordById(record.id);
+                setSelectedRecord(res.data);
+                setCurrentView('case-detail');
+            } catch (err) {
+                console.error("Kunde inte öppna journalen:", err);
+                alert("Kunde inte öppna journalen. Kontrollera din anslutning.");
+            }
+        };
+
+        // I din renderAuthenticatedContent i App.jsx
         if (currentUser?.role === 'ROLE_ADMIN') {
-            return <AdminDashboard />;
+            // Här styr vi exakt vad dashboarden ska visa baserat på currentView
+            let tabToOpen = 'OVERVIEW'; // Default
+
+            if (currentView === 'admin-dashboard') {
+                tabToOpen = 'OVERVIEW'; // Hem-knappen visar allt
+            } else if (currentView === 'admin-users') {
+                tabToOpen = 'USERS';    // Användarknappen döljer stats
+            } else if (currentView === 'admin-clinics') {
+                tabToOpen = 'CLINICS';  // Klinikknappen döljer stats
+            } else if (currentView === 'admin-logs') {
+                tabToOpen = 'LOGS';     // Direktlänk: döljer stats, visar loggar
+            }
+
+            return (
+                <AdminDashboard
+                    userName={currentUser.name}
+                    initialTab={tabToOpen}
+                />
+            );
         }
 
         switch (currentView) {
+            case 'vet-dashboard':
+                return (
+                    <VetDashboard
+                        userName={currentUser?.name}
+                        clinicId={currentUser?.clinicId}
+                        currentUserId={currentUser?.id}
+                        onCaseClick={handleCaseClick}
+                    />
+                );
+
+            case 'my-assigned-cases':
+                return (
+                    <VetDashboard
+                        userName={currentUser?.name}
+                        clinicId={currentUser?.clinicId}
+                        currentUserId={currentUser?.id}
+                        isPersonalView={true}
+                        onCaseClick={handleCaseClick}
+                    />
+                );
+
             case 'add-pet':
                 return <PetForm onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
 
-            case 'pet-detail': {
-                const filteredRecords = myRecords.filter(r => {
-                    const recordPetId = r.petId || (r.pet && r.pet.id);
-                    if (recordPetId && selectedPet?.id && String(recordPetId) === String(selectedPet.id)) {
-                        return true;
-                    }
-
-                    if (r.petName && selectedPet?.name &&
-                        r.petName.toLowerCase() === selectedPet.name.toLowerCase()) {
-                        return true;
-                    }
-
-                    return false;
-                });
-
+            case 'pet-detail':
                 return (
                     <PetDetail
                         pet={selectedPet}
-                        petRecords={filteredRecords}
+                        petRecords={myRecords.filter(r => (r.petId || r.pet?.id) === selectedPet?.id)}
                         onBack={goBackToDashboard}
                         onRegisterCase={(pet) => { setSelectedPet(pet); setCurrentView('create-case'); }}
-                        onCaseClick={async (record) => {
-                            try {
-                                const res = await medicalRecordService.getRecordById(record.id);
-                                setSelectedRecord(res.data);
-                                setCurrentView('case-detail');
-                            } catch (err) {
-                                console.error("Kunde inte hämta journal", err);
-                            }
-                        }}
+                        onCaseClick={handleCaseClick}
                     />
                 );
-            }
 
             case 'create-case':
                 return <CreateCase pets={myPets} preSelectedPet={selectedPet} existingCase={selectedRecord} onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
@@ -154,8 +202,8 @@ function App() {
                 return (
                     <CaseDetail
                         caseData={selectedRecord}
-                        currentUser={currentUser}
                         currentUserId={currentUser?.id}
+                        userRole={currentUser?.role} // VIKTIGT: Skickar med rollen för veterinär-panelen
                         onBack={goBackToDashboard}
                         onGoToPet={(petId) => {
                             const pet = myPets.find(p => p.id === petId);
@@ -167,31 +215,22 @@ function App() {
                     />
                 );
 
-            case 'vet-dashboard':
-                return (
-                    <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-slate-200 shadow-sm text-center">
-                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                        </div>
-                        <h2 className="text-2xl font-bold text-slate-800">Veterinärportal</h2>
-                        <p className="text-slate-500 mt-2 max-w-md">
-                            Denna vy är under utveckling och kommer snart att innehålla verktyg för att hantera inkommande ärenden.
-                        </p>
-                        <button
-                            onClick={() => setCurrentView('dashboard')}
-                            className="mt-6 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
-                        >
-                            Tillbaka till min översikt
-                        </button>
-                    </div>
-                );
-
             case 'dashboard':
             case 'my-pets':
             case 'my-cases':
             default:
+                // Om en veterinär hamnar på en odefinierad vy, skicka till klinikens dashboard
+                if (currentUser?.role === 'ROLE_VET') {
+                    return (
+                        <VetDashboard
+                            userName={currentUser?.name}
+                            clinicId={currentUser?.clinicId}
+                            currentUserId={currentUser?.id}
+                            onCaseClick={handleCaseClick}
+                        />
+                    );
+                }
+
                 return (
                     <OwnerDashboard
                         userName={currentUser?.name}
@@ -201,15 +240,7 @@ function App() {
                         onAddPet={() => setCurrentView('add-pet')}
                         onPetClick={(pet) => { setSelectedPet(pet); setCurrentView('pet-detail'); }}
                         onRegisterCase={() => { setSelectedRecord(null); setCurrentView('create-case'); }}
-                        onCaseClick={async (record) => {
-                            try {
-                                const res = await medicalRecordService.getRecordById(record.id);
-                                setSelectedRecord(res.data);
-                                setCurrentView('case-detail');
-                            } catch (err) {
-                                alert("Kunde inte öppna journalen just nu.");
-                            }
-                        }}
+                        onCaseClick={handleCaseClick}
                     />
                 );
         }
@@ -235,7 +266,7 @@ function App() {
             onNavigate={(view) => setCurrentView(view)}
             currentView={currentView}
         >
-            <div className="container mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto">
                 {renderAuthenticatedContent()}
             </div>
         </Layout>
