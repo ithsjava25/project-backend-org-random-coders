@@ -20,12 +20,13 @@ const VetDashboard = ({ userName, clinicId, currentUserId, onCaseClick, isPerson
     const fetchRecords = useCallback(async () => {
         if (!isPersonalView && !clinicId) {
             console.warn("Väntar på clinicId för klinikvy...");
+            setRecords([]);
+            setLoading(false);
             return;
         }
 
         setLoading(true);
         try {
-            // Välj API-anrop baserat på om vi vill se "Mina ärenden" eller hela kliniken
             const res = isPersonalView
                 ? await medicalRecordService.getMyAssignedRecords()
                 : await medicalRecordService.getRecordsByClinic(clinicId);
