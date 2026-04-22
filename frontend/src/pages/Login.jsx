@@ -45,7 +45,10 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
             onLoginSuccess();
 
         } catch (err) {
-            console.error("Login error:", err);
+            console.error("Login error:", {
+                status: err.response?.status,
+                message: err.message || "An error occurred during login"
+            });
             const errorMsg = err.response?.data?.message || 'Fel e-post eller lösenord. Försök igen.';
             setError(errorMsg);
         } finally {

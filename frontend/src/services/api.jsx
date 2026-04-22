@@ -14,7 +14,7 @@ const api = axios.create({
  */
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -35,6 +35,7 @@ api.interceptors.response.use(
         // 401: Token utgången
         if (error.response?.status === 401 && !isAuthEndpoint) {
             localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             window.dispatchEvent(new CustomEvent('auth:logout'));
         }
 

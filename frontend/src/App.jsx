@@ -25,7 +25,7 @@ function App() {
     // 1. Initialisering: Hämta användare från token vid start
     useEffect(() => {
         const initializeAuth = async () => {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
             if (!token) {
                 setLoading(false);
                 return;
@@ -98,6 +98,7 @@ function App() {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
+        sessionStorage.removeItem('token')
         setCurrentUser(null);
         setCurrentView('dashboard');
         setIsRegistering(false);
