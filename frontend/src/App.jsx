@@ -24,7 +24,7 @@ function App() {
 
     // 1. Initialisering: Hämta användare från token vid start
     useEffect(() => {
-        const initializeAuth = () => {
+        const initializeAuth = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
                 setLoading(false);
@@ -38,7 +38,6 @@ function App() {
                     role: decoded.role,
                     email: decoded.sub,
                     name: decoded.name,
-                    // Hämtas nu direkt från den uppdaterade JWT-token!
                     clinicId: decoded.clinicId
                 };
 
@@ -47,16 +46,19 @@ function App() {
                 // Styr vy baserat på roll
                 if (user.role === 'ROLE_VET') {
                     setCurrentView('vet-dashboard');
+                    setLoading(false);
                 } else if (user.role === 'ROLE_ADMIN') {
                     setCurrentView('admin-dashboard');
+                    setLoading(false);
                 } else {
                     setCurrentView('dashboard');
-                    fetchData(user); // Endast för OWNER
+                    await fetchData(user); // Endast för OWNER
+                    setLoading(false);
+
                 }
             } catch (error) {
                 console.error("Ogiltig token vid start:", error);
                 handleLogout();
-            } finally {
                 setLoading(false);
             }
         };
