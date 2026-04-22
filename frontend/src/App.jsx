@@ -210,11 +210,13 @@ function App() {
                         currentUserId={currentUser?.id}
                         userRole={currentUser?.role} // VIKTIGT: Skickar med rollen för veterinär-panelen
                         onBack={goBackToDashboard}
-                        onGoToPet={(petId) => {
-                            const pet = myPets.find(p => p.id === petId);
-                            if (pet) {
-                                setSelectedPet(pet);
+                        onGoToPet={async (petId) => {
+                            try {
+                                const res = await petService.getPetById(petId);
+                                setSelectedPet(res.data);
                                 setCurrentView('pet-detail');
+                            } catch (e) {
+                                alert("Kunde inte hämta djurets profil.");
                             }
                         }}
                     />
