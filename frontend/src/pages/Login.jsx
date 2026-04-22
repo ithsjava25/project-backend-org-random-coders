@@ -4,8 +4,14 @@ import { authService } from '../services/api';
 const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false); // NY: State för checkbox
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const handleForgotPassword = () => {
+        // Här kan du antingen navigera till en ny sida eller visa en alert
+        alert("Funktionen för lösenordsåterställning kommer snart. Kontakta din administratör så länge.");
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -13,11 +19,9 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         setLoading(true);
 
         try {
-
             const response = await authService.login(email, password);
 
             let token = null;
-
             if (response.data && typeof response.data.token === 'string') {
                 token = response.data.token;
             } else if (typeof response.data === 'string') {
@@ -30,13 +34,18 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                 throw new Error('Giltig inloggningsnyckel saknas i svaret från servern.');
             }
 
-            localStorage.setItem('token', token);
+
+            if (rememberMe) {
+                localStorage.setItem('token', token);
+            } else {
+                sessionStorage.setItem('token', token);
+                localStorage.removeItem('token');
+            }
+
             onLoginSuccess();
-            // ----------------------------------------
 
         } catch (err) {
             console.error("Login error:", err);
-            // Visa det specifika felet från servern om det finns, annars ditt standardmeddelande
             const errorMsg = err.response?.data?.message || 'Fel e-post eller lösenord. Försök igen.';
             setError(errorMsg);
         } finally {
@@ -55,18 +64,18 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
             {/* Kort sektion */}
             <div className="bg-white rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                <div className="p-10 md:p-12">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight">Logga in</h2>
+                <div className="p-10 md:p-12 text-left">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-8 tracking-tight text-left">Logga in</h2>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
-                            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold uppercase tracking-wide border border-red-100">
+                            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold uppercase tracking-wide border border-red-100 text-left">
                                 {error}
                             </div>
                         )}
 
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-left">
                                 E-post eller användarnamn
                             </label>
                             <input
@@ -80,7 +89,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-left">
                                 Lösenord
                             </label>
                             <input
@@ -94,11 +103,22 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                         </div>
 
                         <div className="flex items-center justify-between px-1 pt-2">
+                            {/* FIX: Checkbox nu kopplad till state */}
                             <label className="flex items-center text-xs font-bold text-slate-400 cursor-pointer">
-                                <input type="checkbox" className="mr-2 rounded border-slate-300 text-[#003f5a] focus:ring-[#003f5a]" />
+                                <input
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="mr-2 rounded border-slate-300 text-[#003f5a] focus:ring-[#003f5a]"
+                                />
                                 Kom ihåg mig
                             </label>
-                            <button type="button" className="text-xs font-bold text-[#0ea5e9] hover:underline bg-transparent border-none p-0 cursor-pointer">
+                            {/* FIX: Knapp nu kopplad till handler */}
+                            <button
+                                type="button"
+                                onClick={handleForgotPassword}
+                                className="text-xs font-bold text-[#0ea5e9] hover:underline bg-transparent border-none p-0 cursor-pointer"
+                            >
                                 Glömt lösenord?
                             </button>
                         </div>
