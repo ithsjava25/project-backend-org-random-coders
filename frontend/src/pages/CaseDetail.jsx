@@ -23,12 +23,12 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
     const isClosed = localStatus === 'CLOSED'; // Helper för att förenkla checkar
 
     useEffect(() => {
-        if (caseData && !isEditing) {
+        if (caseData) {
             setLocalStatus(caseData.status);
             setEditedTitle(caseData.title || '');
             setEditedDescription(caseData.description || '');
         }
-    }, [caseData, isEditing]);
+    }, [caseData?.id]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,15 +65,23 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
         fetchAllData();
     }, [caseData?.id]);
 
-    const handleStatusChange = async (newStatus) => {
+    const refetchActivityLog = async () => {
         try {
-            await medicalRecordService.updateStatus(caseData.id, newStatus);
-            setLocalStatus(newStatus);
             const logsRes = await activityService.getLogsByRecord(caseData.id);
             setTimeline(prev => [
                 ...prev.filter(i => i.type !== 'ACTIVITY'),
                 ...logsRes.data.map(l => ({ ...l, type: 'ACTIVITY' }))
             ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        } catch (error) {
+            console.error("Kunde inte uppdatera aktivitetsloggen:", error);
+        }
+    };
+
+    const handleStatusChange = async (newStatus) => {
+        try {
+            await medicalRecordService.updateStatus(caseData.id, newStatus);
+            setLocalStatus(newStatus);
+            await refetchActivityLog();
         } catch (error) {
             alert("Kunde inte uppdatera status.");
         }
@@ -86,6 +94,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             await medicalRecordService.closeRecord(caseData.id, {
                 finalNote: `SLUTGILTIG NOTERING: ${clinicalNote}`
             });
+            await refetchActivityLog();
             setShowCloseModal(false);
             onBack();
         } catch (error) {
@@ -102,6 +111,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             });
             setTimeline(prev => [...prev, { ...res.data, type: 'COMMENT' }].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
             setNewMessage('');
+            await refetchActivityLog();
         } catch (error) {
             alert("Kunde inte skicka meddelande.");
         }
@@ -122,6 +132,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             setIsUploading(true);
             const res = await attachmentService.upload(caseData.id, formData);
             setAttachments(prev => [...prev, res.data]);
+            await refetchActivityLog();
         } catch (error) {
             alert("Kunde inte ladda upp filen.");
         } finally {
@@ -140,6 +151,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
         try {
             await attachmentService.delete(id);
             setAttachments(prev => prev.filter(a => a.id !== id));
+            await refetchActivityLog();
         } catch (error) {
             alert("Kunde inte radera filen.");
         }
@@ -152,12 +164,12 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                 title: editedTitle,
                 description: editedDescription
             });
+            if (res?.data) {
+                setEditedTitle(res.data.title ?? editedTitle);
+                setEditedDescription(res.data.description ?? editedDescription);
+            }
             setIsEditing(false);
-            const logsRes = await activityService.getLogsByRecord(caseData.id);
-            setTimeline(prev => [
-                ...prev.filter(i => i.type !== 'ACTIVITY'),
-                ...logsRes.data.map(l => ({ ...l, type: 'ACTIVITY' }))
-            ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+            await refetchActivityLog();
         } catch (error) {
             alert("Kunde inte spara ändringarna.");
         }
@@ -217,7 +229,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                         {caseData.petName?.charAt(0) || "#"}
                     </div>
                     <div className="text-left">
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-left">{caseData.title}</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-left">{editedTitle}</h1>
                         <div className="flex items-center gap-3 mt-2 text-left">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border italic ${statusConfig.color}`}>
                                 {statusConfig.label}
@@ -255,14 +267,14 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                                     <textarea value={editedDescription} onChange={(e) => setEditedDescription(e.target.value)} className="w-full h-64 bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm leading-relaxed outline-none focus:border-vet-accent font-medium italic" />
                                 </div>
                                 <div className="flex justify-end gap-3">
-                                    <button onClick={() => { setIsEditing(false); }} className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avbryt</button>
+                                    <button onClick={() => { setIsEditing(false); setEditedTitle(caseData.title || ''); setEditedDescription(caseData.description || ''); }} className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Avbryt</button>
                                     <button onClick={handleSaveRecord} className="px-6 py-2 bg-vet-navy text-white text-[10px] font-bold uppercase tracking-widest rounded-lg">Spara</button>
                                 </div>
                             </div>
                         ) : (
                             <div className="text-left">
-                                <h3 className="text-lg font-bold text-slate-800 mb-2 italic text-left">{caseData.title}</h3>
-                                <p className="text-slate-600 leading-relaxed font-medium italic whitespace-pre-wrap text-left">{caseData.description}</p>
+                                <h3 className="text-lg font-bold text-slate-800 mb-2 italic text-left">{editedTitle}</h3>
+                                <p className="text-slate-600 leading-relaxed font-medium italic whitespace-pre-wrap text-left">{editedDescription}</p>
                             </div>
                         )}
                     </section>
