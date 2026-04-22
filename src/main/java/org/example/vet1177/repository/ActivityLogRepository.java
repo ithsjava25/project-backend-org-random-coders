@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface ActivityLogRepository extends JpaRepository<ActivityLog, UUID> {
 
-    List<ActivityLog> findByMedicalRecordIdOrderByCreatedAtDesc(UUID medicalRecordId);
+    List<ActivityLog> findByMedicalRecordIdOrderByCreatedAtAsc(UUID medicalRecordId);
 
     // Ny metod - Hämta alla
     List<ActivityLog> findAllByOrderByCreatedAtDesc();
