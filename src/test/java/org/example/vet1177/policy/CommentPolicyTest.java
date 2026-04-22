@@ -230,14 +230,15 @@ class CommentPolicyTest {
     }
 
     // -------------------------------------------------------------------------
-    // isVisibleTo — VET_CLINICAL_NOTE döljs för OWNER
+    // isVisibleTo — OWNER ser både VET_CLINICAL_NOTE och OWNER_MESSAGE på eget ärende
+    // (1177-modellen). Åtkomsten till ärendet gatas i canView.
     // -------------------------------------------------------------------------
 
     @Test
-    void isVisibleTo_ownerAndClinicalNote_shouldReturnFalse() {
+    void isVisibleTo_ownerAndClinicalNote_shouldReturnTrue() {
         comment.setType(CommentType.VET_CLINICAL_NOTE);
 
-        assertThat(policy.isVisibleTo(owner, comment)).isFalse();
+        assertThat(policy.isVisibleTo(owner, comment)).isTrue();
     }
 
     @Test
@@ -262,10 +263,10 @@ class CommentPolicyTest {
     }
 
     @Test
-    void isVisibleTo_ownerAndNullType_shouldReturnFalse() {
+    void isVisibleTo_ownerAndNullType_shouldReturnTrue() {
         comment.setType(null);
 
-        assertThat(policy.isVisibleTo(owner, comment)).isFalse();
+        assertThat(policy.isVisibleTo(owner, comment)).isTrue();
     }
 
     // -------------------------------------------------------------------------
