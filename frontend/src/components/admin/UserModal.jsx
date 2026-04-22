@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Lock, Shield, Hospital, Award, Loader2, PlusCircle } from 'lucide-react';
+import React, { useState, useEffect, useId } from 'react';
+import { X, User, Mail, Lock, Shield, Hospital, Award, Loader2 } from 'lucide-react';
 import { vetService } from '../../services/api';
 
 const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }) => {
@@ -15,10 +15,28 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
         bookingInfo: ''
     });
 
+    // Unika ID:n för tillgänglighet
+    const modalTitleId = useId();
+    const nameId = useId();
+    const emailId = useId();
+    const passwordId = useId();
+    const roleId = useId();
+    const clinicIdSelect = useId();
+    const licenseIdInput = useId();
+    const specId = useId();
+
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
-                setFormData({ ...initialData, password: '' });
+                // Om vi redigerar en veterinär, se till att fälten från vetRecord följer med in i formData
+                setFormData({
+                    ...initialData,
+                    password: '',
+                    licenseId: initialData.vetRecord?.licenseId || '',
+                    specialization: initialData.vetRecord?.specialization || '',
+                    bookingInfo: initialData.vetRecord?.bookingInfo || '',
+                    clinicId: initialData.vetRecord?.clinicId || ''
+                });
             } else {
                 setFormData({
                     name: '', email: '', password: '',
@@ -37,20 +55,33 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
         e.preventDefault();
         setLoading(true);
         try {
-            // 1. Spara användaren (returnerar response med ID)
+            // 1. Spara/Uppdatera användaren
             const response = await onSave(formData);
 
-            // 2. Om veterinär, spara detaljer (använd ID från response)
-            if (isVet && response?.data?.id) {
-                await vetService.create({
-                    userId: response.data.id,
+            // 2. Hantera Veterinär-detaljer (Om rollen är VET)
+            if (isVet) {
+                const userId = response?.data?.id || initialData?.id;
+
+                const vetPayload = {
+                    userId: userId,
+                    clinicId: formData.clinicId,
                     licenseId: formData.licenseId,
                     specialization: formData.specialization,
                     bookingInfo: formData.bookingInfo
-                });
+                };
+
+                // CodeRabbit Fix: Kolla om det redan finns en veterinärpost (Edit vs Create)
+                const existingVetId = initialData?.vetRecord?.id;
+
+                if (existingVetId) {
+                    await vetService.update(existingVetId, vetPayload);
+                } else if (userId) {
+                    await vetService.create(vetPayload);
+                }
             }
             onClose();
         } catch (err) {
+            console.error("Save error:", err);
             alert(err.response?.data?.message || "Ett fel uppstod vid sparandet.");
         } finally {
             setLoading(false);
@@ -59,19 +90,27 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 max-h-[95vh] flex flex-col">
-
+            <div
+                className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 max-h-[95vh] flex flex-col"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={modalTitleId}
+            >
                 {/* HEADER */}
                 <div className="px-8 pt-8 pb-4 flex justify-between items-center">
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900 italic tracking-tight text-left">
+                        <h2 id={modalTitleId} className="text-2xl font-black text-slate-900 italic tracking-tight text-left">
                             {initialData ? 'Redigera Profil' : 'Ny Användare'}
                         </h2>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 text-left">
                             {initialData ? 'Uppdatera behörigheter' : 'Registrera ny systemanvändare'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"
+                        aria-label="Stäng modal"
+                    >
                         <X size={20} />
                     </button>
                 </div>
@@ -79,10 +118,11 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                 <form onSubmit={handleSubmit} className="p-8 space-y-5 overflow-y-auto custom-scrollbar text-left">
                     {/* NAMN */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Namn</label>
+                        <label htmlFor={nameId} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Namn</label>
                         <div className="relative">
-                            <User className="absolute left-4 top-3 text-slate-400" size={18} />
+                            <User className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                             <input
+                                id={nameId}
                                 required
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700"
                                 placeholder="Namn Namnsson"
@@ -94,10 +134,11 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
 
                     {/* E-POST */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">E-postadress</label>
+                        <label htmlFor={emailId} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">E-postadress</label>
                         <div className="relative">
-                            <Mail className="absolute left-4 top-3 text-slate-400" size={18} />
+                            <Mail className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                             <input
+                                id={emailId}
                                 required
                                 type="email"
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700"
@@ -108,13 +149,14 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                         </div>
                     </div>
 
-                    {/* LÖSENORD (Endast vid skapande) */}
+                    {/* LÖSENORD */}
                     {!initialData && (
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Lösenord</label>
+                            <label htmlFor={passwordId} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Lösenord</label>
                             <div className="relative">
-                                <Lock className="absolute left-4 top-3 text-slate-400" size={18} />
+                                <Lock className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                                 <input
+                                    id={passwordId}
                                     required
                                     type="password"
                                     className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700"
@@ -128,10 +170,11 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
 
                     {/* ROLL */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Systemroll</label>
+                        <label htmlFor={roleId} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Systemroll</label>
                         <div className="relative">
-                            <Shield className="absolute left-4 top-3 text-slate-400" size={18} />
+                            <Shield className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                             <select
+                                id={roleId}
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700 appearance-none bg-white"
                                 value={formData.role}
                                 onChange={(e) => setFormData({...formData, role: e.target.value})}
@@ -146,10 +189,11 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                     {/* KLINIK (Om veterinär) */}
                     {isVet && (
                         <div className="space-y-1.5 animate-in slide-in-from-top-2">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Ansluten Klinik</label>
+                            <label htmlFor={clinicIdSelect} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic block text-left">Ansluten Klinik</label>
                             <div className="relative">
-                                <Hospital className="absolute left-4 top-3 text-slate-400" size={18} />
+                                <Hospital className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                                 <select
+                                    id={clinicIdSelect}
                                     required
                                     className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700 appearance-none bg-white"
                                     value={formData.clinicId}
@@ -168,10 +212,11 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                     {isVet && (
                         <div className="pt-4 space-y-4 border-t border-slate-100">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1 italic block text-left">Legitimations-ID</label>
+                                <label htmlFor={licenseIdInput} className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1 italic block text-left">Legitimations-ID</label>
                                 <div className="relative">
-                                    <Award className="absolute left-4 top-3 text-blue-400" size={18} />
+                                    <Award className="absolute left-4 top-3 text-blue-400" size={18} aria-hidden="true" />
                                     <input
+                                        id={licenseIdInput}
                                         required
                                         className="w-full pl-11 pr-4 py-3 bg-blue-50/30 border border-blue-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
                                         placeholder="VET-123456"
@@ -181,8 +226,9 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1 italic block text-left">Specialisering</label>
+                                <label htmlFor={specId} className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1 italic block text-left">Specialisering</label>
                                 <input
+                                    id={specId}
                                     className="w-full px-4 py-3 bg-blue-50/30 border border-blue-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-slate-700"
                                     placeholder="T.ex. Kirurgi"
                                     value={formData.specialization}
