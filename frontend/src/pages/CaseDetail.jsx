@@ -160,10 +160,14 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
     const handleSaveRecord = async () => {
         if (isClosed) return;
         try {
-            await medicalRecordService.update(caseData.id, {
+            const res = await medicalRecordService.update(caseData.id, {
                 title: editedTitle,
                 description: editedDescription
             });
+            if (res?.data) {
+                setEditedTitle(res.data.title ?? editedTitle);
+                setEditedDescription(res.data.description ?? editedDescription);
+            }
             setIsEditing(false);
             await refetchActivityLog();
         } catch (error) {
@@ -225,7 +229,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                         {caseData.petName?.charAt(0) || "#"}
                     </div>
                     <div className="text-left">
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-left">{caseData.title}</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-left">{editedTitle}</h1>
                         <div className="flex items-center gap-3 mt-2 text-left">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border italic ${statusConfig.color}`}>
                                 {statusConfig.label}
