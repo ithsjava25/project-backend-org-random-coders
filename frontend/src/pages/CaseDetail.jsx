@@ -52,7 +52,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                 const combinedTimeline = [
                     ...commentsRes.data.map(c => ({ ...c, type: 'COMMENT' })),
                     ...logsRes.data.map(l => ({ ...l, type: 'ACTIVITY' }))
-                ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
                 setTimeline(combinedTimeline);
                 setAttachments(attachRes.data);
@@ -73,7 +73,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             setTimeline(prev => [
                 ...prev.filter(i => i.type !== 'ACTIVITY'),
                 ...logsRes.data.map(l => ({ ...l, type: 'ACTIVITY' }))
-            ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
+            ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
         } catch (error) {
             alert("Kunde inte uppdatera status.");
         }
@@ -100,7 +100,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                 recordId: caseData.id,
                 body: newMessage
             });
-            setTimeline(prev => [...prev, { ...res.data, type: 'COMMENT' }]);
+            setTimeline(prev => [...prev, { ...res.data, type: 'COMMENT' }].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
             setNewMessage('');
         } catch (error) {
             alert("Kunde inte skicka meddelande.");
@@ -157,7 +157,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             setTimeline(prev => [
                 ...prev.filter(i => i.type !== 'ACTIVITY'),
                 ...logsRes.data.map(l => ({ ...l, type: 'ACTIVITY' }))
-            ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
+            ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
         } catch (error) {
             alert("Kunde inte spara ändringarna.");
         }
