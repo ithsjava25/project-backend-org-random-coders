@@ -101,6 +101,8 @@ function App() {
         setIsRegistering(false);
         setMyPets([]);
         setMyRecords([]);
+        setSelectedPet(null);
+        setSelectedRecord(null);
     };
 
     const goBackToDashboard = () => {
