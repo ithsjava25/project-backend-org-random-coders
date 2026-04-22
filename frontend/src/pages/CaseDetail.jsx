@@ -82,16 +82,21 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
 
     const handleCloseCase = async () => {
         if (!clinicalNote.trim()) return alert("Vänligen skriv en slutnotering.");
+
+        setLoading(true);
         try {
-            await commentService.createComment({
-                recordId: caseData.id,
-                body: `SLUTGILTIG NOTERING: ${clinicalNote}`
+            await medicalRecordService.closeRecord(caseData.id, {
+                finalNote: `SLUTGILTIG NOTERING: ${clinicalNote}`
             });
-            await medicalRecordService.closeRecord(caseData.id);
+
             setShowCloseModal(false);
             onBack();
+
         } catch (error) {
-            alert("Ett fel uppstod när ärendet skulle stängas.");
+            console.error("Stängningsfel:", error);
+            alert("Kunde inte stänga ärendet. Vänligen kontrollera anslutningen och försök igen.");
+        } finally {
+            setLoading(false);
         }
     };
 
