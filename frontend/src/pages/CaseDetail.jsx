@@ -13,10 +13,19 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
     // States för veterinär-logik och status
     const [showCloseModal, setShowCloseModal] = useState(false);
     const [clinicalNote, setClinicalNote] = useState('');
+
     const [localStatus, setLocalStatus] = useState(caseData?.status);
     const [isEditing, setIsEditing] = useState(false);
     const [editedDescription, setEditedDescription] = useState(caseData?.description || '');
     const [editedTitle, setEditedTitle] = useState(caseData?.title || '');
+
+    useEffect(() => {
+        if (caseData && !isEditing) {
+            setLocalStatus(caseData.status);
+            setEditedTitle(caseData.title || '');
+            setEditedDescription(caseData.description || '');
+        }
+    }, [caseData, isEditing]);
 
     const messagesEndRef = useRef(null);
     const statusConfig = STATUS_MAP[localStatus] || { label: localStatus, color: 'bg-slate-50 text-slate-500 border-slate-100' };
@@ -142,7 +151,6 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
 
             setIsEditing(false);
 
-            // Uppdatera tidslinjen så vi ser att en ändring skett
             const logsRes = await activityService.getLogsByRecord(caseData.id);
             setTimeline(prev => [
                 ...prev.filter(i => i.type !== 'ACTIVITY'),
@@ -157,7 +165,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
     if (!caseData || loading) return <div className="p-10 text-center italic text-slate-400">Laddar journal...</div>;
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
+        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 pb-20 text-left">
             {/* NAVIGATION */}
             <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-vet-navy font-bold text-[10px] uppercase tracking-[0.2em] transition group">
                 <span className="group-hover:-translate-x-1 transition-transform">←</span> Tillbaka till listan
@@ -166,7 +174,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             {/* VETERINÄRPANEL */}
             {userRole === 'ROLE_VET' && localStatus !== 'CLOSED' && (
                 <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-2xl border border-slate-800">
-                    <div className="flex flex-wrap items-center justify-between gap-6">
+                    <div className="flex flex-wrap items-center justify-between gap-6 text-left">
                         <div className="flex items-center gap-4">
                             <div className="bg-vet-accent p-3 rounded-xl rotate-3 shadow-lg shadow-vet-accent/20">
                                 <Stethoscope size={24} className="text-white" />
@@ -202,7 +210,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             )}
 
             {/* HEADER CARD */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-left">
                 <div className="flex items-center gap-5">
                     <div className="bg-vet-navy text-white h-12 w-12 rounded-lg flex items-center justify-center text-xl font-bold shadow-lg shadow-vet-navy/10 italic">
                         {caseData.petName?.charAt(0) || "#"}
@@ -219,7 +227,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
                 <div className="lg:col-span-2 space-y-6">
                     {/* DESCRIPTION / JOURNALNOTERING */}
                     <section className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm relative group">
@@ -228,7 +236,6 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                                 Sjukdomshistorik & Medicinsk Journal
                             </h2>
 
-                            {/* Visa redigera-knapp endast för veterinärer om ärendet inte är stängt */}
                             {userRole === 'ROLE_VET' && localStatus !== 'CLOSED' && !isEditing && (
                                 <button
                                     onClick={() => setIsEditing(true)}
@@ -380,7 +387,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                         </div>
                     </button>
 
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-left">
                         <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 border-b pb-2 italic">Logg & Historik</h3>
                         <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
                             {timeline.filter(item => item.type === 'ACTIVITY').map((log) => (
@@ -398,7 +405,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             {/* CLOSE CASE MODAL */}
             {showCloseModal && (
                 <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-[2rem] max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-[2rem] max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-200 text-left">
                         <div className="flex items-center gap-4 mb-6">
                             <div className="bg-red-50 text-red-500 p-3 rounded-2xl">
                                 <FileText size={24} />
