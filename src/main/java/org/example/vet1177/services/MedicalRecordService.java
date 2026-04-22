@@ -134,6 +134,12 @@ public class MedicalRecordService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<MedicalRecord> getByAssignedVet(UUID vetId) {
+        log.debug("Fetching medical records assigned to vetId={}", vetId);
+        return medicalRecordRepository.findByAssignedVetId(vetId);
+    }
+
     // ── Uppdatera ─────────────────────────────────────────────
 
     public MedicalRecord update(UUID id, String title, String description, User updatedBy) {

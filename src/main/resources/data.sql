@@ -15,11 +15,11 @@ VALUES
     ('c3d4e5f6-a7b8-4c5d-0e1f-a2b3c4d5e6f7',
      'Anna Svensson',
      'anna@test.se',
-     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+     '$2a$10$VGOiZMqHRXy44lnflHbenutE9Il7Wf/uBcxKPVYMCgZRd45vVN/I6',
      'OWNER',
      true,
      NOW(), NOW())
-    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name;
+    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;
 --                                 ↑ viktigt — uppdaterar UUID:t om emailen finns
 
 -- Vet Erik
@@ -28,12 +28,12 @@ VALUES
     ('d4e5f6a7-b8c9-4d5e-1f2a-b3c4d5e6f7a8',
      'Erik Veterinär',
      'erik@klinik.se',
-     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+     '$2a$10$VGOiZMqHRXy44lnflHbenutE9Il7Wf/uBcxKPVYMCgZRd45vVN/I6',
      'VET',
      'a1b2c3d4-e5f6-4a5b-8c9d-e0f1a2b3c4d5',
      true,
      NOW(), NOW())
-    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name;
+    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;
 
 -- Admin Sara
 INSERT INTO users (id, name, email, password_hash, role, is_active, created_at, updated_at)
@@ -41,11 +41,11 @@ VALUES
     ('e5f6a7b8-c9d0-4e5f-2a3b-c4d5e6f7a8b9',
      'Sara Admin',
      'sara@admin.se',
-     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+     '$2a$10$VGOiZMqHRXy44lnflHbenutE9Il7Wf/uBcxKPVYMCgZRd45vVN/I6',
      'ADMIN',
      true,
      NOW(), NOW())
-    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name;
+    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;
 
 -- Djur
 INSERT INTO pet (id, owner_id, clinic_id, name, species, breed, created_at, updated_at)

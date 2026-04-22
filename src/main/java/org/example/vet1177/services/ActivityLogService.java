@@ -63,6 +63,11 @@ public class ActivityLogService {
                 .toList();
     }
 
+        // Ny metod - Hämta alla
+    public List<ActivityLog> getAllLogs(User currentUser) {
+        return repository.findAllByOrderByCreatedAtDesc();
+    }
+
     // HELPER
 
     private boolean canView(User user, ActivityLog log) {
