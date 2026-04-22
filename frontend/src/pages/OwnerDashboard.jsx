@@ -45,7 +45,7 @@ const OwnerDashboard = ({ userName, pets, records, onAddPet, onPetClick, onRegis
                             </h2>
                             <div className={`${isCasesView ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-4'}`}>
                                 {records && records.length > 0 ? (
-                                    [...records].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).map(record => {
+                                    [...records].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(record => {
                                         const statusConfig = STATUS_MAP[record.status] || { label: record.status, color: 'bg-slate-100 text-slate-600 border-slate-200' };
                                         return (
                                             <button
