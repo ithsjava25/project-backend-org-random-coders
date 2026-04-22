@@ -90,11 +90,11 @@ export const medicalRecordService = {
 };
 
 export const attachmentService = {
-    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData),
+
+
     getByRecord: (recordId) => api.get(`/attachments/record/${recordId}`),
-    download: (id) => api.get(`/attachments/${id}/download`),
+    download: (id) => api.get(`/attachments/${id}/download`, { responseType: 'blob' }),
     delete: (id) => api.delete(`/attachments/${id}`),
 };
 
