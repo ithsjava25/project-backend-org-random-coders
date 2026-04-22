@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react'; // Importera useId för unika ID:n
 import { X, Hospital, MapPin, Phone, Loader2 } from 'lucide-react';
 
 const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
@@ -9,7 +9,12 @@ const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
         phoneNumber: ''
     });
 
-    // Synka formuläret med initialData när modalen öppnas eller byter läge
+    // Skapa unika ID:n för tillgänglighet
+    const modalTitleId = useId();
+    const nameInputId = useId();
+    const addressInputId = useId();
+    const phoneInputId = useId();
+
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
@@ -19,7 +24,6 @@ const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                     phoneNumber: initialData.phoneNumber || ''
                 });
             } else {
-                // Återställ om vi ska skapa en ny
                 setFormData({ name: '', address: '', phoneNumber: '' });
             }
         }
@@ -31,7 +35,6 @@ const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            // onSave hanterar om det är en PUT eller POST i AdminDashboard
             await onSave(formData);
             onClose();
         } catch (err) {
@@ -43,18 +46,30 @@ const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+            {/* 1. Tillagt role="dialog", aria-modal="true" och aria-labelledby */}
+            <div
+                className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={modalTitleId}
+            >
                 {/* HEADER */}
                 <div className="px-8 pt-8 pb-4 flex justify-between items-center">
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900 italic tracking-tight">
+                        {/* 2. Tillagt ID för rubriken */}
+                        <h2 id={modalTitleId} className="text-2xl font-black text-slate-900 italic tracking-tight">
                             {initialData ? 'Redigera Klinik' : 'Ny Klinik'}
                         </h2>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                             {initialData ? 'Uppdatera klinikuppgifter' : 'Registrera ny vårdenhet'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                    {/* 3. Tillagt aria-label på stäng-knappen */}
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"
+                        aria-label="Stäng modal"
+                    >
                         <X size={20} />
                     </button>
                 </div>
@@ -62,10 +77,14 @@ const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                 <form onSubmit={handleSubmit} className="p-8 space-y-5">
                     {/* KLINIKNAMN */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">Klinikens Namn</label>
+                        {/* 4. Använt htmlFor och kopplat till input-ID */}
+                        <label htmlFor={nameInputId} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">
+                            Klinikens Namn
+                        </label>
                         <div className="relative">
-                            <Hospital className="absolute left-4 top-3 text-slate-400" size={18} />
+                            <Hospital className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                             <input
+                                id={nameInputId}
                                 required
                                 type="text"
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700"
@@ -78,10 +97,13 @@ const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
 
                     {/* ADRESS */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">Gatuadress & Ort</label>
+                        <label htmlFor={addressInputId} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">
+                            Gatuadress & Ort
+                        </label>
                         <div className="relative">
-                            <MapPin className="absolute left-4 top-3 text-slate-400" size={18} />
+                            <MapPin className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                             <input
+                                id={addressInputId}
                                 required
                                 type="text"
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700"
@@ -94,10 +116,13 @@ const ClinicModal = ({ isOpen, onClose, onSave, initialData = null }) => {
 
                     {/* TELEFON */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">Telefonnummer</label>
+                        <label htmlFor={phoneInputId} className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 italic">
+                            Telefonnummer
+                        </label>
                         <div className="relative">
-                            <Phone className="absolute left-4 top-3 text-slate-400" size={18} />
+                            <Phone className="absolute left-4 top-3 text-slate-400" size={18} aria-hidden="true" />
                             <input
+                                id={phoneInputId}
                                 required
                                 type="tel"
                                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all font-medium text-slate-700"
