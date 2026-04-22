@@ -119,7 +119,9 @@ export const userService = {
     create: (data) => api.post('/users', data),
     update: (id, data) => api.put(`/users/${id}`, data),
     delete: (id) => api.delete(`/users/${id}`),
-    searchByEmail: (email) => api.get(`/users/search?email=${email}`),
+    searchByEmail: (email) => api.get('/users/search', {
+        params: { email }
+    }),
 };
 
 export const vetService = {
