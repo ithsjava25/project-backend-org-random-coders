@@ -219,10 +219,10 @@ public class MedicalRecordService {
 
         MedicalRecord updated = medicalRecordRepository.save(record);
 
-        // LOGGING
+        // LOGGING — använd svensk label så loggen matchar UI-texterna.
         activityLogService.log(
                 ActivityType.STATUS_CHANGED,
-                "Status ändrad till: " + newStatus,
+                "Status ändrad till: " + newStatus.displayLabel(),
                 updatedBy,
                 updated
         );
