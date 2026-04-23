@@ -52,7 +52,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                 const combinedTimeline = [
                     ...commentsRes.data.map(c => ({ ...c, type: 'COMMENT' })),
                     ...logsRes.data.map(l => ({ ...l, type: 'ACTIVITY' }))
-                ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
                 setTimeline(combinedTimeline);
                 setAttachments(attachRes.data);
@@ -71,7 +71,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             setTimeline(prev => [
                 ...prev.filter(i => i.type !== 'ACTIVITY'),
                 ...logsRes.data.map(l => ({ ...l, type: 'ACTIVITY' }))
-            ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+            ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
         } catch (error) {
             console.error("Kunde inte uppdatera aktivitetsloggen:", error);
         }
@@ -109,7 +109,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                 recordId: caseData.id,
                 body: newMessage
             });
-            setTimeline(prev => [...prev, { ...res.data, type: 'COMMENT' }].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+            setTimeline(prev => [...prev, { ...res.data, type: 'COMMENT' }].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)));
             setNewMessage('');
             await refetchActivityLog();
         } catch (error) {
