@@ -164,12 +164,17 @@ const AuditLogView = ({ logs = [], loading }) => {
                                                 </h4>
                                                 {/* Roll-tagg */}
                                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${
-                                                    log.performedByRole === 'ROLE_VET' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                        log.performedByRole === 'ROLE_ADMIN' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                            'bg-slate-100 text-slate-600 border-slate-200'
+                                                    log.performedByRole === 'ROLE_VET' || log.performedByRole === 'VET'
+                                                        ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                                        log.performedByRole === 'ROLE_ADMIN' || log.performedByRole === 'ADMIN'
+                                                            ? 'bg-red-50 text-red-600 border-red-100' :
+                                                            log.performedByRole === 'ROLE_OWNER' || log.performedByRole === 'OWNER'
+                                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : // Grön för ägare
+                                                                'bg-slate-100 text-slate-600 border-slate-200'         // Grå fallback
                                                 }`}>
-                                                    {log.performedByRole.replace('ROLE_', '')}
-                                                </span>
+
+                                                    {log.performedByRole?.replace('ROLE_', '') ?? 'SYSTEM'}
+                                                    </span>
                                             </div>
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white px-2">
                                                 {date}
