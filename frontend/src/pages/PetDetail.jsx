@@ -7,12 +7,17 @@ const PetDetail = ({ pet, onBack, onRegisterCase, onCaseClick }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!pet?.id) return;
+        if (!pet?.id) {
+            setLoading(false);
+            return;
+        }
+        let cancelled = false;
         setLoading(true);
         medicalRecordService.getRecordsByPet(pet.id)
-            .then(res => setPetRecords(res.data))
-            .catch(() => setPetRecords([]))
-            .finally(() => setLoading(false));
+            .then(res => { if (!cancelled) setPetRecords(res.data); })
+            .catch(() => { if (!cancelled) setPetRecords([]); })
+            .finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
     }, [pet?.id]);
 
     if (!pet) {
