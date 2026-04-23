@@ -8,6 +8,7 @@ import {
     User as UserIcon,
     AlertCircle
 } from 'lucide-react';
+import { getActionLabel } from '../../utils/statusHelper';
 
 const AuditLogView = ({ logs = [], loading }) => {
 
@@ -52,7 +53,7 @@ const AuditLogView = ({ logs = [], loading }) => {
                         <div className="flex-1 pb-8">
                             <div className="flex justify-between items-start mb-1">
                                 <h4 className="font-black text-slate-900 italic tracking-tight uppercase text-sm">
-                                    {log.action.replace('_', ' ')}
+                                    {getActionLabel(log.action)}
                                 </h4>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                     {date}
