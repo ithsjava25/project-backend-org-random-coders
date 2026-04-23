@@ -92,13 +92,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/clinics/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/clinics/**").hasRole("ADMIN")
 
-                        // ─── VET/ADMIN: journal-mutation (status/tilldelning/stängning/uppdatering) ───
-                        // Ordningen matters: mer specifika paths (*/close, */status, */assign-vet) före /* så
-                        // att Spring matchar dem innan den generella PUT /api/medical-records/* regeln.
+                        // ─── VET/ADMIN: journal-mutation (status/tilldelning/stängning) ───
+                        // PUT /api/medical-records/{id} (titel/beskrivning) är medvetet utelämnad —
+                        // gatas i MedicalRecordPolicy.canUpdate så att OWNER får uppdatera eget ärende.
+                        // /status, /close, /assign-vet förblir VET/ADMIN-only på URL-nivå.
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/close").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/assign-vet").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/status").hasAnyRole("VET", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/medical-records/*").hasAnyRole("VET", "ADMIN")
 
                         // ─── VET/ADMIN: klinik-vy ───
                         .requestMatchers(HttpMethod.GET, "/api/medical-records/clinic/**").hasAnyRole("VET", "ADMIN")
