@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { commentService, activityService, attachmentService, medicalRecordService } from '../services/api';
-import { STATUS_MAP } from '../utils/statusHelper';
+import { STATUS_MAP, ACTIVE_STATUS_KEYS } from '../utils/statusHelper';
 import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink } from 'lucide-react';
 
 const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) => {
@@ -206,9 +206,9 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                                     onChange={(e) => handleStatusChange(e.target.value)}
                                     className="bg-slate-800 border border-slate-700 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-vet-accent transition-all cursor-pointer"
                                 >
-                                    <option value="OPEN">Öppen</option>
-                                    <option value="IN_PROGRESS">Under behandling</option>
-                                    <option value="AWAITING_INFO">Väntar på svar</option>
+                                    {ACTIVE_STATUS_KEYS.map((key) => (
+                                        <option key={key} value={key}>{STATUS_MAP[key].label}</option>
+                                    ))}
                                 </select>
                             </div>
                             <button
