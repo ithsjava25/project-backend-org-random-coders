@@ -8,8 +8,8 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Behålls för framtida tillägg
     const handleForgotPassword = () => {
-        // Här kan du antingen navigera till en ny sida eller visa en alert
         alert("Funktionen för lösenordsåterställning kommer snart. Kontakta din administratör så länge.");
     };
 
@@ -116,7 +116,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                                 />
                                 Kom ihåg mig
                             </label>
-                            {/* FIX: Knapp nu kopplad till handler */}
+                            {/* KNAPP DOLD TILLS VIDARE:
                             <button
                                 type="button"
                                 onClick={handleForgotPassword}
@@ -124,6 +124,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                             >
                                 Glömt lösenord?
                             </button>
+                            */}
                         </div>
 
                         <div className="pt-4">
