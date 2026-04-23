@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Layout from './components/Layout';
 import OwnerDashboard from './pages/OwnerDashboard';
@@ -21,6 +21,7 @@ function App() {
     const [myRecords, setMyRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
+    const caseDetailDirtyRef = useRef(false);
 
     // 1. Initialisering: Hämta användare från token vid start
     useEffect(() => {
@@ -109,6 +110,7 @@ function App() {
     };
 
     const goBackToDashboard = () => {
+        caseDetailDirtyRef.current = false;
         setSelectedPet(null);
         setSelectedRecord(null);
         if (currentUser?.role === 'ROLE_VET') {
@@ -209,6 +211,7 @@ function App() {
                         caseData={selectedRecord}
                         currentUserId={currentUser?.id}
                         userRole={currentUser?.role} // VIKTIGT: Skickar med rollen för veterinär-panelen
+                        onDirtyChange={(dirty) => { caseDetailDirtyRef.current = dirty; }}
                         onBack={goBackToDashboard}
                         onGoToPet={async (petId) => {
                             try {
@@ -270,7 +273,13 @@ function App() {
             userName={currentUser?.name || currentUser?.email || "Användare"}
             userRole={currentUser?.role}
             onLogout={handleLogout}
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={(view) => {
+                    if (currentView === 'case-detail' && caseDetailDirtyRef.current) {
+                        if (!window.confirm('Du har osparade ändringar. Vill du lämna sidan?')) return;
+                    }
+                    caseDetailDirtyRef.current = false;
+                    setCurrentView(view);
+                }}
             currentView={currentView}
         >
             <div className="max-w-7xl mx-auto">

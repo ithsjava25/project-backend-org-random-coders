@@ -3,7 +3,7 @@ import { commentService, activityService, attachmentService, medicalRecordServic
 import { STATUS_MAP } from '../utils/statusHelper';
 import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink } from 'lucide-react';
 
-const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) => {
+const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDirtyChange }) => {
     const [newMessage, setNewMessage] = useState('');
     const [timeline, setTimeline] = useState([]);
     const [attachments, setAttachments] = useState([]);
@@ -21,6 +21,48 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
     const statusConfig = STATUS_MAP[localStatus] || { label: localStatus, color: 'bg-slate-50 text-slate-500 border-slate-100' };
 
     const isClosed = localStatus === 'CLOSED'; // Helper för att förenkla checkar
+
+    // Refs för att komma åt senaste state i cleanup-funktioner
+    const newMessageRef = useRef(newMessage);
+    const isEditingRef = useRef(isEditing);
+    const editedTitleRef = useRef(editedTitle);
+    const editedDescriptionRef = useRef(editedDescription);
+
+    useEffect(() => { newMessageRef.current = newMessage; }, [newMessage]);
+    useEffect(() => { isEditingRef.current = isEditing; }, [isEditing]);
+    useEffect(() => { editedTitleRef.current = editedTitle; }, [editedTitle]);
+    useEffect(() => { editedDescriptionRef.current = editedDescription; }, [editedDescription]);
+
+    // Rapportera dirty-state uppåt till App för in-app navigeringsskydd
+    useEffect(() => {
+        onDirtyChange?.(newMessage.trim().length > 0 || isEditing);
+    }, [newMessage, isEditing]);
+
+    // Varna vid stängning av fliken om det finns osparad text
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            const hasUnsaved = newMessageRef.current.trim() || isEditingRef.current;
+            if (hasUnsaved) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, []);
+
+    // Auto-spara journalnotering vid unmount (flikbyte i appen)
+    useEffect(() => {
+        return () => {
+            onDirtyChange?.(false);
+            if (isEditingRef.current) {
+                medicalRecordService.update(caseData.id, {
+                    title: editedTitleRef.current,
+                    description: editedDescriptionRef.current
+                }).catch(() => {});
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (caseData) {
