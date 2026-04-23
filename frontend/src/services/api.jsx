@@ -126,6 +126,7 @@ export const userService = {
 
 export const vetService = {
     create: (vetData) => api.post('/vets', vetData),
+    update: (userId, vetData) => api.put(`/vets/${userId}`, vetData),
     getAll: () => api.get('/vets'),
     getById: (id) => api.get(`/vets/${id}`),
 };
