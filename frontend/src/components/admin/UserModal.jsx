@@ -86,7 +86,15 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                 };
 
                 if (initialData) {
-                    await vetService.update(initialData.id, vetPayload);
+                    try {
+                        await vetService.update(userId, vetPayload);
+                    } catch (err) {
+                        if (err.response?.status === 404) {
+                            await vetService.create(vetPayload);
+                        } else {
+                            throw err;
+                        }
+                    }
                 } else {
                     await vetService.create(vetPayload);
                 }
