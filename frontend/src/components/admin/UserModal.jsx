@@ -28,15 +28,30 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
-                // Om vi redigerar en veterinär, se till att fälten från vetRecord följer med in i formData
+                const role = (initialData.role || 'OWNER').replace('ROLE_', '');
                 setFormData({
                     ...initialData,
+                    role,
                     password: '',
-                    licenseId: initialData.vetRecord?.licenseId || '',
-                    specialization: initialData.vetRecord?.specialization || '',
-                    bookingInfo: initialData.vetRecord?.bookingInfo || '',
-                    clinicId: initialData.vetRecord?.clinicId || ''
+                    clinicId: initialData.clinicId || '',
+                    licenseId: '',
+                    specialization: '',
+                    bookingInfo: '',
                 });
+
+                if (role === 'VET') {
+                    vetService.getAll().then(res => {
+                        const vetRecord = res.data.find(v => v.userId === initialData.id);
+                        if (vetRecord) {
+                            setFormData(prev => ({
+                                ...prev,
+                                licenseId: vetRecord.licenseId || '',
+                                specialization: vetRecord.specialization || '',
+                                bookingInfo: vetRecord.bookingInfo || '',
+                            }));
+                        }
+                    }).catch(err => console.error('Kunde inte hämta veterinärdetaljer:', err));
+                }
             } else {
                 setFormData({
                     name: '', email: '', password: '',
@@ -70,12 +85,9 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                     bookingInfo: formData.bookingInfo
                 };
 
-                // CodeRabbit Fix: Kolla om det redan finns en veterinärpost (Edit vs Create)
-                const existingVetId = initialData?.vetRecord?.id;
-
-                if (existingVetId) {
-                    await vetService.update(existingVetId, vetPayload);
-                } else if (userId) {
+                if (initialData) {
+                    await vetService.update(initialData.id, vetPayload);
+                } else {
                     await vetService.create(vetPayload);
                 }
             }
@@ -211,7 +223,7 @@ const UserModal = ({ isOpen, onClose, onSave, initialData = null, clinics = [] }
                     {/* VETERINÄR-DETALJER */}
                     {isVet && (
                         <div className="pt-4 space-y-4 border-t border-slate-100">
-                            <div className="space-y-1.5">
+                                    <div className="space-y-1.5">
                                 <label htmlFor={licenseIdInput} className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1 italic block text-left">Legitimations-ID</label>
                                 <div className="relative">
                                     <Award className="absolute left-4 top-3 text-blue-400" size={18} aria-hidden="true" />

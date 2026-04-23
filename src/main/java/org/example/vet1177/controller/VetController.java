@@ -41,6 +41,16 @@ public class VetController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{userId}")
+    public ResponseEntity<VetResponse> updateVet(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID userId,
+            @Valid @RequestBody VetRequest request) {
+        log.info("PUT /api/vets/{}", userId);
+        adminPolicy.requireAdmin(user);
+        return ResponseEntity.ok(vetService.updateVet(userId, request));
+    }
+
     @GetMapping
     public ResponseEntity<List<VetResponse>> getAllVets() {
         log.info("GET /api/vets");

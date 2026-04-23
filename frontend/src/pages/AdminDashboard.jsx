@@ -83,7 +83,7 @@ const AdminDashboard = ({ userName, initialTab = 'USERS' }) => {
             ? await userService.update(selectedItem.id, userData)
             : await userService.create(userData);
 
-        fetchData();
+        await fetchData();
         return response;
     };
 
