@@ -31,8 +31,10 @@ public class AttachmentPolicy {
         this.medicalRecordPolicy = medicalRecordPolicy;
     }
 
-    // OWNER får ladda upp bilagor på egna öppna case — men får inte uppdatera själva journalen.
-    // Därför kan vi inte kaskadera till MedicalRecordPolicy.canUpdate; egna regler krävs här.
+    // VET får alltid ladda upp på öppna ärenden (oavsett klinik) — remiss- och konsultflöden
+    // kräver att remitterande veterinär kan bifoga filer på en annan kliniks ärende.
+    // OWNER får ladda upp på egna öppna ärenden. CLOSED spärrar både VET och OWNER.
+    // ADMIN har inga restriktioner (t.ex. retroaktiv arkivering).
     public void canUpload(User user, MedicalRecord record, String contentType, long fileSize) {
         if (fileSize <= 0) {
             throw new IllegalArgumentException("Filen kan inte vara tom (0 bytes).");
@@ -44,9 +46,8 @@ public class AttachmentPolicy {
         switch (user.getRole()) {
             case ADMIN -> {}
             case VET -> {
-                if (user.getClinic() == null ||
-                        !user.getClinic().getId().equals(record.getClinic().getId()))
-                    throw new ForbiddenException("Du har inte tillgång till ärenden på en annan klinik");
+                if (record.getStatus() == RecordStatus.CLOSED)
+                    throw new ForbiddenException("Bilagor kan inte laddas upp på stängda ärenden");
             }
             case OWNER -> {
                 if (!record.getOwner().getId().equals(user.getId()))

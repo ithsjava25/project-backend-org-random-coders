@@ -41,10 +41,14 @@ public class MedicalRecordPolicy {
     // Auth-kontroll (roll/ägarskap) körs före isFinal-kontrollen — annars skulle en
     // OWNER som försöker uppdatera någon annans stängda ärende få "Stängda ärenden
     // kan inte uppdateras" i stället för 403 (CodeRabbit-kommentar på #216).
+    // OWNER får uppdatera eget ärendes titel/beskrivning (DTO:n exponerar bara de fälten).
+    // Status/close/assign-vet gatas i separata policy-metoder och URL-regler.
     public void canUpdate(User user, MedicalRecord record) {
         switch (user.getRole()) {
-            case OWNER ->
-                    throw new ForbiddenException("Ägare får inte uppdatera journaler");
+            case OWNER -> {
+                if (!user.getId().equals(record.getOwner().getId()))
+                    throw new ForbiddenException("Du kan bara uppdatera egna ärenden");
+            }
             case VET -> {
                 if (!sameClinic(user, record))
                     throw new ForbiddenException("Du har inte tillgång till ärenden på en annan klinik");

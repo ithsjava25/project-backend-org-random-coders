@@ -106,14 +106,23 @@ class MedicalRecordPolicyTest {
     }
 
     // -------------------------------------------------------------------------
-    // canUpdate — OWNER blockerad helt; VET/ADMIN på samma klinik tillåtna
+    // canUpdate — OWNER får uppdatera eget öppet ärende (titel/beskrivning);
+    // status/close/assign-vet gatas separat
     // -------------------------------------------------------------------------
 
     @Test
-    void canUpdate_owner_shouldThrowForbidden() {
-        assertThatThrownBy(() -> policy.canUpdate(owner, openRecord))
+    void canUpdate_ownerOfOwnRecord_shouldNotThrow() {
+        assertThatNoException().isThrownBy(() -> policy.canUpdate(owner, openRecord));
+    }
+
+    @Test
+    void canUpdate_ownerOfOthersRecord_shouldThrowForbidden() throws Exception {
+        User otherOwner = new User("Bertil Annan", "b@mail.se", "hash", Role.OWNER);
+        setPrivateField(otherOwner, "id", UUID.randomUUID());
+
+        assertThatThrownBy(() -> policy.canUpdate(otherOwner, openRecord))
                 .isInstanceOf(ForbiddenException.class)
-                .hasMessage("Ägare får inte uppdatera journaler");
+                .hasMessage("Du kan bara uppdatera egna ärenden");
     }
 
     @Test
@@ -140,12 +149,22 @@ class MedicalRecordPolicyTest {
                 .hasMessage("Stängda ärenden kan inte uppdateras");
     }
 
-    // Auth-kontroll före isFinal-kontroll: en OWNER som ropar canUpdate på stängt ärende
-    // ska få 403 (ForbiddenException), inte 422 (BusinessRuleException).
+    // Auth-kontroll före isFinal-kontroll: OWNER på någon annans stängda ärende
+    // ska få 403 (ForbiddenException) på ägarskapskontrollen, inte 422.
     @Test
-    void canUpdate_ownerOnClosedRecord_shouldThrowForbiddenNotBusinessRule() {
-        assertThatThrownBy(() -> policy.canUpdate(owner, closedRecord))
+    void canUpdate_ownerOfOthersClosedRecord_shouldThrowForbiddenNotBusinessRule() throws Exception {
+        User otherOwner = new User("Bertil Annan", "b@mail.se", "hash", Role.OWNER);
+        setPrivateField(otherOwner, "id", UUID.randomUUID());
+
+        assertThatThrownBy(() -> policy.canUpdate(otherOwner, closedRecord))
                 .isInstanceOf(ForbiddenException.class);
+    }
+
+    // OWNER på eget stängt ärende passerar ägarskapskontrollen och faller på isFinal.
+    @Test
+    void canUpdate_ownerOfOwnClosedRecord_shouldThrowBusinessRule() {
+        assertThatThrownBy(() -> policy.canUpdate(owner, closedRecord))
+                .isInstanceOf(BusinessRuleException.class);
     }
 
     // -------------------------------------------------------------------------
