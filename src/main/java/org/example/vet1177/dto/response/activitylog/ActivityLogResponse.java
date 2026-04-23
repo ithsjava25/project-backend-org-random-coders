@@ -27,9 +27,9 @@ public record ActivityLogResponse(
                 log.getDescription(),
                 log.getPerformedBy().getId(),
                 log.getPerformedBy().getName(),
-                log.getPerformedBy().getRole().name(),
+                log.getPerformedBy().getRole() != null ? log.getPerformedBy().getRole().name() : "ROLE_UNKNOWN",
                 log.getMedicalRecord().getId(),
-                log.getMedicalRecord().getClinic().getName(),
+                log.getMedicalRecord().getClinic() != null ? log.getMedicalRecord().getClinic().getName() : "Okänd klinik",
                 log.getMedicalRecord().getPet() != null ? log.getMedicalRecord().getPet().getName() : "Okänt djur",
                 log.getCreatedAt()
         );

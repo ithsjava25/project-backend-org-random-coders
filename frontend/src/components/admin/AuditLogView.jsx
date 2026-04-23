@@ -35,6 +35,7 @@ const AuditLogView = ({ logs = [], loading }) => {
         }
     };
 
+    
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
             const searchLower = searchTerm.toLowerCase();
