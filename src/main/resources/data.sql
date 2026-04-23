@@ -1,7 +1,7 @@
--- ============================================================
+
 -- Demo-data för presentation
 -- Lösenord för alla användare: password
--- ============================================================
+
 
 -- Klinik
 INSERT INTO clinic (id, name, address, phone_number, email, created_at, updated_at)
