@@ -10,9 +10,22 @@ const PetForm = ({ onCancel, onSave }) => {
         weight: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState({});
+
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setFieldErrors({});
+
+                // Klient-validering: framtida datum
+        if (formData.dob && formData.dob > today) {
+            setFieldErrors({ dob: 'Födelsedatum kan inte vara i framtiden.' });
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -32,7 +45,40 @@ const PetForm = ({ onCancel, onSave }) => {
             onSave();
         } catch (error) {
             console.error("Kunde inte spara djuret:", error);
-            alert("Något gick fel vid sparning. Kontrollera att alla obligatoriska fält är ifyllda.");
+            if (error.response?.status === 400) {
+                const data = error.response.data;
+                const errors = {};
+                if (data?.errors) {
+                    const fieldMap = {
+                        dateOfBirth: 'dob',
+                        weightKg: 'weight'
+                    };
+
+                    const addFieldError = (field, message) => {
+                        const formField = fieldMap[field] || field;
+                        errors[formField] = field === 'dateOfBirth'
+                            ? 'Födelsedatum kan inte vara i framtiden.'
+                            : message;
+                    };
+
+                    if (Array.isArray(data.errors)) {
+                        data.errors.forEach(err => {
+                            addFieldError(err.field, err.defaultMessage);
+                        });
+                    } else {
+                        Object.entries(data.errors).forEach(([field, messages]) => {
+                            addFieldError(field, Array.isArray(messages) ? messages[0] : messages);
+                        });
+                    }
+                } else if (data?.dateOfBirth || data?.message?.toLowerCase().includes('date')) {
+                    errors.dob = 'Födelsedatum kan inte vara i framtiden.';
+                } else {
+                    errors.general = 'Något gick fel vid sparning. Kontrollera att alla obligatoriska fält är ifyllda.';
+                }
+                setFieldErrors(errors);
+            } else {
+                setFieldErrors({ general: 'Något gick fel vid sparning. Försök igen.' });
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -111,10 +157,17 @@ const PetForm = ({ onCancel, onSave }) => {
                             <input
                                 type="date"
                                 value={formData.dob}
-                                onChange={(e) => setFormData({...formData, dob: e.target.value})}
-                                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition font-medium italic"
+                                max={today}
+                                onChange={(e) => {
+                                    setFormData({...formData, dob: e.target.value});
+                                    if (fieldErrors.dob) setFieldErrors({...fieldErrors, dob: undefined});
+                                }}
+                                className={`w-full px-4 py-3 rounded-lg border bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition font-medium italic ${fieldErrors.dob ? 'border-red-400 focus:ring-red-400' : 'border-slate-200'}`}
                                 required
                             />
+                            {fieldErrors.dob && (
+                                <p className="text-red-500 text-xs font-semibold ml-1 mt-1">{fieldErrors.dob}</p>
+                            )}
                         </div>
 
                         {/* VIKT */}
@@ -132,6 +185,12 @@ const PetForm = ({ onCancel, onSave }) => {
                         </div>
                     </div>
 
+                    {/* GENERELLT FEL */}
+                    {fieldErrors.general && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-600 text-sm font-semibold">
+                            {fieldErrors.general}
+                        </div>
+                    )}
                     {/* KNAPPAR */}
                     <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
                         <button
