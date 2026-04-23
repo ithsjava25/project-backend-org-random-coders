@@ -55,12 +55,17 @@ public class ActivityLogService {
         }
 
         List<ActivityLog> logs =
-                repository.findByMedicalRecordIdOrderByCreatedAtDesc(recordId);
+                repository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId);
 
         // Filtrera istället för att kasta exception
         return logs.stream()
                 .filter(log -> canView(currentUser, log))
                 .toList();
+    }
+
+        // Ny metod - Hämta alla
+    public List<ActivityLog> getAllLogs(User currentUser) {
+        return repository.findAllByOrderByCreatedAtDesc();
     }
 
     // HELPER

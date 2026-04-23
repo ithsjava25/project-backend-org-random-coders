@@ -70,22 +70,34 @@ public class JwtService {
     public String generateToken(User user) {
         Instant now = Instant.now();
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        // 1. Deklarera 'builder' separat så att vi kan ändra i den senare
+        JwtClaimsSet.Builder builder = JwtClaimsSet.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getId().toString())
                 .claim("role", "ROLE_" + user.getRole().name())
+                .claim("name", user.getName())
                 .issuedAt(now)
-                .expiresAt(now.plusMillis(expirationMs))
-                .build();
+                .expiresAt(now.plusMillis(expirationMs));
 
-        // Talar om att vi vill signera med HS256-algoritmen
+        // 2. Nu fungerar 'builder.claim' eftersom variabeln är deklarerad ovan
+        if (user.getClinic() != null && user.getClinic().getId() != null) {
+            builder.claim("clinicId", user.getClinic().getId().toString());
+        }
+
+        // 3. Skapa det slutgiltiga claims-objektet (endast en gång!)
+        JwtClaimsSet claims = builder.build();
+
+        // 4. Skapa parametrar för signering
         JwtEncoderParameters params = JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS256).build(),
                 claims
         );
 
         String token = jwtEncoder.encode(params).getTokenValue();
-        log.info("Generated JWT for user email={}", user.getEmail());
+        log.info("Generated JWT for user email={}, clinicId={}",
+                user.getEmail(),
+                user.getClinic() != null ? user.getClinic().getId() : "none");
+
         return token;
     }
 

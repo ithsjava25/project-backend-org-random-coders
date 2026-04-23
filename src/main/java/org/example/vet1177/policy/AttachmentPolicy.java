@@ -2,6 +2,7 @@ package org.example.vet1177.policy;
 
 import org.example.vet1177.entities.Attachment;
 import org.example.vet1177.entities.MedicalRecord;
+import org.example.vet1177.entities.RecordStatus;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.BusinessRuleException;
 import org.example.vet1177.exception.ForbiddenException;
@@ -30,6 +31,8 @@ public class AttachmentPolicy {
         this.medicalRecordPolicy = medicalRecordPolicy;
     }
 
+    // OWNER får ladda upp bilagor på egna öppna case — men får inte uppdatera själva journalen.
+    // Därför kan vi inte kaskadera till MedicalRecordPolicy.canUpdate; egna regler krävs här.
     public void canUpload(User user, MedicalRecord record, String contentType, long fileSize) {
         if (fileSize <= 0) {
             throw new IllegalArgumentException("Filen kan inte vara tom (0 bytes).");
@@ -38,7 +41,20 @@ public class AttachmentPolicy {
         validateFileType(contentType);
         validateFileSize(fileSize);
 
-        medicalRecordPolicy.canUpdate(user, record);
+        switch (user.getRole()) {
+            case ADMIN -> {}
+            case VET -> {
+                if (user.getClinic() == null ||
+                        !user.getClinic().getId().equals(record.getClinic().getId()))
+                    throw new ForbiddenException("Du har inte tillgång till ärenden på en annan klinik");
+            }
+            case OWNER -> {
+                if (!record.getOwner().getId().equals(user.getId()))
+                    throw new ForbiddenException("Du kan bara ladda upp bilagor på egna ärenden");
+                if (record.getStatus() == RecordStatus.CLOSED)
+                    throw new ForbiddenException("Bilagor kan inte laddas upp på stängda ärenden");
+            }
+        }
     }
 
 
@@ -50,22 +66,23 @@ public class AttachmentPolicy {
 
     //Kontrollerar om användaren får radera en bilaga från systemet.
     public void canDelete(User user, Attachment attachment) {
-
-        medicalRecordPolicy.canUpdate(user, attachment.getMedicalRecord());
+        MedicalRecord record = attachment.getMedicalRecord();
 
         switch (user.getRole()) {
+            case OWNER ->
+                    throw new ForbiddenException("Djurägare får inte radera bilagor");
+            case VET -> {
+                if (user.getClinic() == null ||
+                        !user.getClinic().getId().equals(record.getClinic().getId()))
+                    throw new ForbiddenException("Du har inte tillgång till ärenden på en annan klinik");
+                // VET får endast radera bilagor de själva har laddat upp.
+                if (attachment.getUploadedBy() == null ||
+                        !attachment.getUploadedBy().getId().equals(user.getId()))
+                    throw new ForbiddenException("Du kan endast radera bilagor du själv har laddat upp.");
+            }
             case ADMIN -> {
                 // Admin har fulla rättigheter att radera.
             }
-            case VET -> {
-                // En veterinär får endast radera bilagor som de själva har laddat upp.
-                if (attachment.getUploadedBy() == null ||
-                        !attachment.getUploadedBy().getId().equals(user.getId())) {
-                    throw new ForbiddenException("Du kan endast radera bilagor du själv har laddat upp.");
-                }
-            }
-            case OWNER ->
-                    throw new ForbiddenException("Djurägare har inte behörighet att radera medicinsk dokumentation.");
         }
     }
 

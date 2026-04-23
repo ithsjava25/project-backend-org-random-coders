@@ -23,6 +23,10 @@ public class Comment {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String body;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "comment_type", nullable = false)
+    private CommentType type = CommentType.OWNER_MESSAGE;
+
     @Column(name = "created_at", updatable = false, nullable = false)
     private Instant createdAt;
 
@@ -52,6 +56,9 @@ public class Comment {
 
     public String getBody() { return body; }
     public void setBody(String body) { this.body = body; }
+
+    public CommentType getType() { return type; }
+    public void setType(CommentType type) { this.type = type; }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

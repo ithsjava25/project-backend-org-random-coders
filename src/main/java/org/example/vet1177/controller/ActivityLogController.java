@@ -36,4 +36,13 @@ public class ActivityLogController {
                 .map(ActivityLogResponse::from)
                 .toList();
     }
+        // Ny metod - Hämta alla
+    @GetMapping("/all")
+    public List<ActivityLogResponse> getAllLogs(@AuthenticationPrincipal User currentUser) {
+        log.info("GET /api/activity-logs/all - Admin access");
+        return activityLogService.getAllLogs(currentUser)
+                .stream()
+                .map(ActivityLogResponse::from)
+                .toList();
+    }
 }

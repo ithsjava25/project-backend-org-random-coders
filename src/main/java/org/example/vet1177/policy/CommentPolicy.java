@@ -66,4 +66,12 @@ public class CommentPolicy {
             throw new ForbiddenException("Du kan bara ta bort dina egna kommentarer");
         }
     }
+
+    // OWNER ser både egna meddelanden och VET:ens journalanteckningar på sitt eget ärende
+    // (jfr 1177-modellen). Åtkomsten till själva ärendet gatas i canView, så det räcker
+    // att alltid returnera true här — finkornig filtrering görs när/om en separat
+    // VET_INTERNAL_NOTE-typ införs.
+    public boolean isVisibleTo(User user, Comment comment) {
+        return true;
+    }
 }

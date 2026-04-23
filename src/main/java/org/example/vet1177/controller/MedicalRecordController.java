@@ -58,6 +58,27 @@ public class MedicalRecordController {
         );
     }
 
+    @GetMapping("/my-assigned")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<MedicalRecordSummaryResponse>> getMyAssignedRecords(
+            @AuthenticationPrincipal User currentUser) {
+
+        log.info("GET /api/medical-records/my-assigned - User: {}", currentUser.getEmail());
+
+        // Säkerhetskoll
+        if (currentUser.getRole() != Role.VET) {
+            throw new org.example.vet1177.exception.ForbiddenException("Endast veterinärer kan se sina egna tilldelade ärenden");
+        }
+
+        // Vi hämtar från tjänsten och mappar till DTO
+        return ResponseEntity.ok(
+                medicalRecordService.getByAssignedVet(currentUser.getId())
+                        .stream()
+                        .map(MedicalRecordSummaryResponse::from)
+                        .toList()
+        );
+    }
+
     // GET /api/medical-records/{id}
     @GetMapping("/{id}")
     @Transactional(readOnly = true)
@@ -247,4 +268,6 @@ public class MedicalRecordController {
                 )
         );
     }
+
+
 }

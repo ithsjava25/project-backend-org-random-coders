@@ -25,6 +25,9 @@ public class ActivityLog {
     @Column(name = "entity_type", nullable = false)
     private String entityType = "MEDICAL_RECORD";
 
+    @Column(name = "entity_id")
+    private UUID entityId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "performed_by", nullable = false)
     private User performedBy;
@@ -44,6 +47,8 @@ public class ActivityLog {
         this.description = description;
         this.performedBy = performedBy;
         this.medicalRecord = medicalRecord;
+        this.entityId = medicalRecord.getId();
+        this.entityType = "MEDICAL_RECORD";
     }
 
     @PrePersist

@@ -78,7 +78,7 @@ class ActivityLogServiceTest {
         ActivityLog log1 = mock(ActivityLog.class);
         ActivityLog log2 = mock(ActivityLog.class);
 
-        when(repository.findByMedicalRecordIdOrderByCreatedAtDesc(recordId))
+        when(repository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId))
                 .thenReturn(List.of(log1, log2));
 
         // Policy tillåter båda
@@ -96,7 +96,7 @@ class ActivityLogServiceTest {
         ActivityLog allowedLog = mock(ActivityLog.class);
         ActivityLog forbiddenLog = mock(ActivityLog.class);
 
-        when(repository.findByMedicalRecordIdOrderByCreatedAtDesc(recordId))
+        when(repository.findByMedicalRecordIdOrderByCreatedAtAsc(recordId))
                 .thenReturn(List.of(allowedLog, forbiddenLog));
 
         // Första OK
