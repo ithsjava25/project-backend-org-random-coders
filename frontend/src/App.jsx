@@ -195,7 +195,6 @@ function App() {
                 return (
                     <PetDetail
                         pet={selectedPet}
-                        petRecords={myRecords.filter(r => (r.petId || r.pet?.id) === selectedPet?.id)}
                         onBack={goBackToDashboard}
                         onRegisterCase={(pet) => { setSelectedPet(pet); setCurrentView('create-case'); }}
                         onCaseClick={handleCaseClick}
