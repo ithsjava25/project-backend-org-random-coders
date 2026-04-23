@@ -208,7 +208,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                                 >
                                     <option value="OPEN">Öppen</option>
                                     <option value="IN_PROGRESS">Under behandling</option>
-                                    <option value="AWAITING_TEST_RESULTS">Väntar på provsvar</option>
+                                    <option value="AWAITING_INFO">Väntar på svar</option>
                                 </select>
                             </div>
                             <button
