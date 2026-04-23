@@ -224,6 +224,61 @@ class MedicalRecordPolicyTest {
     }
 
     // -------------------------------------------------------------------------
+    // canUnassignVet — endast den tilldelade veterinären själv (+ ADMIN)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void canUnassignVet_owner_shouldThrowForbidden() {
+        openRecord.setAssignedVet(vet);
+        assertThatThrownBy(() -> policy.canUnassignVet(owner, openRecord))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("Ägare får inte släppa ärenden");
+    }
+
+    @Test
+    void canUnassignVet_vetSelf_shouldNotThrow() {
+        openRecord.setAssignedVet(vet);
+        assertThatNoException().isThrownBy(() -> policy.canUnassignVet(vet, openRecord));
+    }
+
+    @Test
+    void canUnassignVet_vetColleagueSameClinic_shouldThrowForbidden() throws Exception {
+        openRecord.setAssignedVet(vet);
+        User colleagueVet = new User("Dr. Kollega", "kollega@vet.se", "hash", Role.VET, clinic);
+        setPrivateField(colleagueVet, "id", UUID.randomUUID());
+
+        assertThatThrownBy(() -> policy.canUnassignVet(colleagueVet, openRecord))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("Du kan bara släppa ärenden du själv är tilldelad");
+    }
+
+    @Test
+    void canUnassignVet_vetOnRecordWithoutAssignee_shouldThrowForbidden() {
+        openRecord.setAssignedVet(null);
+        assertThatThrownBy(() -> policy.canUnassignVet(vet, openRecord))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void canUnassignVet_admin_shouldNotThrow() {
+        openRecord.setAssignedVet(vet);
+        assertThatNoException().isThrownBy(() -> policy.canUnassignVet(admin, openRecord));
+    }
+
+    @Test
+    void canUnassignVet_adminOnRecordWithoutAssignee_shouldNotThrow() {
+        openRecord.setAssignedVet(null);
+        assertThatNoException().isThrownBy(() -> policy.canUnassignVet(admin, openRecord));
+    }
+
+    @Test
+    void canUnassignVet_closedRecord_shouldThrowBusinessRule() {
+        closedRecord.setAssignedVet(vet);
+        assertThatThrownBy(() -> policy.canUnassignVet(vet, closedRecord))
+                .isInstanceOf(BusinessRuleException.class);
+    }
+
+    // -------------------------------------------------------------------------
     // canViewClinic — OWNER blockeras, VET på rätt klinik släpps, ADMIN alltid
     // -------------------------------------------------------------------------
 
