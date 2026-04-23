@@ -35,13 +35,15 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
 
     // Rapportera dirty-state uppåt till App för in-app navigeringsskydd
     useEffect(() => {
-        onDirtyChange?.(newMessage.trim().length > 0 || isEditing);
-    }, [newMessage, isEditing]);
+        const journalChanged = isEditing && (editedTitle !== caseData?.title || editedDescription !== caseData?.description);
+        onDirtyChange?.(newMessage.trim().length > 0 || journalChanged);
+    }, [newMessage, isEditing, editedTitle, editedDescription]);
 
     // Varna vid stängning av fliken om det finns osparad text
     useEffect(() => {
         const handleBeforeUnload = (e) => {
-            const hasUnsaved = newMessageRef.current.trim() || isEditingRef.current;
+            const journalChanged = isEditingRef.current && (editedTitleRef.current !== caseData?.title || editedDescriptionRef.current !== caseData?.description);
+            const hasUnsaved = newMessageRef.current.trim() || journalChanged;
             if (hasUnsaved) {
                 e.preventDefault();
                 e.returnValue = '';
@@ -51,17 +53,8 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, []);
 
-    // Auto-spara journalnotering vid unmount (flikbyte i appen)
     useEffect(() => {
-        return () => {
-            onDirtyChange?.(false);
-            if (isEditingRef.current) {
-                medicalRecordService.update(caseData.id, {
-                    title: editedTitleRef.current,
-                    description: editedDescriptionRef.current
-                }).catch(() => {});
-            }
-        };
+        return () => { onDirtyChange?.(false); };
     }, []);
 
     useEffect(() => {
