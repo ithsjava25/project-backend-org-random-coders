@@ -80,7 +80,11 @@ public class VetService {
         vet.setSpecialization(request.specialization());
         vet.setBookingInfo(request.bookingInfo());
 
-        return VetResponse.from(vetRepository.save(vet));
+        try {
+            return VetResponse.from(vetRepository.save(vet));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new BusinessRuleException("Licens-ID " + request.licenseId() + " används redan");
+        }
     }
 
 @Transactional(readOnly = true)
