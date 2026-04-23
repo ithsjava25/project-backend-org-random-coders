@@ -1,7 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { STATUS_MAP } from '../utils/statusHelper';
+import { medicalRecordService } from '../services/api';
 
-const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }) => {
+const PetDetail = ({ pet, onBack, onRegisterCase, onCaseClick }) => {
+    const [petRecords, setPetRecords] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!pet?.id) return;
+        setLoading(true);
+        medicalRecordService.getRecordsByPet(pet.id)
+            .then(res => setPetRecords(res.data))
+            .catch(() => setPetRecords([]))
+            .finally(() => setLoading(false));
+    }, [pet?.id]);
 
     if (!pet) {
         return <div className="p-10 text-center italic text-slate-400">Ingen djurdata hittades.</div>;
@@ -66,7 +78,12 @@ const PetDetail = ({ pet, petRecords = [], onBack, onRegisterCase, onCaseClick }
                     </h2>
 
                     <div className="space-y-4">
-                        {Array.isArray(petRecords) && petRecords.length > 0 ? (
+                        {loading ? (
+                            <div className="flex items-center gap-2 text-slate-400 py-4">
+                                <div className="w-4 h-4 border-2 border-slate-200 border-t-blue-400 rounded-full animate-spin"></div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest italic">Laddar...</span>
+                            </div>
+                        ) : Array.isArray(petRecords) && petRecords.length > 0 ? (
                             petRecords.map(record => {
                                 const statusKey = record?.status;
                                 const statusConfig = (STATUS_MAP && STATUS_MAP[statusKey]) || {
