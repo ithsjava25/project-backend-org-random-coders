@@ -51,7 +51,7 @@ const AuditLogView = ({ logs = [], loading }) => {
                 log.performedByRole?.replace('ROLE_', '') === roleFilter.replace('ROLE_', '');
 
             const matchesClinic = clinicFilter === 'ALL' || log.clinicName === clinicFilter;
-            const matchesDate = !dateFilter || log.createdAt.startsWith(dateFilter);
+            const matchesDate = !dateFilter || (log.createdAt?.startsWith(dateFilter) ?? false);
 
             return matchesSearch && matchesAction && matchesRole && matchesDate && matchesClinic;
         });
