@@ -85,29 +85,29 @@ ON CONFLICT (email) DO UPDATE SET
                                   updated_at = NOW();
 
 -- Djur (Annas)
-INSERT INTO pet (id, owner_id, clinic_id, name, species, breed, created_at, updated_at)
+INSERT INTO pet (id, owner_id, clinic_id, name, species, breed, weight_kg, created_at, updated_at)
 VALUES
     ('f6a7b8c9-d0e1-4f5a-3b4c-d5e6f7a8b9c0',
      'c3d4e5f6-a7b8-4c5d-0e1f-a2b3c4d5e6f7',
      'a1b2c3d4-e5f6-4a5b-8c9d-e0f1a2b3c4d5',
-     'Fido', 'Hund', 'Labrador',
+     'Fido', 'Hund', 'Labrador', 28.5,
      NOW(), NOW()),
     ('a7b8c9d0-e1f2-4a5b-4c5d-e6f7a8b9c0d1',
      'c3d4e5f6-a7b8-4c5d-0e1f-a2b3c4d5e6f7',
      'a1b2c3d4-e5f6-4a5b-8c9d-e0f1a2b3c4d5',
-     'Missan', 'Katt', 'Persisk',
+     'Missan', 'Katt', 'Persisk', 4.2,
      NOW(), NOW()),
 
     -- Djur (Lars)
     ('c8d9e0f1-a2b3-4c4d-5e6f-a7b8c9d0e1f2',
      'b1c2d3e4-f5a6-4b7c-8d9e-f0a1b2c3d4e5',
      'a1b2c3d4-e5f6-4a5b-8c9d-e0f1a2b3c4d5',
-     'Birk', 'Hund', 'Golden Retriever',
+     'Birk', 'Hund', 'Golden Retriever', 32.0,
      NOW(), NOW()),
     ('d9e0f1a2-b3c4-4d5e-6f7a-b8c9d0e1f2a3',
      'b1c2d3e4-f5a6-4b7c-8d9e-f0a1b2c3d4e5',
      'a1b2c3d4-e5f6-4a5b-8c9d-e0f1a2b3c4d5',
-     'Misse', 'Katt', 'Maine Coon',
+     'Misse', 'Katt', 'Maine Coon', 6.8,
      NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
