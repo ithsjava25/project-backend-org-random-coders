@@ -12,7 +12,8 @@ const PetForm = ({ onCancel, onSave }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
 
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
 
     const handleSubmit = async (e) => {
@@ -48,14 +49,27 @@ const PetForm = ({ onCancel, onSave }) => {
                 const data = error.response.data;
                 const errors = {};
                 if (data?.errors) {
-                    // Spring returnerar vanligtvis { errors: [{ field, defaultMessage }] }
-                    data.errors.forEach(err => {
-                        if (err.field === 'dateOfBirth') {
-                            errors.dob = 'Födelsedatum kan inte vara i framtiden.';
-                        } else {
-                            errors[err.field] = err.defaultMessage;
-                        }
-                    });
+                    const fieldMap = {
+                        dateOfBirth: 'dob',
+                        weightKg: 'weight'
+                    };
+
+                    const addFieldError = (field, message) => {
+                        const formField = fieldMap[field] || field;
+                        errors[formField] = field === 'dateOfBirth'
+                            ? 'Födelsedatum kan inte vara i framtiden.'
+                            : message;
+                    };
+
+                    if (Array.isArray(data.errors)) {
+                        data.errors.forEach(err => {
+                            addFieldError(err.field, err.defaultMessage);
+                        });
+                    } else {
+                        Object.entries(data.errors).forEach(([field, messages]) => {
+                            addFieldError(field, Array.isArray(messages) ? messages[0] : messages);
+                        });
+                    }
                 } else if (data?.dateOfBirth || data?.message?.toLowerCase().includes('date')) {
                     errors.dob = 'Födelsedatum kan inte vara i framtiden.';
                 } else {
@@ -64,11 +78,11 @@ const PetForm = ({ onCancel, onSave }) => {
                 setFieldErrors(errors);
             } else {
                 setFieldErrors({ general: 'Något gick fel vid sparning. Försök igen.' });
-        }   }
-    finally {
-        setIsSubmitting(false);
-    }
-};
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
@@ -171,8 +185,9 @@ const PetForm = ({ onCancel, onSave }) => {
                         </div>
                     </div>
 
+                    {/* GENERELLT FEL */}
                     {fieldErrors.general && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg ...">
+                        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-600 text-sm font-semibold">
                             {fieldErrors.general}
                         </div>
                     )}
