@@ -414,15 +414,27 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
 
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-left">
                         <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 border-b pb-2 italic text-left">Logg & Historik</h3>
-                        <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                            {timeline.filter(item => item.type === 'ACTIVITY').map((log) => (
-                                <div key={log.id} className="relative pl-8 text-left">
-                                    <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-slate-300 border-2 border-white ring-4 ring-slate-50"></div>
-                                    <p className="text-[11px] font-bold text-slate-800 italic leading-tight text-left">{log.description}</p>
-                                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 italic tracking-tighter text-left">{new Date(log.createdAt).toLocaleString('sv-SE')}</p>
+                        {loading ? (
+                            <div className="flex items-center gap-2 text-slate-400 py-2">
+                                <div className="w-4 h-4 border-2 border-slate-200 border-t-blue-400 rounded-full animate-spin"></div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest italic">Laddar...</span>
+                            </div>
+                        ) : (() => {
+                            const activityLogs = timeline.filter(item => item.type === 'ACTIVITY');
+                            return activityLogs.length === 0 ? (
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic py-2">Ingen aktivitet ännu</p>
+                            ) : (
+                                <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                                    {activityLogs.map((log) => (
+                                        <div key={log.id} className="relative pl-8 text-left">
+                                            <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-slate-300 border-2 border-white ring-4 ring-slate-50"></div>
+                                            <p className="text-[11px] font-bold text-slate-800 italic leading-tight text-left">{log.description}</p>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 italic tracking-tighter text-left">{new Date(log.createdAt).toLocaleString('sv-SE')}</p>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>
