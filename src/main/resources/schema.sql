@@ -83,6 +83,11 @@ CREATE TABLE IF NOT EXISTS attachment (
                                           uploaded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Migration för befintliga databaser som skapades innan description-kolumnen lades till.
+-- CREATE TABLE IF NOT EXISTS ovan är no-op om tabellen redan finns, så kolumnen måste
+-- läggas till explicit. Samma mönster som comment_type ovan.
+ALTER TABLE attachment ADD COLUMN IF NOT EXISTS description VARCHAR(500);
+
 CREATE TABLE IF NOT EXISTS activity_log (
                                             id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
                                             record_id       UUID        REFERENCES medical_record(id),

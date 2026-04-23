@@ -91,8 +91,12 @@ export const medicalRecordService = {
 };
 
 export const attachmentService = {
-    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData),
-
+    // Content-Type sätts till undefined så att browsern själv sätter
+    // multipart/form-data med korrekt boundary. Annars ärver anropet
+    // axios-instansens globala application/json och backenden svarar 415.
+    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData, {
+        headers: { 'Content-Type': undefined }
+    }),
 
     getByRecord: (recordId) => api.get(`/attachments/record/${recordId}`),
     download: (id) => api.get(`/attachments/${id}/download`, { responseType: 'blob' }),
