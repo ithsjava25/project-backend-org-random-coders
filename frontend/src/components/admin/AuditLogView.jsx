@@ -35,7 +35,7 @@ const AuditLogView = ({ logs = [], loading }) => {
         }
     };
 
-    
+
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
             const searchLower = searchTerm.toLowerCase();
@@ -47,7 +47,9 @@ const AuditLogView = ({ logs = [], loading }) => {
                 log.recordId?.includes(searchTerm);
 
             const matchesAction = actionFilter === 'ALL' || log.action === actionFilter;
-            const matchesRole = roleFilter === 'ALL' || log.performedByRole === roleFilter;
+            const matchesRole = roleFilter === 'ALL' ||
+                log.performedByRole?.replace('ROLE_', '') === roleFilter.replace('ROLE_', '');
+
             const matchesClinic = clinicFilter === 'ALL' || log.clinicName === clinicFilter;
             const matchesDate = !dateFilter || log.createdAt.startsWith(dateFilter);
 
