@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { commentService, activityService, attachmentService, medicalRecordService } from '../services/api';
 import { STATUS_MAP } from '../utils/statusHelper';
-import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink } from 'lucide-react';
+import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink, UserMinus } from 'lucide-react';
 
 const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) => {
     const [newMessage, setNewMessage] = useState('');
@@ -84,6 +84,17 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             await refetchActivityLog();
         } catch (error) {
             alert("Kunde inte uppdatera status.");
+        }
+    };
+
+    const handleReleaseCase = async () => {
+        if (!window.confirm("Släppa ärendet? Det blir ledigt för en annan veterinär att ta över.")) return;
+        try {
+            const res = await medicalRecordService.unassignVet(caseData.id);
+            if (res?.data?.status) setLocalStatus(res.data.status);
+            await refetchActivityLog();
+        } catch (error) {
+            alert("Kunde inte släppa ärendet.");
         }
     };
 
@@ -211,6 +222,14 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                                     <option value="AWAITING_INFO">Väntar på svar</option>
                                 </select>
                             </div>
+                            {caseData.assignedVetId === currentUserId && (
+                                <button
+                                    onClick={handleReleaseCase}
+                                    className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 self-end"
+                                >
+                                    <UserMinus size={14} /> Släpp ärende
+                                </button>
+                            )}
                             <button
                                 onClick={() => setShowCloseModal(true)}
                                 className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-500/20 flex items-center gap-2 self-end"
