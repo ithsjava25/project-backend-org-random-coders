@@ -13,7 +13,10 @@ public record ActivityLogResponse(
         String description,
         UUID performedById,
         String performedByName,
+        String performedByRole,
         UUID recordId,
+        String clinicName,
+        String petName,
         Instant createdAt
 
 ) {
@@ -24,7 +27,10 @@ public record ActivityLogResponse(
                 log.getDescription(),
                 log.getPerformedBy().getId(),
                 log.getPerformedBy().getName(),
+                log.getPerformedBy().getRole().name(),
                 log.getMedicalRecord().getId(),
+                log.getMedicalRecord().getClinic().getName(),
+                log.getMedicalRecord().getPet() != null ? log.getMedicalRecord().getPet().getName() : "Okänt djur",
                 log.getCreatedAt()
         );
     }
