@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { commentService, activityService, attachmentService, medicalRecordService } from '../services/api';
 import { STATUS_MAP, ACTIVE_STATUS_KEYS } from '../utils/statusHelper';
-import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink } from 'lucide-react';
-import { STATUS_MAP } from '../utils/statusHelper';
 import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink, UserMinus } from 'lucide-react';
 
 const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDirtyChange }) => {
