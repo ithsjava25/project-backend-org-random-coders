@@ -141,6 +141,12 @@ public class PetService {
         if (!petPolicy.canDelete(currentUser, pet)) {
             throw new ForbiddenException("Du har inte behörighet att radera detta djur");
         }
+
+        boolean hasRecords = medicalRecordRepository.existsByPetId(petId);
+        if (hasRecords) {
+            throw new BusinessRuleException("Djuret kan inte raderas eftersom det finns registrerade journaler/ärenden.");
+        }
+
         try {
             petRepository.delete(pet);
             petRepository.flush();

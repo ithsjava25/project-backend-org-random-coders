@@ -69,6 +69,8 @@ export const petService = {
     getPetsByOwner: (ownerId) => api.get(`/pets/owner/${ownerId}`),
     getPetById: (id) => api.get(`/pets/${id}`),
     createPet: (data) => api.post('/pets', data),
+    updatePet: (id, data) => api.put(`/pets/${id}`, data),
+    deletePet: (id) => api.delete(`/pets/${id}`),
 };
 
 export const medicalRecordService = {

@@ -198,6 +198,7 @@ function App() {
                         onBack={goBackToDashboard}
                         onRegisterCase={(pet) => { setSelectedPet(pet); setCurrentView('create-case'); }}
                         onCaseClick={handleCaseClick}
+                        onDelete={fetchData}
                     />
                 );
 
