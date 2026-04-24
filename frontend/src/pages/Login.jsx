@@ -66,7 +66,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
             {/* Kort sektion */}
             <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
                 <div className="p-10 md:p-12 text-left">
-                    <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight italic uppercase">Logga in</h2>
+                    {/* <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight italic uppercase">Logga in</h2>*/}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
