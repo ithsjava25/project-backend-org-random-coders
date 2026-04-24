@@ -218,7 +218,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
         <div className="max-w-6xl mx-auto space-y-8 pb-20 text-left">
             {/* NAVIGATION */}
             <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-vet-navy font-bold text-[10px] uppercase tracking-[0.2em] transition group">
-                <span className="group-hover:-translate-x-1 transition-transform">←</span> Tillbaka till listan
+                <span className="group-hover:-translate-x-1 transition-transform">←</span> Tillbaka
             </button>
 
             {/* VETERINÄRPANEL */}

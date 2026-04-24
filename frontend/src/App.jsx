@@ -22,6 +22,7 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
     const caseDetailDirtyRef = useRef(false);
+    const previousViewRef = useRef(null);
 
     // 1. Initialisering: Hämta användare från token vid start
     useEffect(() => {
@@ -109,16 +110,45 @@ function App() {
         setSelectedRecord(null);
     };
 
-    const goBackToDashboard = () => {
+    const navigateBack = () => {
         caseDetailDirtyRef.current = false;
-        setSelectedPet(null);
         setSelectedRecord(null);
+
         if (currentUser?.role === 'ROLE_VET') {
-            setCurrentView('vet-dashboard');
+            setCurrentView(previousViewRef.current || 'vet-dashboard');
+            setSelectedPet(null);
         } else if (currentUser?.role === 'ROLE_ADMIN') {
             setCurrentView('admin-dashboard');
+            setSelectedPet(null);
         } else {
-            setCurrentView('dashboard');
+            // OWNER: gå tillbaka till rätt vy
+            if (currentView === 'pet-detail') {
+                setCurrentView('my-pets');
+                setSelectedPet(null);
+            } else if (currentView === 'case-detail' && selectedPet) {
+                // Kom från djurkortet → tillbaka dit
+                setCurrentView('pet-detail');
+            } else if (currentView === 'case-detail') {
+                // Kom från journallistan
+                setCurrentView('my-cases');
+                setSelectedPet(null);
+            } else {
+                setCurrentView('dashboard');
+                setSelectedPet(null);
+            }
+        }
+    };
+
+    // Hjälpfunktion för att hämta och öppna en journal
+    const handleCaseClick = async (record) => {
+        try {
+            const res = await medicalRecordService.getRecordById(record.id);
+            setSelectedRecord(res.data);
+            previousViewRef.current = currentView;// ← spara varifrån vi kom
+            setCurrentView('case-detail');
+        } catch (err) {
+            console.error("Kunde inte öppna journalen:", err);
+            alert("Kunde inte öppna journalen. Kontrollera din anslutning.");
         }
     };
 
@@ -130,18 +160,6 @@ function App() {
             </div>
         );
 
-        // Hjälpfunktion för att hämta och öppna en journal
-        const handleCaseClick = async (record) => {
-            try {
-                // Vi hämtar den fullständiga journalen (inkl. beskrivning etc) från servern
-                const res = await medicalRecordService.getRecordById(record.id);
-                setSelectedRecord(res.data);
-                setCurrentView('case-detail');
-            } catch (err) {
-                console.error("Kunde inte öppna journalen:", err);
-                alert("Kunde inte öppna journalen. Kontrollera din anslutning.");
-            }
-        };
 
         // I din renderAuthenticatedContent i App.jsx
         if (currentUser?.role === 'ROLE_ADMIN') {
@@ -189,13 +207,13 @@ function App() {
                 );
 
             case 'add-pet':
-                return <PetForm onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
+                return <PetForm onCancel={navigateBack} onSave={async () => { await fetchData(); navigateBack(); }} />
 
             case 'pet-detail':
                 return (
                     <PetDetail
                         pet={selectedPet}
-                        onBack={goBackToDashboard}
+                        onBack={navigateBack}
                         onRegisterCase={(pet) => { setSelectedPet(pet); setCurrentView('create-case'); }}
                         onCaseClick={handleCaseClick}
                         onDelete={fetchData}
@@ -203,7 +221,7 @@ function App() {
                 );
 
             case 'create-case':
-                return <CreateCase pets={myPets} preSelectedPet={selectedPet} existingCase={selectedRecord} onCancel={goBackToDashboard} onSave={async () => { await fetchData(); goBackToDashboard(); }} />
+                return <CreateCase pets={myPets} preSelectedPet={selectedPet} existingCase={selectedRecord} onCancel={navigateBack} onSave={async () => { await fetchData(); navigateBack(); }} />
 
             case 'case-detail':
                 return (
@@ -212,7 +230,7 @@ function App() {
                         currentUserId={currentUser?.id}
                         userRole={currentUser?.role} // VIKTIGT: Skickar med rollen för veterinär-panelen
                         onDirtyChange={(dirty) => { caseDetailDirtyRef.current = dirty; }}
-                        onBack={goBackToDashboard}
+                        onBack={navigateBack}
                         onGoToPet={async (petId) => {
                             try {
                                 const res = await petService.getPetById(petId);
