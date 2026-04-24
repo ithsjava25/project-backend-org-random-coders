@@ -17,7 +17,6 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
     const [editedDescription, setEditedDescription] = useState(caseData?.description || '');
     const [editedTitle, setEditedTitle] = useState(caseData?.title || '');
 
-    const messagesEndRef = useRef(null);
     const statusConfig = STATUS_MAP[localStatus] || { label: localStatus, color: 'bg-slate-50 text-slate-500 border-slate-100' };
 
     const isClosed = localStatus === 'CLOSED'; // Helper för att förenkla checkar
@@ -64,14 +63,6 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
             setEditedDescription(caseData.description || '');
         }
     }, [caseData?.id]);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    useEffect(() => {
-        if (timeline.length > 0) scrollToBottom();
-    }, [timeline]);
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -224,7 +215,7 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
     if (!caseData || loading) return <div className="p-10 text-center italic text-slate-400">Laddar journal...</div>;
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 pb-20 text-left">
+        <div className="max-w-6xl mx-auto space-y-8 pb-20 text-left">
             {/* NAVIGATION */}
             <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-vet-navy font-bold text-[10px] uppercase tracking-[0.2em] transition group">
                 <span className="group-hover:-translate-x-1 transition-transform">←</span> Tillbaka till listan
@@ -390,7 +381,6 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
                                         </div>
                                     </div>
                                 ))}
-                                <div ref={messagesEndRef} />
                             </div>
                         </div>
 
@@ -457,7 +447,6 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
                     </div>
                 </div>
             </div>
-
             {/* CLOSE CASE MODAL */}
             {showCloseModal && (
                 <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
