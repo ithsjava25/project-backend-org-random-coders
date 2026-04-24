@@ -87,6 +87,7 @@ export const medicalRecordService = {
 
     // Arbetsflöde (Veterinär)
     assignVet: (id, vetId) => api.put(`/medical-records/${id}/assign-vet`, { vetId }),
+    unassignVet: (id) => api.put(`/medical-records/${id}/unassign-vet`),
     updateStatus: (id, status) => api.put(`/medical-records/${id}/status`, { status }),
     closeRecord: (id) => api.put(`/medical-records/${id}/close`),
     getMyAssignedRecords: () => api.get('/medical-records/my-assigned'),

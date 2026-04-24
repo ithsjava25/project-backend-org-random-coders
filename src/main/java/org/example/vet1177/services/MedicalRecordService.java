@@ -202,6 +202,37 @@ public class MedicalRecordService {
 
     }
 
+    // Släpper nuvarande handläggare från ärendet. Återställer status till OPEN om
+    // ärendet var IN_PROGRESS (speglar assignVet som satte IN_PROGRESS); andra statusar
+    // som VET manuellt satt (t.ex. AWAITING_INFO) bevaras.
+    public MedicalRecord unassignVet(UUID recordId, User updatedBy) {
+        log.info("Unassigning vet from record id={}", recordId);
+        MedicalRecord record = getById(recordId);
+
+        if (record.getAssignedVet() == null) {
+            throw new BusinessRuleException("Ärendet har ingen tilldelad handläggare");
+        }
+
+        User releasedVet = record.getAssignedVet();
+
+        record.setAssignedVet(null);
+        if (record.getStatus() == RecordStatus.IN_PROGRESS) {
+            record.setStatus(RecordStatus.OPEN);
+        }
+        record.setUpdatedBy(updatedBy);
+
+        MedicalRecord updated = medicalRecordRepository.save(record);
+
+        activityLogService.log(
+                ActivityType.UNASSIGNED,
+                "Veterinär " + releasedVet.getName() + " har släppt ärendet",
+                updatedBy,
+                updated
+        );
+
+        return updated;
+    }
+
     public MedicalRecord updateStatus(UUID recordId, RecordStatus newStatus, User updatedBy) {
         log.info("Updating status of record id={} to {}", recordId, newStatus);
         MedicalRecord record = getById(recordId);
