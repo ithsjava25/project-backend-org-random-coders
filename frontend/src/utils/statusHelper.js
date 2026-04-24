@@ -27,6 +27,7 @@ export const ACTION_LABELS = {
     'STATUS_CHANGED': 'Status ändrad',
     'COMMENT_ADDED':  'Kommentar tillagd',
     'ASSIGNED':       'Veterinär tilldelad',
+    'UNASSIGNED':     'Ärende släppt',
     'UPDATED':        'Ärende uppdaterat'
 };
 
