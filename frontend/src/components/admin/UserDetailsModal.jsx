@@ -1,26 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Shield, Hospital, Calendar, Activity, User as UserIcon, Edit2, Award, Briefcase } from 'lucide-react';
+import { X, Mail, Shield, Hospital, Calendar, Activity, User as UserIcon, Edit2, Award } from 'lucide-react';
 import { vetService } from '../../services/api';
 
 const UserDetailsModal = ({ isOpen, onClose, user, clinics, onEdit }) => {
     const [vetDetails, setVetDetails] = useState(null);
     const [loadingVet, setLoadingVet] = useState(false);
 
+    // --- KEYBOARD & SCROLL LOCK & RACE CONDITION PROTECTION ---
     useEffect(() => {
-        // Om användaren är en veterinär, hämta extrauppgifter
-        if (isOpen && user?.role?.includes('VET')) {
-            setLoadingVet(true);
-            vetService.getAll()
-                .then(res => {
-                    const details = res.data.find(v => v.userId === user.id);
-                    setVetDetails(details);
-                })
-                .catch(err => console.error("Kunde inte hämta veterinärinfo:", err))
-                .finally(() => setLoadingVet(false));
+        let ignore = false;
+
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'hidden';
+
+            // Om användaren är en veterinär, hämta extrauppgifter
+            if (user?.role?.includes('VET')) {
+                setLoadingVet(true);
+                vetService.getAll()
+                    .then(res => {
+                        if (!ignore) {
+                            const details = res.data.find(v => v.userId === user.id);
+                            setVetDetails(details);
+                        }
+                    })
+                    .catch(err => {
+                        if (!ignore) console.error("Kunde inte hämta veterinärinfo:", err);
+                    })
+                    .finally(() => {
+                        if (!ignore) setLoadingVet(false);
+                    });
+            }
         } else {
             setVetDetails(null);
         }
-    }, [isOpen, user]);
+
+        return () => {
+            ignore = true;
+            window.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen, user, onClose]);
 
     if (!isOpen || !user) return null;
 
@@ -29,14 +53,24 @@ const UserDetailsModal = ({ isOpen, onClose, user, clinics, onEdit }) => {
     const isVet = user.role?.includes('VET');
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+        <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="user-modal-title"
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* HEADER */}
                 <div className="bg-slate-50 px-8 pt-10 pb-8 relative">
                     <button
                         onClick={onClose}
                         className="absolute top-6 right-6 p-2 hover:bg-white rounded-full transition-all text-slate-400 shadow-sm"
+                        aria-label="Stäng modal"
                     >
                         <X size={20} />
                     </button>
@@ -46,7 +80,10 @@ const UserDetailsModal = ({ isOpen, onClose, user, clinics, onEdit }) => {
                             <UserIcon size={40} />
                         </div>
                         <div className="text-left">
-                            <h2 className="text-3xl font-black text-slate-900 italic tracking-tight uppercase leading-none">
+                            <h2
+                                id="user-modal-title"
+                                className="text-3xl font-black text-slate-900 italic tracking-tight uppercase leading-none"
+                            >
                                 {user.name}
                             </h2>
                             <div className="flex items-center gap-2 mt-2">
@@ -72,7 +109,6 @@ const UserDetailsModal = ({ isOpen, onClose, user, clinics, onEdit }) => {
                             </div>
                         </div>
 
-                        {/* Renderas bara om användaren har en klinik kopplad */}
                         {user.clinicId && (
                             <div className="space-y-1 text-left">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Ansluten klinik</p>
@@ -91,14 +127,22 @@ const UserDetailsModal = ({ isOpen, onClose, user, clinics, onEdit }) => {
                                 <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest italic">Vet-ID / Legitimation</p>
                                 <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
                                     <Award size={16} className="text-blue-400" />
-                                    {loadingVet ? '...' : vetDetails?.licenseId || 'Ej angivet'}
+                                    {loadingVet ? (
+                                        <span className="animate-pulse">Hämtar...</span>
+                                    ) : (
+                                        vetDetails?.licenseId || 'Ej angivet'
+                                    )}
                                 </div>
                             </div>
                             <div className="space-y-1 text-left">
                                 <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest italic">Specialisering</p>
                                 <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
                                     <Shield size={16} className="text-blue-400" />
-                                    {loadingVet ? '...' : vetDetails?.specialization || 'Allmänpraktiserande'}
+                                    {loadingVet ? (
+                                        <span className="animate-pulse">...</span>
+                                    ) : (
+                                        vetDetails?.specialization || 'Allmänpraktiserande'
+                                    )}
                                 </div>
                             </div>
                         </div>
