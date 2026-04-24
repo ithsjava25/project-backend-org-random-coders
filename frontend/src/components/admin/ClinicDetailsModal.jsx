@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     X,
     MapPin,
@@ -7,11 +7,28 @@ import {
     Calendar,
     Activity,
     Edit2,
-    Users as UsersIcon,
     Award
 } from 'lucide-react';
 
 const ClinicDetailsModal = ({ isOpen, onClose, clinic, users = [], onEdit }) => {
+
+    // --- NYTT: Keyboard handler & Scroll-lock ---
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'hidden'; // Lås bakgrundsscroll
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'unset'; // Återställ scroll
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen || !clinic) return null;
 
     const clinicStaff = users.filter(u =>
@@ -20,14 +37,27 @@ const ClinicDetailsModal = ({ isOpen, onClose, clinic, users = [], onEdit }) => 
     );
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+        <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+            // --- NYTT: Stäng vid klick på bakgrunden ---
+            onClick={onClose}
+        >
+            <div
+                className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
+                // --- NYTT: Dialog semantik ---
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="clinic-modal-title"
+                // --- NYTT: Stoppa klick-bubbling (så inte modalen stängs när man klickar inuti den) ---
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* HEADER */}
                 <div className="bg-emerald-50/50 px-8 pt-10 pb-8 relative text-left">
                     <button
                         onClick={onClose}
                         className="absolute top-6 right-6 p-2 hover:bg-white rounded-full transition-all text-slate-400 shadow-sm"
+                        aria-label="Stäng modal"
                     >
                         <X size={20} />
                     </button>
@@ -37,10 +67,13 @@ const ClinicDetailsModal = ({ isOpen, onClose, clinic, users = [], onEdit }) => 
                             <Hospital size={40} />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-slate-900 italic tracking-tight uppercase leading-none">
+                            <h2
+                                // --- NYTT: ID för ARIA-koppling ---
+                                id="clinic-modal-title"
+                                className="text-3xl font-black text-slate-900 italic tracking-tight uppercase leading-none"
+                            >
                                 {clinic.name}
                             </h2>
-                            {/* "Aktiv enhet" borttagen härifrån */}
                         </div>
                     </div>
                 </div>
@@ -69,7 +102,7 @@ const ClinicDetailsModal = ({ isOpen, onClose, clinic, users = [], onEdit }) => 
                     <div className="pt-6 border-t border-slate-100">
                         <div className="flex items-center gap-2 mb-4">
                             <Award size={18} className="text-emerald-500" />
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Anslutna Veterinärer ({clinicStaff.length})</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic italic">Anslutna Veterinärer ({clinicStaff.length})</p>
                         </div>
 
                         {clinicStaff.length > 0 ? (
