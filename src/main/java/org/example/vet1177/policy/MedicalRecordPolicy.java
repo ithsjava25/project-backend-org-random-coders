@@ -99,6 +99,24 @@ public class MedicalRecordPolicy {
         }
     }
 
+    // Endast den tilldelade VET:en själv (eller ADMIN) får släppa ärendet.
+    // Kollegor på samma klinik spärras — principen är "man äger sitt eget arbete".
+    public void canUnassignVet(User user, MedicalRecord record) {
+        switch (user.getRole()) {
+            case OWNER ->
+                    throw new ForbiddenException("Ägare får inte släppa ärenden");
+            case VET -> {
+                if (record.getAssignedVet() == null ||
+                        !record.getAssignedVet().getId().equals(user.getId()))
+                    throw new ForbiddenException("Du kan bara släppa ärenden du själv är tilldelad");
+            }
+            case ADMIN -> {}
+        }
+
+        if (record.getStatus().isFinal())
+            throw new BusinessRuleException("Stängda ärenden kan inte ändras");
+    }
+
     public void canClose(User user, MedicalRecord record) {
         switch (user.getRole()) {
             case OWNER ->

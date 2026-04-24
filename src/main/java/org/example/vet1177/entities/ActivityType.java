@@ -5,5 +5,6 @@ public enum ActivityType {
     STATUS_CHANGED,
     COMMENT_ADDED,
     ASSIGNED,
+    UNASSIGNED,
     UPDATED
 }

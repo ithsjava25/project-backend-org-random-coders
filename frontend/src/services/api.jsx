@@ -69,6 +69,8 @@ export const petService = {
     getPetsByOwner: (ownerId) => api.get(`/pets/owner/${ownerId}`),
     getPetById: (id) => api.get(`/pets/${id}`),
     createPet: (data) => api.post('/pets', data),
+    updatePet: (id, data) => api.put(`/pets/${id}`, data),
+    deletePet: (id) => api.delete(`/pets/${id}`),
 };
 
 export const medicalRecordService = {
@@ -85,14 +87,19 @@ export const medicalRecordService = {
 
     // Arbetsflöde (Veterinär)
     assignVet: (id, vetId) => api.put(`/medical-records/${id}/assign-vet`, { vetId }),
+    unassignVet: (id) => api.put(`/medical-records/${id}/unassign-vet`),
     updateStatus: (id, status) => api.put(`/medical-records/${id}/status`, { status }),
     closeRecord: (id) => api.put(`/medical-records/${id}/close`),
     getMyAssignedRecords: () => api.get('/medical-records/my-assigned'),
 };
 
 export const attachmentService = {
-    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData),
-
+    // Content-Type sätts till undefined så att browsern själv sätter
+    // multipart/form-data med korrekt boundary. Annars ärver anropet
+    // axios-instansens globala application/json och backenden svarar 415.
+    upload: (recordId, formData) => api.post(`/attachments/record/${recordId}`, formData, {
+        headers: { 'Content-Type': undefined }
+    }),
 
     getByRecord: (recordId) => api.get(`/attachments/record/${recordId}`),
     download: (id) => api.get(`/attachments/${id}/download`, { responseType: 'blob' }),
@@ -126,6 +133,7 @@ export const userService = {
 
 export const vetService = {
     create: (vetData) => api.post('/vets', vetData),
+    update: (userId, vetData) => api.put(`/vets/${userId}`, vetData),
     getAll: () => api.get('/vets'),
     getById: (id) => api.get(`/vets/${id}`),
 };

@@ -98,6 +98,7 @@ public class SecurityConfig {
                         // /status, /close, /assign-vet förblir VET/ADMIN-only på URL-nivå.
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/close").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/assign-vet").hasAnyRole("VET", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/unassign-vet").hasAnyRole("VET", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medical-records/*/status").hasAnyRole("VET", "ADMIN")
 
                         // ─── VET/ADMIN: klinik-vy ───

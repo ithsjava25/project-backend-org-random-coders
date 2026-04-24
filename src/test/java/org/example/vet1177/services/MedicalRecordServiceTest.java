@@ -328,6 +328,77 @@ class MedicalRecordServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // unassignVet
+    // -------------------------------------------------------------------------
+
+    @Test
+    void unassignVet_shouldClearAssignedVetAndReturn() {
+        User vet = new User("Dr. Erik", "erik@vet.se", "hash", Role.VET);
+        record.setAssignedVet(vet);
+        record.setStatus(RecordStatus.IN_PROGRESS);
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+        when(medicalRecordRepository.save(record)).thenReturn(record);
+
+        MedicalRecord result = medicalRecordService.unassignVet(recordId, currentUser);
+
+        assertThat(result.getAssignedVet()).isNull();
+    }
+
+    @Test
+    void unassignVet_whenStatusInProgress_shouldResetToOpen() {
+        User vet = new User("Dr. Erik", "erik@vet.se", "hash", Role.VET);
+        record.setAssignedVet(vet);
+        record.setStatus(RecordStatus.IN_PROGRESS);
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+        when(medicalRecordRepository.save(record)).thenReturn(record);
+
+        MedicalRecord result = medicalRecordService.unassignVet(recordId, currentUser);
+
+        assertThat(result.getStatus()).isEqualTo(RecordStatus.OPEN);
+    }
+
+    @Test
+    void unassignVet_whenStatusAwaitingInfo_shouldKeepStatus() {
+        User vet = new User("Dr. Erik", "erik@vet.se", "hash", Role.VET);
+        record.setAssignedVet(vet);
+        record.setStatus(RecordStatus.AWAITING_INFO);
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+        when(medicalRecordRepository.save(record)).thenReturn(record);
+
+        MedicalRecord result = medicalRecordService.unassignVet(recordId, currentUser);
+
+        assertThat(result.getStatus()).isEqualTo(RecordStatus.AWAITING_INFO);
+    }
+
+    @Test
+    void unassignVet_shouldLogActivityWithVetName() {
+        User vet = new User("Dr. Erik Vet", "erik@vet.se", "hash", Role.VET);
+        record.setAssignedVet(vet);
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+        when(medicalRecordRepository.save(record)).thenReturn(record);
+
+        medicalRecordService.unassignVet(recordId, currentUser);
+
+        verify(activityLogService).log(
+                eq(ActivityType.UNASSIGNED),
+                eq("Veterinär Dr. Erik Vet har släppt ärendet"),
+                eq(currentUser),
+                eq(record));
+    }
+
+    @Test
+    void unassignVet_whenNoAssignedVet_shouldThrowBusinessRuleException() {
+        record.setAssignedVet(null);
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+
+        assertThatThrownBy(() -> medicalRecordService.unassignVet(recordId, currentUser))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Ärendet har ingen tilldelad handläggare");
+
+        verify(medicalRecordRepository, never()).save(any());
+    }
+
+    // -------------------------------------------------------------------------
     // updateStatus
     // -------------------------------------------------------------------------
 

@@ -66,6 +66,27 @@ public class VetService {
         }
     }
 
+    public VetResponse updateVet(UUID userId, VetRequest request) {
+        log.info("Updating vet userId={}", userId);
+        Vet vet = vetRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vet", userId));
+
+        if (!vet.getLicenseId().equals(request.licenseId()) &&
+                vetRepository.existsByLicenseId(request.licenseId())) {
+            throw new BusinessRuleException("Licens-ID " + request.licenseId() + " används redan");
+        }
+
+        vet.setLicenseId(request.licenseId());
+        vet.setSpecialization(request.specialization());
+        vet.setBookingInfo(request.bookingInfo());
+
+        try {
+            return VetResponse.from(vetRepository.save(vet));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new BusinessRuleException("Licens-ID " + request.licenseId() + " används redan");
+        }
+    }
+
 @Transactional(readOnly = true)
     public List<VetResponse> getAllVets() {
         log.debug("Fetching all vets");

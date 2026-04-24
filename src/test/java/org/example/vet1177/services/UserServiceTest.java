@@ -316,15 +316,16 @@ public class UserServiceTest {
     }
 
     @Test
-    void updateUser_owner_setClinic_throwsBusinessRuleException() {
+    void updateUser_owner_setClinic_isIgnored() {
         UserUpdateRequest request = new UserUpdateRequest();
         request.setClinicId(clinicId);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(ownerUser));
+        when(userRepository.save(ownerUser)).thenReturn(ownerUser);
 
-        assertThatThrownBy(() -> userService.updateUser(userId, request))
-                .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Endast veterinärer kan kopplas till en klinik");
+        userService.updateUser(userId, request);
+
+        assertThat(ownerUser.getClinic()).isNull();
     }
 
     @Test

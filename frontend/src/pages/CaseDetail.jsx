@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { commentService, activityService, attachmentService, medicalRecordService } from '../services/api';
 import { STATUS_MAP, ACTIVE_STATUS_KEYS } from '../utils/statusHelper';
 import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink } from 'lucide-react';
+import { STATUS_MAP } from '../utils/statusHelper';
+import { Stethoscope, Lock, FileText, CheckCircle, Upload, Trash2, ExternalLink, UserMinus } from 'lucide-react';
 
-const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) => {
+const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDirtyChange }) => {
     const [newMessage, setNewMessage] = useState('');
     const [timeline, setTimeline] = useState([]);
     const [attachments, setAttachments] = useState([]);
@@ -21,6 +23,41 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
     const statusConfig = STATUS_MAP[localStatus] || { label: localStatus, color: 'bg-slate-50 text-slate-500 border-slate-100' };
 
     const isClosed = localStatus === 'CLOSED'; // Helper för att förenkla checkar
+
+    // Refs för att komma åt senaste state i cleanup-funktioner
+    const newMessageRef = useRef(newMessage);
+    const isEditingRef = useRef(isEditing);
+    const editedTitleRef = useRef(editedTitle);
+    const editedDescriptionRef = useRef(editedDescription);
+
+    useEffect(() => { newMessageRef.current = newMessage; }, [newMessage]);
+    useEffect(() => { isEditingRef.current = isEditing; }, [isEditing]);
+    useEffect(() => { editedTitleRef.current = editedTitle; }, [editedTitle]);
+    useEffect(() => { editedDescriptionRef.current = editedDescription; }, [editedDescription]);
+
+    // Rapportera dirty-state uppåt till App för in-app navigeringsskydd
+    useEffect(() => {
+        const journalChanged = isEditing && (editedTitle !== caseData?.title || editedDescription !== caseData?.description);
+        onDirtyChange?.(newMessage.trim().length > 0 || journalChanged);
+    }, [newMessage, isEditing, editedTitle, editedDescription]);
+
+    // Varna vid stängning av fliken om det finns osparad text
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            const journalChanged = isEditingRef.current && (editedTitleRef.current !== caseData?.title || editedDescriptionRef.current !== caseData?.description);
+            const hasUnsaved = newMessageRef.current.trim() || journalChanged;
+            if (hasUnsaved) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, []);
+
+    useEffect(() => {
+        return () => { onDirtyChange?.(false); };
+    }, []);
 
     useEffect(() => {
         if (caseData) {
@@ -84,6 +121,17 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
             await refetchActivityLog();
         } catch (error) {
             alert("Kunde inte uppdatera status.");
+        }
+    };
+
+    const handleReleaseCase = async () => {
+        if (!window.confirm("Släppa ärendet? Det blir ledigt för en annan veterinär att ta över.")) return;
+        try {
+            const res = await medicalRecordService.unassignVet(caseData.id);
+            if (res?.data?.status) setLocalStatus(res.data.status);
+            await refetchActivityLog();
+        } catch (error) {
+            alert("Kunde inte släppa ärendet.");
         }
     };
 
@@ -211,6 +259,14 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
                                     ))}
                                 </select>
                             </div>
+                            {caseData.assignedVetId === currentUserId && (
+                                <button
+                                    onClick={handleReleaseCase}
+                                    className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 self-end"
+                                >
+                                    <UserMinus size={14} /> Släpp ärende
+                                </button>
+                            )}
                             <button
                                 onClick={() => setShowCloseModal(true)}
                                 className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-500/20 flex items-center gap-2 self-end"
@@ -379,15 +435,27 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole }) =>
 
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-left">
                         <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 border-b pb-2 italic text-left">Logg & Historik</h3>
-                        <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-                            {timeline.filter(item => item.type === 'ACTIVITY').map((log) => (
-                                <div key={log.id} className="relative pl-8 text-left">
-                                    <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-slate-300 border-2 border-white ring-4 ring-slate-50"></div>
-                                    <p className="text-[11px] font-bold text-slate-800 italic leading-tight text-left">{log.description}</p>
-                                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 italic tracking-tighter text-left">{new Date(log.createdAt).toLocaleString('sv-SE')}</p>
+                        {loading ? (
+                            <div className="flex items-center gap-2 text-slate-400 py-2">
+                                <div className="w-4 h-4 border-2 border-slate-200 border-t-blue-400 rounded-full animate-spin"></div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest italic">Laddar...</span>
+                            </div>
+                        ) : (() => {
+                            const activityLogs = timeline.filter(item => item.type === 'ACTIVITY');
+                            return activityLogs.length === 0 ? (
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic py-2">Ingen aktivitet ännu</p>
+                            ) : (
+                                <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                                    {activityLogs.map((log) => (
+                                        <div key={log.id} className="relative pl-8 text-left">
+                                            <div className="absolute left-1.5 top-1.5 w-3 h-3 rounded-full bg-slate-300 border-2 border-white ring-4 ring-slate-50"></div>
+                                            <p className="text-[11px] font-bold text-slate-800 italic leading-tight text-left">{log.description}</p>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 italic tracking-tighter text-left">{new Date(log.createdAt).toLocaleString('sv-SE')}</p>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>

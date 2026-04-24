@@ -117,7 +117,14 @@ public class UserService {
             user.setName(request.getName());
         }
 
-        if (request.getClinicId() != null) {
+        if (request.getRole() != null) {
+            user.setRole(request.getRole());
+            if (request.getRole() != Role.VET) {
+                user.setClinic(null);
+            }
+        }
+
+        if (request.getClinicId() != null && user.getRole() == Role.VET) {
             applyClinicRulesForUpdate(user, request.getClinicId());
         }
         log.info("Updated user id={}", id);

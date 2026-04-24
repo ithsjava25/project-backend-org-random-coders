@@ -228,6 +228,24 @@ public class MedicalRecordController {
         );
     }
 
+    // PUT /api/medical-records/{id}/unassign-vet
+    @PutMapping("/{id}/unassign-vet")
+    @Transactional
+    public ResponseEntity<MedicalRecordResponse> unassignVet(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User currentUser) {
+
+        log.info("PUT /api/medical-records/{}/unassign-vet", id);
+        MedicalRecord record = medicalRecordService.getById(id);
+        medicalRecordPolicy.canUnassignVet(currentUser, record);
+
+        return ResponseEntity.ok(
+                MedicalRecordResponse.from(
+                        medicalRecordService.unassignVet(id, currentUser)
+                )
+        );
+    }
+
     // PUT /api/medical-records/{id}/status
     @PutMapping("/{id}/status")
     @Transactional
