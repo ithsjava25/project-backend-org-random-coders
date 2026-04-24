@@ -447,7 +447,6 @@ const CaseDetail = ({ caseData, onBack, onGoToPet, currentUserId, userRole, onDi
                     </div>
                 </div>
             </div>
-
             {/* CLOSE CASE MODAL */}
             {showCloseModal && (
                 <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
