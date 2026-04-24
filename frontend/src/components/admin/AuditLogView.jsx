@@ -70,17 +70,6 @@ const AuditLogView = ({ logs = [], loading }) => {
         });
     }, [logs, searchTerm, actionFilter, roleFilter, clinicFilter, dateFilter]);
 
-                        {/* Content */}
-                        <div className="flex-1 pb-8">
-                            <div className="flex justify-between items-start mb-1">
-                                <h4 className="font-black text-slate-900 italic tracking-tight uppercase text-sm">
-                                    {getActionLabel(log.action)}
-                                </h4>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    {date}
-                                </span>
-                            </div>
-                            <p className="text-slate-600 text-sm font-medium mb-2">{log.description}</p>
     if (loading) return <div className="p-20 text-center italic text-slate-400">Laddar administrativ historik...</div>;
 
     return (
@@ -161,7 +150,7 @@ const AuditLogView = ({ logs = [], loading }) => {
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-3">
                                                 <h4 className="font-black text-slate-900 italic tracking-tight uppercase text-sm">
-                                                    {log.action.replace('_', ' ')}
+                                                    {getActionLabel(log.action)}
                                                 </h4>
                                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${
                                                     log.performedByRole?.includes('VET') ? 'bg-blue-50 text-blue-600 border-blue-100' :
