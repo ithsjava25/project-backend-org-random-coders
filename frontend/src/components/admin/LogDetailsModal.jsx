@@ -122,7 +122,7 @@ const LogDetailsModal = ({ isOpen, onClose, log }) => {
                         onClick={onClose}
                         className="w-full flex items-center justify-center gap-2 py-4 bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-purple-600 transition-all shadow-xl active:scale-95 italic"
                     >
-                        Stäng detaljvy
+                        Stäng
                     </button>
                 </div>
 

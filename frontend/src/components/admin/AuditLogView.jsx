@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import LogDetailsModal from './LogDetailsModal'; // Importeras nu som den enda källan till sanning
 import {
     FilePlus,
     RefreshCw,
@@ -9,109 +10,10 @@ import {
     AlertCircle,
     Search,
     MapPin,
-    ShieldCheck,
     X,
     Activity,
-    Hash,
-    Info
+    Hash
 } from 'lucide-react';
-
-// --- MODAL KOMPONENT ---
-const LogDetailsModal = ({ isOpen, onClose, log }) => {
-    if (!isOpen || !log) return null;
-
-    const fullDate = new Date(log.createdAt).toLocaleString('sv-SE', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-
-    return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
-                {/* HEADER */}
-                <div className="bg-purple-50/50 px-8 pt-10 pb-8 relative text-left">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-6 right-6 p-2 hover:bg-white rounded-full transition-all text-slate-400 shadow-sm"
-                    >
-                        <X size={20} />
-                    </button>
-                    <div className="flex items-center gap-5">
-                        <div className="w-20 h-20 bg-white rounded-3xl border border-slate-200 shadow-sm flex items-center justify-center text-purple-500">
-                            <ShieldCheck size={40} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest italic mb-1">Systemlogg / Detaljer</p>
-                            <h2 className="text-2xl font-black text-slate-900 italic tracking-tight uppercase leading-none">
-                                {log.action.replace('_', ' ')}
-                            </h2>
-                        </div>
-                    </div>
-                </div>
-
-                {/* INNEHÅLL */}
-                <div className="p-8 space-y-8">
-                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 relative text-left">
-                        <Info size={16} className="absolute top-4 right-4 text-slate-300" />
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mb-2">Beskrivning</p>
-                        <p className="text-slate-700 font-bold leading-relaxed">{log.description}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-1 text-left">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Utförd av</p>
-                            <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                                <UserIcon size={16} className="text-purple-400" />
-                                {log.performedByName}
-                            </div>
-                        </div>
-                        <div className="space-y-1 text-left">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Klinik</p>
-                            <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                                <MapPin size={16} className="text-purple-400" />
-                                {log.clinicName || 'System'}
-                            </div>
-                        </div>
-                        <div className="space-y-1 text-left">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Patient</p>
-                            <div className="flex items-center gap-2 text-amber-700 font-bold text-sm">
-                                <Activity size={16} className="text-amber-500" />
-                                {log.petName || 'N/A'}
-                            </div>
-                        </div>
-                        <div className="space-y-1 text-left">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Tidpunkt</p>
-                            <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                                <Clock size={16} className="text-purple-400" />
-                                {fullDate}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
-                        <div className="flex items-center gap-3 text-left">
-                            <div className="p-2 bg-slate-50 rounded-xl text-slate-400"><Hash size={18} /></div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Referens-ID</p>
-                                <p className="font-mono text-xs font-bold text-slate-600">{log.recordId}</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="px-8 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-purple-600 transition-all italic"
-                        >
-                            Stäng
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 // --- HUVUDKOMPONENT ---
 const AuditLogView = ({ logs = [], loading }) => {
@@ -140,6 +42,7 @@ const AuditLogView = ({ logs = [], loading }) => {
             case 'CASE_CREATED': return { icon: <FilePlus size={16} />, color: 'text-emerald-500', bg: 'bg-emerald-50' };
             case 'STATUS_CHANGED': return { icon: <RefreshCw size={16} />, color: 'text-blue-500', bg: 'bg-blue-50' };
             case 'COMMENT_ADDED': return { icon: <MessageSquare size={16} />, color: 'text-purple-500', bg: 'bg-purple-50' };
+            case 'USER_REGISTERED': return { icon: <UserPlus size={16} />, color: 'text-orange-500', bg: 'bg-orange-50' };
             case 'ASSIGNED': return { icon: <UserPlus size={16} />, color: 'text-orange-500', bg: 'bg-orange-50' };
             default: return { icon: <AlertCircle size={16} />, color: 'text-slate-500', bg: 'bg-slate-50' };
         }
@@ -278,7 +181,7 @@ const AuditLogView = ({ logs = [], loading }) => {
                 )}
             </div>
 
-            {/* MODAL RENDER */}
+            {/* MODAL RENDER - Använder nu den importerade komponenten */}
             <LogDetailsModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
