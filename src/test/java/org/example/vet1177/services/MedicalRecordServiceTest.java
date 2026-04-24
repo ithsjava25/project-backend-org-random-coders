@@ -431,7 +431,7 @@ class MedicalRecordServiceTest {
 
         verify(activityLogService).log(
                 eq(ActivityType.STATUS_CHANGED),
-                contains("AWAITING_INFO"),
+                contains(RecordStatus.AWAITING_INFO.displayLabel()),
                 eq(currentUser),
                 eq(record));
     }

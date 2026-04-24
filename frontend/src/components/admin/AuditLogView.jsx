@@ -14,6 +14,7 @@ import {
     Activity,
     Hash
 } from 'lucide-react';
+import { getActionLabel } from '../../utils/statusHelper';
 
 // --- HUVUDKOMPONENT ---
 const AuditLogView = ({ logs = [], loading }) => {
@@ -149,7 +150,7 @@ const AuditLogView = ({ logs = [], loading }) => {
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-3">
                                                 <h4 className="font-black text-slate-900 italic tracking-tight uppercase text-sm">
-                                                    {log.action.replace('_', ' ')}
+                                                    {getActionLabel(log.action)}
                                                 </h4>
                                                 <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${
                                                     log.performedByRole?.includes('VET') ? 'bg-blue-50 text-blue-600 border-blue-100' :

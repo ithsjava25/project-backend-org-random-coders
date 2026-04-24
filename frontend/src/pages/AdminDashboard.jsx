@@ -203,8 +203,8 @@ const AdminDashboard = ({ userName, initialTab = 'USERS' }) => {
                     <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm border-b-4 border-b-red-400">
                         <div className="flex items-center gap-4">
                             <div className="bg-red-50 p-3 rounded-2xl text-red-600"><ShieldAlert size={24} /></div>
-                            <div className="text-left">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Admininstratörer</p>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Administratörer</p>
                                 <p className="text-3xl font-black text-slate-900">{stats.admins}</p>
                             </div>
                         </div>
@@ -239,7 +239,7 @@ const AdminDashboard = ({ userName, initialTab = 'USERS' }) => {
                                     activeTab === 'LOGS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'
                                 }`}
                             >
-                                Audit Log
+                                Aktivitetslogg
                             </button>
                         </div>
                     </div>
