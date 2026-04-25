@@ -5,14 +5,12 @@ import org.example.vet1177.dto.request.attachment.AttachmentRequest;
 import org.example.vet1177.dto.response.attachment.AttachmentResponse;
 import org.example.vet1177.entities.Attachment;
 import org.example.vet1177.entities.MedicalRecord;
-import org.example.vet1177.entities.OrphanedS3Object;
 import org.example.vet1177.entities.User;
 import org.example.vet1177.exception.ResourceNotFoundException;
 import org.example.vet1177.policy.AttachmentPolicy;
 import org.example.vet1177.policy.MedicalRecordPolicy;
 import org.example.vet1177.repository.AttachmentRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
-import org.example.vet1177.repository.OrphanedS3ObjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,7 +20,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +34,7 @@ public class AttachmentService {
     private final AttachmentPolicy attachmentPolicy;
     private final String bucketName;
     private final MedicalRecordPolicy medicalRecordPolicy;
-    private final OrphanedS3ObjectRepository orphanedS3ObjectRepository;
+    private final OrphanedS3Enqueuer orphanedS3Enqueuer;
 
     public AttachmentService(AttachmentRepository attachmentRepository,
                              FileStorageService fileStorageService,
@@ -45,14 +42,14 @@ public class AttachmentService {
                              AttachmentPolicy attachmentPolicy,
                              AwsS3Properties props,
                              MedicalRecordPolicy medicalRecordPolicy,
-                             OrphanedS3ObjectRepository orphanedS3ObjectRepository) {
+                             OrphanedS3Enqueuer orphanedS3Enqueuer) {
         this.attachmentRepository = attachmentRepository;
         this.fileStorageService = fileStorageService;
         this.medicalRecordRepository = medicalRecordRepository;
         this.attachmentPolicy = attachmentPolicy;
         this.bucketName = props.getBucketName();
         this.medicalRecordPolicy = medicalRecordPolicy;
-        this.orphanedS3ObjectRepository = orphanedS3ObjectRepository;
+        this.orphanedS3Enqueuer = orphanedS3Enqueuer;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -106,7 +103,7 @@ public class AttachmentService {
                 fileStorageService.delete(s3Key);
             } catch (Exception deleteEx) {
                 log.error("Upload cleanup failed. Enqueuing {} for background retry.", s3Key);
-                orphanedS3ObjectRepository.save(new OrphanedS3Object(s3Key, bucketName));
+                orphanedS3Enqueuer.enqueue(s3Key, bucketName, "Upload transaction failed");
             }
             throw new RuntimeException("Kunde inte spara metadata i databasen. Uppladdningen avbröts.", e);
         }
@@ -133,10 +130,8 @@ public class AttachmentService {
                         log.info("S3 object {} deleted after successful DB commit", s3Key);
                     } catch (Exception e) {
                         log.error("S3 deletion failed for {}. Enqueuing for background retry.", s3Key, e);
-                        OrphanedS3Object orphan = new OrphanedS3Object(s3Key, s3Bucket);
-                        orphan.setLastError("Initial deletion failure: " + e.getMessage());
-                        orphan.setLastAttemptAt(Instant.now());
-                        orphanedS3ObjectRepository.save(orphan);
+
+                        orphanedS3Enqueuer.enqueue(s3Key, s3Bucket, "S3 deletion failed after commit: " + e.getMessage());
                     }
                 }
             });
@@ -144,7 +139,7 @@ public class AttachmentService {
             try {
                 fileStorageService.delete(s3Key);
             } catch (Exception e) {
-                orphanedS3ObjectRepository.save(new OrphanedS3Object(s3Key, s3Bucket));
+                orphanedS3Enqueuer.enqueue(s3Key, bucketName, "Delete failed: " + e.getMessage());
             }
         }
         log.info("Attachment {} marked for deletion in database", attachmentId);
@@ -176,7 +171,7 @@ public class AttachmentService {
             return UUID.randomUUID().toString();
         }
         String filename = new java.io.File(originalFilename).getName();
-        filename = filename.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+        filename = filename.replaceAll("[^a-zA-Z0-9.\\-_]", "_");
         filename = filename.trim();
         if (filename.isEmpty() || filename.equals(".") || filename.equals("..")) {
             return "file_" + System.currentTimeMillis();

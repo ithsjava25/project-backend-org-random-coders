@@ -9,7 +9,6 @@ import org.example.vet1177.policy.AttachmentPolicy;
 import org.example.vet1177.policy.MedicalRecordPolicy;
 import org.example.vet1177.repository.AttachmentRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
-import org.example.vet1177.repository.OrphanedS3ObjectRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,7 +48,7 @@ class AttachmentServiceTest {
     private MedicalRecordPolicy medicalRecordPolicy;
 
     @Mock
-    private OrphanedS3ObjectRepository orphanedS3ObjectRepository;
+    private OrphanedS3Enqueuer orphanedS3Enqueuer;
 
     private AttachmentService attachmentService;
 
@@ -74,7 +73,8 @@ class AttachmentServiceTest {
                 attachmentPolicy,
                 props,
                 medicalRecordPolicy,
-                orphanedS3ObjectRepository
+                orphanedS3Enqueuer
+
         );
 
         vetUser = new User("Dr. Sara Lindqvist", "sara@vet.se", "hash", Role.VET);
@@ -299,5 +299,26 @@ class AttachmentServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
 
         verify(attachmentRepository, never()).delete(any());
+    }
+
+    @Test
+    void upload_whenDbFailsAndS3DeleteFails_shouldEnqueueOrphan() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "bild.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+
+        // 1. Tvinga DB att krascha
+        when(attachmentRepository.saveAndFlush(any())).thenThrow(new RuntimeException("DB Error"));
+
+        // 2. Tvinga även raderingen att krascha (det är då den hamnar i kön!)
+        doThrow(new RuntimeException("S3 Delete Error"))
+                .when(fileStorageService).delete(anyString());
+
+        assertThatThrownBy(() -> attachmentService.uploadAttachment(vetUser, file, new AttachmentRequest(recordId, "En bild")))
+                .isInstanceOf(RuntimeException.class);
+
+        // Nu kommer kön att anropas!
+        verify(orphanedS3Enqueuer).enqueue(anyString(), eq("test-bucket"), anyString());
     }
 }
