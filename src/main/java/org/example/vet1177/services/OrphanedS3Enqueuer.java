@@ -25,8 +25,8 @@ public class OrphanedS3Enqueuer {
     public void enqueue(String s3Key, String bucket, String reason) {
         OrphanedS3Object orphan = new OrphanedS3Object(s3Key, bucket);
 
-        // Vi sätter lastAttemptAt till nu direkt så att kön vet att den är ny
-        orphan.setLastAttemptAt(null); // Eller Instant.now() beroende på hur vi vill att NULLS FIRST ska reagera
+
+        orphan.setLastAttemptAt(null);
 
         if (reason != null) {
             // Säkerställ att vi inte kraschar på för långa felmeddelanden

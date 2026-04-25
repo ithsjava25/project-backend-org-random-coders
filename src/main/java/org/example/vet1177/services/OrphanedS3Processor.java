@@ -46,7 +46,7 @@ public class OrphanedS3Processor {
 
             repository.save(orphan);
             log.warn("Retry failed for S3 object {}. Attempt {}/{}",
-                    orphan.getS3Key(), orphan.getRetryCount(), maxRetries);
+                    orphan.getS3Key(), orphan.getRetryCount(), maxRetries, e);
         }
     }
 }
