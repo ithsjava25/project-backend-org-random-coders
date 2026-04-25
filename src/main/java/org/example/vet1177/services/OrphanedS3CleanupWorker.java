@@ -4,6 +4,7 @@ import org.example.vet1177.entities.OrphanedS3Object;
 import org.example.vet1177.repository.OrphanedS3ObjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +36,10 @@ public class OrphanedS3CleanupWorker {
     @Transactional
     public void retryDeletions() {
         // Hämta upp till 20 objekt som behöver raderas
-        List<OrphanedS3Object> pending = repository.findTop20ByRetryCountLessThanOrderByLastAttemptAtAsc(MAX_RETRIES);
+        List<OrphanedS3Object> pending = repository.findNextBatchToProcess(
+                MAX_RETRIES,
+                PageRequest.of(0, 20)
+        );
 
         if (pending.isEmpty()) {
             return;
