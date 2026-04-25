@@ -120,7 +120,7 @@ public class AttachmentService {
         String s3Bucket = attachment.getS3Bucket();
 
         attachmentRepository.delete(attachment);
-        
+
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
