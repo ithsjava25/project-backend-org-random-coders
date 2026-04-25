@@ -9,6 +9,7 @@ import org.example.vet1177.policy.AttachmentPolicy;
 import org.example.vet1177.policy.MedicalRecordPolicy;
 import org.example.vet1177.repository.AttachmentRepository;
 import org.example.vet1177.repository.MedicalRecordRepository;
+import org.example.vet1177.repository.OrphanedS3ObjectRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +48,9 @@ class AttachmentServiceTest {
     @Mock
     private MedicalRecordPolicy medicalRecordPolicy;
 
+    @Mock
+    private OrphanedS3ObjectRepository orphanedS3ObjectRepository;
+
     private AttachmentService attachmentService;
 
     private User vetUser;
@@ -69,7 +73,8 @@ class AttachmentServiceTest {
                 medicalRecordRepository,
                 attachmentPolicy,
                 props,
-                medicalRecordPolicy
+                medicalRecordPolicy,
+                orphanedS3ObjectRepository
         );
 
         vetUser = new User("Dr. Sara Lindqvist", "sara@vet.se", "hash", Role.VET);
