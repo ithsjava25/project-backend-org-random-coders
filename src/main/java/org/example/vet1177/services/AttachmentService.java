@@ -98,12 +98,18 @@ public class AttachmentService {
             return mapToResponse(attachment);
 
         } catch (Exception e) {
-            log.error("Database persistence failed for S3 key: {}. Triggering cleanup.", s3Key);
+            // FIX: Inkluderar stacktrace (e) och bevarar felkedjan
+            log.error("Database persistence failed for S3 key: {}. Triggering cleanup.", s3Key, e);
             try {
                 fileStorageService.delete(s3Key);
             } catch (Exception deleteEx) {
-                log.error("Upload cleanup failed. Enqueuing {} for background retry.", s3Key);
-                orphanedS3Enqueuer.enqueue(s3Key, bucketName, "Upload transaction failed");
+                // FIX: Loggar cleanup-felet separat och skapar en informativ anledning för kön
+                log.error("Upload cleanup failed for {}. Enqueuing for background retry.", s3Key, deleteEx);
+
+                String errorReason = String.format("DB Error: %s. Cleanup Error: %s",
+                        e.getClass().getSimpleName(), deleteEx.getMessage());
+
+                orphanedS3Enqueuer.enqueue(s3Key, bucketName, errorReason);
             }
             throw new RuntimeException("Kunde inte spara metadata i databasen. Uppladdningen avbröts.", e);
         }
@@ -121,19 +127,18 @@ public class AttachmentService {
 
         attachmentRepository.delete(attachment);
 
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    try {
-                        fileStorageService.delete(s3Key);
-                        log.info("S3 object {} deleted after successful DB commit", s3Key);
-                    } catch (Exception e) {
-                        log.error("S3 deletion failed for {}. Enqueuing for background retry.", s3Key, e);
-
-                        orphanedS3Enqueuer.enqueue(s3Key, s3Bucket, "S3 deletion failed after commit: " + e.getMessage());
-                    }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    fileStorageService.delete(s3Key);
+                    log.info("S3 object {} deleted after successful DB commit", s3Key);
+                } catch (Exception e) {
+                    log.error("S3 deletion failed for {}. Enqueuing for background retry.", s3Key, e);
+                    orphanedS3Enqueuer.enqueue(s3Key, s3Bucket, "S3 deletion failed after commit: " + e.getMessage());
                 }
-            });
+            }
+        });
 
         log.info("Attachment {} marked for deletion in database", attachmentId);
     }
