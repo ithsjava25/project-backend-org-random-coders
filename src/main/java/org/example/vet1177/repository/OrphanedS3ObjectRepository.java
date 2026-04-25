@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -21,4 +22,6 @@ public interface OrphanedS3ObjectRepository extends JpaRepository<OrphanedS3Obje
     List<OrphanedS3Object> findNextBatchToProcess(@Param("maxRetries") int maxRetries, Pageable pageable);
 
     long countByRetryCountGreaterThanEqual(int maxRetries);
+
+    Optional<OrphanedS3Object> findByS3Key(String s3Key);
 }
