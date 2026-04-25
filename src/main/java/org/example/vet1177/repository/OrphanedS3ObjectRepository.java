@@ -19,4 +19,6 @@ public interface OrphanedS3ObjectRepository extends JpaRepository<OrphanedS3Obje
        """)
 
     List<OrphanedS3Object> findNextBatchToProcess(@Param("maxRetries") int maxRetries, Pageable pageable);
+
+    long countByRetryCountGreaterThanEqual(int maxRetries);
 }
