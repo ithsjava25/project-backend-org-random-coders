@@ -120,8 +120,7 @@ public class AttachmentService {
         String s3Bucket = attachment.getS3Bucket();
 
         attachmentRepository.delete(attachment);
-
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
@@ -135,13 +134,7 @@ public class AttachmentService {
                     }
                 }
             });
-        } else {
-            try {
-                fileStorageService.delete(s3Key);
-            } catch (Exception e) {
-                orphanedS3Enqueuer.enqueue(s3Key, bucketName, "Delete failed: " + e.getMessage());
-            }
-        }
+
         log.info("Attachment {} marked for deletion in database", attachmentId);
     }
 
