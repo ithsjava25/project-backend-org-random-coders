@@ -1,4 +1,4 @@
-# Vet1177 – Veterinärjournalsystem (Backend)
+# Vet1177 – Veterinärjournalsystem
 
 Ett webbaserat journalhanteringssystem för veterinärkliniker. Husdjursägare kan skapa ärenden, veterinärer kan hantera journaler och bifoga filer, och administratörer har full tillgång till systemet.
 
@@ -15,23 +15,34 @@ Ett webbaserat journalhanteringssystem för veterinärkliniker. Husdjursägare k
 - [Fillagring (MinIO/S3)](#fillagring-minios3)
 - [Testning](#testning)
 - [CI/CD](#cicd)
+- [Felhantering](#felhantering)
 
 ---
 
 ## Tech-stack
 
+### Backend
+
 | Kategori        | Teknologi                          |
 |-----------------|------------------------------------|
-| Språk           | Java 25                            |
+| Språk           | Java 24                            |
 | Ramverk         | Spring Boot 4.0.4                  |
 | Databas         | PostgreSQL 15                      |
 | ORM             | Spring Data JPA / Hibernate        |
 | Säkerhet        | Spring Security 6                  |
 | Fillagring      | MinIO (S3-kompatibel)              |
-| Templating      | Thymeleaf                          |
 | Loggning        | SLF4J                              |
 | Byggsystem      | Maven                              |
 | Containerisering| Docker / Docker Compose            |
+
+### Frontend
+
+| Kategori        | Teknologi                          |
+|-----------------|------------------------------------|
+| Ramverk         | React 19                           |
+| Byggverktyg     | Vite 8                             |
+| Styling         | Tailwind CSS 3                     |
+| HTTP-klient     | Axios                              |
 
 ---
 
@@ -39,9 +50,10 @@ Ett webbaserat journalhanteringssystem för veterinärkliniker. Husdjursägare k
 
 ### Förutsättningar
 
-- Java 25
+- Java 24
 - Maven
 - Docker & Docker Compose
+- Node.js (för frontend)
 
 ### Installation
 
@@ -62,12 +74,21 @@ Fyll i värdena i `.env` (se [Miljövariabler](#miljövariabler)).
 docker compose up -d
 ```
 
-**4. Starta applikationen**
+**4. Starta backend**
 ```bash
 ./mvnw spring-boot:run
 ```
 
-Applikationen startar på `http://localhost:8080`.
+Backenden startar på `http://localhost:8080`.
+
+**5. Starta frontend**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontenden startar på `http://localhost:5173`.
 
 > MinIO-konsolen nås på `http://localhost:9001` (använd dina `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD`).
 
@@ -107,6 +128,12 @@ src/main/java/org/example/vet1177/
 ├── security/            # Spring Security-konfiguration + auth
 │   └── auth/dto/        # Auth-relaterade DTOs
 └── services/            # Affärslogik
+
+frontend/src/
+├── components/          # Återanvändbara UI-komponenter
+├── pages/               # Sidkomponenter per roll (Owner, Vet, Admin)
+├── services/            # API-anrop (axios)
+└── utils/               # Hjälpfunktioner
 ```
 
 ### Entiteter
@@ -116,7 +143,7 @@ src/main/java/org/example/vet1177/
 | `User`          | Användare med roll: `OWNER`, `VET`, `ADMIN`              |
 | `Vet`           | Utökar User med licensnummer och specialisering          |
 | `Clinic`        | Veterinärklinik                                          |
-| `Pet`           | Husdjur knutet till en ägare och klinik                  |
+| `Pet`           | Husdjur knutet till en ägare                             |
 | `MedicalRecord` | Ärende/journal – kärnan i systemet                       |
 | `Comment`       | Kommentar på ett ärende                                  |
 | `Attachment`    | Bifogad fil lagrad i MinIO/S3                            |
@@ -132,37 +159,47 @@ src/main/java/org/example/vet1177/
 
 Bas-URL: `/api`
 
+### Autentisering – `/api/auth`
+
+| Metod | Sökväg      | Beskrivning       |
+|-------|-------------|-------------------|
+| POST  | `/login`    | Logga in (JWT)    |
+| POST  | `/register` | Registrera ägare  |
+
 ### Journaler – `/api/medical-records`
 
-| Metod  | Sökväg                              | Beskrivning                        |
-|--------|-------------------------------------|------------------------------------|
-| POST   | `/`                                 | Skapa nytt ärende                  |
-| GET    | `/{id}`                             | Hämta ärende via ID                |
-| GET    | `/my-records`                       | Inloggad ägares ärenden            |
-| GET    | `/owner/{ownerId}`                  | Ärenden för en ägare               |
-| GET    | `/pet/{petId}`                      | Ärenden för ett husdjur            |
-| GET    | `/clinic/{clinicId}`                | Ärenden på en klinik               |
-| GET    | `/clinic/{clinicId}/status/{status}`| Filtrera på klinik och status      |
-| PUT    | `/{id}`                             | Uppdatera ärende                   |
-| PUT    | `/{id}/assign-vet`                  | Tilldela veterinär                 |
-| PUT    | `/{id}/status`                      | Uppdatera status                   |
-| PUT    | `/{id}/close`                       | Stäng ärende                       |
+| Metod  | Sökväg                               | Beskrivning                        |
+|--------|--------------------------------------|------------------------------------|
+| POST   | `/`                                  | Skapa nytt ärende                  |
+| GET    | `/{id}`                              | Hämta ärende via ID                |
+| GET    | `/my-records`                        | Inloggad ägares ärenden            |
+| GET    | `/my-assigned`                       | Inloggad veterinärs tilldelade     |
+| GET    | `/owner/{ownerId}`                   | Ärenden för en ägare               |
+| GET    | `/pet/{petId}`                       | Ärenden för ett husdjur            |
+| GET    | `/clinic/{clinicId}`                 | Ärenden på en klinik               |
+| GET    | `/clinic/{clinicId}/status/{status}` | Filtrera på klinik och status      |
+| PUT    | `/{id}`                              | Uppdatera ärende                   |
+| PUT    | `/{id}/assign-vet`                   | Tilldela veterinär                 |
+| PUT    | `/{id}/status`                       | Uppdatera status                   |
+| PUT    | `/{id}/close`                        | Stäng ärende                       |
 
 ### Övriga endpoints
 
-| Prefix               | Beskrivning                    |
-|----------------------|--------------------------------|
-| `/api/clinics`       | CRUD för kliniker              |
-| `/api/vets`          | Hämta och skapa veterinärer    |
-| `/api/pets`          | Husdjurshantering (pågående)   |
-| `/api/comments`      | Kommentarer på ärenden         |
-| `/api/activity-logs` | Revisionslogg                  |
+| Prefix               | Beskrivning                          |
+|----------------------|--------------------------------------|
+| `/api/users`         | CRUD för användare (admin)           |
+| `/api/clinics`       | CRUD för kliniker                    |
+| `/api/vets`          | Hämta, skapa och uppdatera veterinärer |
+| `/api/pets`          | Husdjurshantering                    |
+| `/api/comments`      | Kommentarer på ärenden               |
+| `/api/attachments`   | Bilagor (uppladdning, nedladdning)   |
+| `/api/activity-logs` | Revisionslogg                        |
 
 ---
 
 ## Roller och behörigheter
 
-Auktoriseringslogiken hanteras i `MedicalRecordPolicy`.
+Auktoriseringslogiken hanteras av rollspecifika policy-klasser: `MedicalRecordPolicy`, `CommentPolicy` och `PetPolicy`.
 
 | Roll    | Behörighet                                                  |
 |---------|-------------------------------------------------------------|
@@ -183,47 +220,29 @@ Bilagor lagras i MinIO (S3-kompatibelt). Vid applikationsstart skapas bucket aut
 
 ---
 
-### Att göra
-
-| Uppgift                                               | Prioritet |
-|-------------------------------------------------------|-----------|
-| Admin-policy (auktorisering för adminrollen)          | Hög       |
-| Loggning – genomgång och utökning med SLF4J           | Medium    |
-| Tester – enhetstester för egna klasser                | Hög       |
-| Tester – integrationstester                           | Hög       |
-| Fortsätta skapa issues och fördela ansvar             | Löpande   |
-
-### Klart nyligen
-
-- Borttaget dubblett-exceptions-paket
-- MinIO-konfiguration ersätter `System.out` med SLF4J-loggning
-- Klinik-controller refaktorering
-- Pet service policy
-
----
-
 ## Testning
 
-> Tester är ännu inte implementerade – detta är ett prioriterat nästa steg.
+Tester är implementerade med JUnit 5 och Mockito.
 
-Planen är:
-1. **Enhetstester** – varje utvecklare skriver tester för sina egna klasser
-2. **Integrationstester** – tester mot riktig databas (ingen mocking av DB)
+```bash
+./mvnw test
+```
 
-Testberoenden är redan konfigurerade i `pom.xml`:
-- `spring-boot-starter-data-jpa-test`
-- `spring-boot-starter-webmvc-test`
-- `spring-boot-starter-thymeleaf-test`
+**Enhetstester** – finns under `src/test/java/org/example/vet1177/services/` och `policy/`, testar affärslogik och auktorisering med mockade beroenden.
+
+**Integrationstester** – finns under `src/test/java/org/example/vet1177/integration/`, testar mot riktig databas:
+- `ClinicIntegrationTest`
+- `ActivityLogIntegrationTest`
+- `VetIntegrationTest`
 
 ---
 
 ## CI/CD
 
-> CI/CD-pipeline är under uppsättning.
+GitHub Actions kör bygge och tester automatiskt vid PR mot `main`.
 
-Planerat:
-- GitHub Actions workflow för bygge och test vid PR
-- Automatisk körning av `./mvnw verify`
+- Workflow: `.github/workflows/`
+- Kör `./mvnw verify` vid varje PR
 
 ---
 
