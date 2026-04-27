@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.security.access.AccessDeniedException;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -34,24 +34,26 @@ public class AttachmentService {
     private final AttachmentPolicy attachmentPolicy;
     private final String bucketName;
     private final MedicalRecordPolicy medicalRecordPolicy;
+    private final OrphanedS3Enqueuer orphanedS3Enqueuer;
 
     public AttachmentService(AttachmentRepository attachmentRepository,
                              FileStorageService fileStorageService,
                              MedicalRecordRepository medicalRecordRepository,
                              AttachmentPolicy attachmentPolicy,
                              AwsS3Properties props,
-                             MedicalRecordPolicy medicalRecordPolicy) {
+                             MedicalRecordPolicy medicalRecordPolicy,
+                             OrphanedS3Enqueuer orphanedS3Enqueuer) {
         this.attachmentRepository = attachmentRepository;
         this.fileStorageService = fileStorageService;
         this.medicalRecordRepository = medicalRecordRepository;
         this.attachmentPolicy = attachmentPolicy;
         this.bucketName = props.getBucketName();
         this.medicalRecordPolicy = medicalRecordPolicy;
+        this.orphanedS3Enqueuer = orphanedS3Enqueuer;
     }
 
-
     @Transactional(rollbackFor = Exception.class)
-    public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request)  {
+    public AttachmentResponse uploadAttachment(User currentUser, MultipartFile file, AttachmentRequest request) {
         MedicalRecord record = medicalRecordRepository.findById(request.recordId())
                 .orElseThrow(() -> new ResourceNotFoundException("MedicalRecord", request.recordId()));
 
@@ -59,19 +61,16 @@ public class AttachmentService {
             throw new IllegalArgumentException("Det går inte att ladda upp en tom fil.");
         }
 
-        // Validering
         attachmentPolicy.canUpload(currentUser, record, file.getContentType(), file.getSize());
 
         String originalName = file.getOriginalFilename();
         String sanitizedName = sanitizeFilename(originalName);
 
-        // Skapa unik S3-nyckel
         String s3Key = String.format("records/%s/%s_%s",
                 record.getId(),
                 UUID.randomUUID(),
                 sanitizedName);
 
-        // Anropa FileStorageService
         try {
             fileStorageService.upload(s3Key, file.getInputStream(), file.getSize(), file.getContentType());
         } catch (IOException e) {
@@ -82,62 +81,39 @@ public class AttachmentService {
             throw new RuntimeException("Kunde inte ladda upp filen till molnlagringen", e);
         }
 
-        // Skapa entitet
-    try {
-        Attachment attachment = new Attachment();
-        attachment.setMedicalRecord(record);
-        attachment.setUploadedBy(currentUser);
-        attachment.setFileName(file.getOriginalFilename());
-        attachment.setS3Key(s3Key);
-        attachment.setS3Bucket(bucketName);
-        attachment.setFileType(file.getContentType());
-        attachment.setFileSizeBytes(file.getSize());
-        attachment.setDescription(request.description());
+        try {
+            Attachment attachment = new Attachment();
+            attachment.setMedicalRecord(record);
+            attachment.setUploadedBy(currentUser);
+            attachment.setFileName(file.getOriginalFilename());
+            attachment.setS3Key(s3Key);
+            attachment.setS3Bucket(bucketName);
+            attachment.setFileType(file.getContentType());
+            attachment.setFileSizeBytes(file.getSize());
+            attachment.setDescription(request.description());
 
-        attachment = attachmentRepository.saveAndFlush(attachment);
+            attachment = attachmentRepository.saveAndFlush(attachment);
 
-        log.info("Attachment {} successfully persisted for record {}", attachment.getId(), record.getId());
-
-        return mapToResponse(attachment);
+            log.info("Attachment {} successfully persisted for record {}", attachment.getId(), record.getId());
+            return mapToResponse(attachment);
 
         } catch (Exception e) {
-        log.error("Database persistence failed for S3 key: {}. Triggering cleanup.", s3Key);
+            // FIX: Inkluderar stacktrace (e) och bevarar felkedjan
+            log.error("Database persistence failed for S3 key: {}. Triggering cleanup.", s3Key, e);
+            try {
+                fileStorageService.delete(s3Key);
+            } catch (Exception deleteEx) {
+                // FIX: Loggar cleanup-felet separat och skapar en informativ anledning för kön
+                log.error("Upload cleanup failed for {}. Enqueuing for background retry.", s3Key, deleteEx);
 
-        try {
-            fileStorageService.delete(s3Key);
-        } catch (Exception deleteEx) {
-            log.error("CRITICAL: Failed to cleanup S3 object {}!", s3Key, deleteEx);
-        }
-        throw new RuntimeException("Kunde inte spara metadata i databasen. Uppladdningen avbröts.", e);
-    }
-    }
+                String errorReason = String.format("DB Error: %s. Cleanup Error: %s",
+                        e.getClass().getSimpleName(), deleteEx.getMessage());
 
-    private String sanitizeFilename(String originalFilename) {
-        if (originalFilename == null || originalFilename.isBlank()) {
-            return UUID.randomUUID().toString();
-        }
-
-        String filename = new java.io.File(originalFilename).getName();
-        filename = filename.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
-
-        filename = filename.trim();
-            if (filename.isEmpty() || filename.equals(".") || filename.equals("..")) {
-                return "file_" + System.currentTimeMillis();
+                orphanedS3Enqueuer.enqueue(s3Key, bucketName, errorReason);
             }
-            return filename;
+            throw new RuntimeException("Kunde inte spara metadata i databasen. Uppladdningen avbröts.", e);
+        }
     }
-
-
-    @Transactional(readOnly = true)
-    public AttachmentResponse getAttachment(User currentUser, UUID attachmentId) {
-        Attachment attachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment", attachmentId));
-
-        attachmentPolicy.canDownload(currentUser, attachment);
-
-        return mapToResponse(attachment);
-    }
-
 
     @Transactional
     public void deleteAttachment(User currentUser, UUID attachmentId) {
@@ -147,26 +123,33 @@ public class AttachmentService {
         attachmentPolicy.canDelete(currentUser, attachment);
 
         String s3Key = attachment.getS3Key();
+        String s3Bucket = attachment.getS3Bucket();
 
         attachmentRepository.delete(attachment);
 
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    try {
-                        fileStorageService.delete(s3Key);
-                        log.info("S3 object {} deleted after successful DB commit", s3Key);
-                    } catch (Exception e) {
-                        log.error("CRITICAL: Failed to delete S3 object {} after DB commit!", s3Key, e);
-                    }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    fileStorageService.delete(s3Key);
+                    log.info("S3 object {} deleted after successful DB commit", s3Key);
+                } catch (Exception e) {
+                    log.error("S3 deletion failed for {}. Enqueuing for background retry.", s3Key, e);
+                    orphanedS3Enqueuer.enqueue(s3Key, s3Bucket, "S3 deletion failed after commit: " + e.getMessage());
                 }
-            });
-        } else {
-            fileStorageService.delete(s3Key);
-        }
+            }
+        });
 
         log.info("Attachment {} marked for deletion in database", attachmentId);
+    }
+
+    @Transactional(readOnly = true)
+    public AttachmentResponse getAttachment(User currentUser, UUID attachmentId) {
+        Attachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment", attachmentId));
+
+        attachmentPolicy.canDownload(currentUser, attachment);
+        return mapToResponse(attachment);
     }
 
     @Transactional(readOnly = true)
@@ -176,15 +159,26 @@ public class AttachmentService {
 
         medicalRecordPolicy.canView(currentUser, record);
 
-
         return attachmentRepository.findByMedicalRecordId(recordId).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
+    private String sanitizeFilename(String originalFilename) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return UUID.randomUUID().toString();
+        }
+        String filename = new java.io.File(originalFilename).getName();
+        filename = filename.replaceAll("[^a-zA-Z0-9.\\-_]", "_");
+        filename = filename.trim();
+        if (filename.isEmpty() || filename.equals(".") || filename.equals("..")) {
+            return "file_" + System.currentTimeMillis();
+        }
+        return filename;
+    }
+
     private AttachmentResponse mapToResponse(Attachment attachment) {
         String downloadUrl = fileStorageService.generatePresignedUrl(attachment.getS3Key());
-
         return new AttachmentResponse(
                 attachment.getId(),
                 attachment.getMedicalRecord().getId(),
