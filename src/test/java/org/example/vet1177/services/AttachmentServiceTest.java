@@ -12,10 +12,13 @@ import org.example.vet1177.repository.MedicalRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +50,9 @@ class AttachmentServiceTest {
     @Mock
     private MedicalRecordPolicy medicalRecordPolicy;
 
+    @Mock
+    private OrphanedS3Enqueuer orphanedS3Enqueuer;
+
     private AttachmentService attachmentService;
 
     private User vetUser;
@@ -69,7 +75,9 @@ class AttachmentServiceTest {
                 medicalRecordRepository,
                 attachmentPolicy,
                 props,
-                medicalRecordPolicy
+                medicalRecordPolicy,
+                orphanedS3Enqueuer
+
         );
 
         vetUser = new User("Dr. Sara Lindqvist", "sara@vet.se", "hash", Role.VET);
@@ -261,29 +269,49 @@ class AttachmentServiceTest {
 
     @Test
     void delete_shouldDeleteFromRepository() {
+        try (var mockedStatic = mockStatic(TransactionSynchronizationManager.class)) {
+            mockedStatic.when(TransactionSynchronizationManager::isSynchronizationActive).thenReturn(true);
         when(attachmentRepository.findById(attachmentId)).thenReturn(Optional.of(attachment));
 
         attachmentService.deleteAttachment(vetUser, attachmentId);
 
         verify(attachmentRepository).delete(attachment);
+            mockedStatic.verify(() -> TransactionSynchronizationManager.registerSynchronization(any()));
+        }
     }
 
     @Test
     void delete_shouldCallPolicyCanDelete() {
+        try (var mockedStatic = mockStatic(TransactionSynchronizationManager.class)) {
+            mockedStatic.when(TransactionSynchronizationManager::isSynchronizationActive).thenReturn(true);
         when(attachmentRepository.findById(attachmentId)).thenReturn(Optional.of(attachment));
 
         attachmentService.deleteAttachment(vetUser, attachmentId);
 
         verify(attachmentPolicy).canDelete(vetUser, attachment);
+            mockedStatic.verify(() -> TransactionSynchronizationManager.registerSynchronization(any()));
+        }
+
     }
 
     @Test
     void delete_shouldCallFileStorageDelete() {
-        when(attachmentRepository.findById(attachmentId)).thenReturn(Optional.of(attachment));
+        try (var mockedStatic = mockStatic(TransactionSynchronizationManager.class)) {
+            // Berätta för Spring att transaktionen är aktiv
+            mockedStatic.when(TransactionSynchronizationManager::isSynchronizationActive).thenReturn(true);
 
-        attachmentService.deleteAttachment(vetUser, attachmentId);
+            when(attachmentRepository.findById(attachmentId)).thenReturn(Optional.of(attachment));
 
-        verify(fileStorageService).delete(attachment.getS3Key());
+            ArgumentCaptor<TransactionSynchronization> syncCaptor = ArgumentCaptor.forClass(TransactionSynchronization.class);
+
+            attachmentService.deleteAttachment(vetUser, attachmentId);
+
+            mockedStatic.verify(() -> TransactionSynchronizationManager.registerSynchronization(syncCaptor.capture()));
+
+            syncCaptor.getValue().afterCommit();
+
+            verify(fileStorageService).delete(attachment.getS3Key());
+        }
     }
 
     @Test
@@ -294,5 +322,26 @@ class AttachmentServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
 
         verify(attachmentRepository, never()).delete(any());
+    }
+
+    @Test
+    void upload_whenDbFailsAndS3DeleteFails_shouldEnqueueOrphan() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "bild.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        when(medicalRecordRepository.findById(recordId)).thenReturn(Optional.of(record));
+
+        // 1. Tvinga DB att krascha
+        when(attachmentRepository.saveAndFlush(any())).thenThrow(new RuntimeException("DB Error"));
+
+        // 2. Tvinga även raderingen att krascha (det är då den hamnar i kön!)
+        doThrow(new RuntimeException("S3 Delete Error"))
+                .when(fileStorageService).delete(anyString());
+
+        assertThatThrownBy(() -> attachmentService.uploadAttachment(vetUser, file, new AttachmentRequest(recordId, "En bild")))
+                .isInstanceOf(RuntimeException.class);
+
+        // Nu kommer kön att anropas!
+        verify(orphanedS3Enqueuer).enqueue(anyString(), eq("test-bucket"), anyString());
     }
 }
