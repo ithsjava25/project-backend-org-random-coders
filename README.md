@@ -12,6 +12,8 @@ Ett webbaserat journalhanteringssystem för veterinärkliniker. Husdjursägare k
 - [Projektstruktur](#projektstruktur)
 - [API-endpoints](#api-endpoints)
 - [Roller och behörigheter](#roller-och-behörigheter)
+- [Säkerhet](#säkerhet)
+- [Databasmigration (Flyway)](#databasmigration-flyway)
 - [Fillagring (MinIO/S3)](#fillagring-minios3)
 - [Testning](#testning)
 - [CI/CD](#cicd)
@@ -29,6 +31,7 @@ Ett webbaserat journalhanteringssystem för veterinärkliniker. Husdjursägare k
 | Ramverk         | Spring Boot 4.0.4                  |
 | Databas         | PostgreSQL 15                      |
 | ORM             | Spring Data JPA / Hibernate        |
+| Migration       | Flyway (versionerade migrationer)  |
 | Säkerhet        | Spring Security 6                  |
 | Fillagring      | MinIO (S3-kompatibel)              |
 | Loggning        | SLF4J                              |
@@ -151,7 +154,14 @@ frontend/src/
 
 ### Ärendestatus
 
-`OPEN` → `IN_PROGRESS` → `AWAITING_INFO` → `CLOSED`
+Status är en enum (`RecordStatus`):
+
+- `OPEN` — nytt ärende, ingen handläggare tilldelad
+- `IN_PROGRESS` — handläggning pågår (sätts automatiskt vid `assignVet`)
+- `AWAITING_INFO` — väntar på komplettering från ägaren
+- `CLOSED` — avslutat (slutstatus, kräver slutnotering vid stängning)
+
+VET kan fritt växla mellan `OPEN`, `IN_PROGRESS` och `AWAITING_INFO` via `PUT /{id}/status`. Stängning sker bara via dedikerad `PUT /{id}/close`.
 
 ---
 
@@ -180,6 +190,7 @@ Bas-URL: `/api`
 | GET    | `/clinic/{clinicId}/status/{status}` | Filtrera på klinik och status      |
 | PUT    | `/{id}`                              | Uppdatera ärende                   |
 | PUT    | `/{id}/assign-vet`                   | Tilldela veterinär                 |
+| PUT    | `/{id}/unassign-vet`                 | Tilldelad VET släpper ärendet      |
 | PUT    | `/{id}/status`                       | Uppdatera status                   |
 | PUT    | `/{id}/close`                        | Stäng ärende                       |
 
@@ -199,7 +210,19 @@ Bas-URL: `/api`
 
 ## Roller och behörigheter
 
-Auktoriseringslogiken hanteras av rollspecifika policy-klasser: `MedicalRecordPolicy`, `CommentPolicy` och `PetPolicy`.
+Auktoriseringen sker i två lager:
+
+**Lager 1 — URL-nivå** i `SecurityConfig` (`requestMatchers(...).hasAnyRole(...)`) — grovmaskigt rollfilter.
+**Lager 2 — Policy-klasser** — finkornig ägarskap, kliniktillhörighet och statuschecks. Kallas från service eller controller innan mutationer.
+
+| Policy-klass | Ansvar |
+|---|---|
+| `MedicalRecordPolicy` | canCreate / canView / canUpdate / canUpdateStatus / canClose / canAssignVet / canUnassignVet / canViewClinic |
+| `AttachmentPolicy` | canUpload (MIME + size + ägarskap + CLOSED-spärr) / canDownload / canDelete |
+| `CommentPolicy` | canCreate / canView / canUpdate / canDelete / isVisibleTo |
+| `PetPolicy` | canUpdate / canDelete |
+| `ActivityLogPolicy` | canView — endast ADMIN eller inblandade parter |
+| `AdminPolicy` | Gate för ADMIN-only operationer |
 
 | Roll    | Behörighet                                                  |
 |---------|-------------------------------------------------------------|
@@ -211,12 +234,79 @@ Policybrott kastar `ForbiddenException` (HTTP 403).
 
 ---
 
+## Säkerhet
+
+### Autentisering
+
+- Username/password (email + BCrypt-hash) verifieras via `DaoAuthenticationProvider` + `CustomUserDetailsService`.
+- Vid lyckad login utfärdar `JwtService.generateToken()` en signerad JWT (HS256, hemlig nyckel via `JWT_SECRET`).
+- Frontend sparar tokenen i `localStorage`/`sessionStorage` och bifogar den som `Authorization: Bearer <token>` på efterföljande requests.
+
+### JWT-claims
+
+Tokenen bär följande claims:
+
+| Claim      | Beskrivning                                                     |
+|------------|-----------------------------------------------------------------|
+| `sub`      | Användarens email (subject)                                     |
+| `userId`   | UUID — backend slår upp `User` i DB vid varje request           |
+| `role`     | `ROLE_OWNER` / `ROLE_VET` / `ROLE_ADMIN` — driver URL-filter    |
+| `name`     | Användarens namn (för UI-visning)                               |
+| `clinicId` | Klinik-UUID (sätts endast för VET) — används i policy-checks    |
+| `iat`      | Issued-at timestamp                                             |
+| `exp`      | Expiration (default 24 h)                                       |
+
+`JwtAuthenticationFilter` validerar signaturen, kontrollerar `exp`, och hydratiserar `User`-objektet från DB innan controllers nås.
+
+### Stateless
+
+- Ingen server-session (`SessionCreationPolicy.STATELESS`).
+- CSRF-skydd avstängt — irrelevant för Bearer-token-baserad auth.
+
+---
+
+## Databasmigration (Flyway)
+
+Schemat hanteras av Flyway-migrationer i `src/main/resources/db/migration/`:
+
+| Migration | Beskrivning |
+|---|---|
+| `V1__initial_schema.sql` | Grundläggande tabeller (users, clinics, pets, medical_record, comments, attachments, activity_log) |
+| `V2__init_orphaned_table.sql` | Tabellen `orphaned_s3_objects` för durable retry (se [Fillagring](#fillagring-minios3)) |
+| `dev/V3__insert_demo_data.sql` | Demo-data, **endast** i dev-profilen (`spring.flyway.locations` inkluderar `dev/` för dev-profilen) |
+
+`flyway_schema_history`-tabellen i databasen håller koll på vilka migrationer som körts. Nya migrationer läggs till med nästkommande versionsnummer (`V3__`, `V4__` ...).
+
+---
+
 ## Fillagring (MinIO/S3)
 
 Bilagor lagras i MinIO (S3-kompatibelt). Vid applikationsstart skapas bucket automatiskt om den saknas.
 
-**Konfigureras via:** `MinioConfig.java`  
+**Konfigureras via:** `MinioConfig.java`
 **Relevanta env-variabler:** `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_REGION`
+
+### Durable retry vid S3-fel (orphan-cleanup)
+
+Vissa S3-operationer kan misslyckas efter att DB-transaktionen redan har committats — då skulle binären annars ligga föräldralös i MinIO utan automatisk återhämtning. För att undvika detta finns en bakgrundsmekanism som garanterar att alla föräldralösa objekt till slut städas upp.
+
+**Komponenter:**
+
+| Klass | Ansvar |
+|---|---|
+| `OrphanedS3Object` | JPA-entitet för tabellen `orphaned_s3_objects` (`s3_key`, `s3_bucket`, `retry_count`, `last_attempt_at`, `last_error`) |
+| `OrphanedS3Enqueuer` | Lägger en S3-nyckel i kön. Kör i `Propagation.REQUIRES_NEW` så raden persisteras även om huvudtransaktionen rullar tillbaka. Idempotent (find-or-create på `s3_key`) |
+| `OrphanedS3Processor` | Försöker radera ett objekt i sin egen `REQUIRES_NEW`-transaktion. Lyckat → ta bort kö-raden. Fel → öka `retry_count`, spara felmeddelande |
+| `OrphanedS3CleanupWorker` | `@Scheduled(fixedDelay = 600000)` (10 min). Plockar upp till 20 rader åt gången med `NULLS FIRST`-ordning så att nya orphans prioriteras före retries |
+
+**Två triggar för enqueue:**
+
+1. **Upload-cleanup** — om DB-persistens misslyckas efter S3-uppladdning så försöker `AttachmentService` radera direkt; om även det misslyckas läggs nyckeln i kön
+2. **Delete efter commit** — `AttachmentService.deleteAttachment` registrerar en `TransactionSynchronization.afterCommit`-callback. Misslyckas S3-anropet där → läggs i kön
+
+**Permanent fail:** Om `retry_count >= MAX_RETRIES` (10) slutar workern försöka och loggar `ALERT`-rad så att operatör kan städa manuellt. Objektet ligger kvar i `orphaned_s3_objects`-tabellen för spårbarhet.
+
+**Migration:** Tabellen skapas via Flyway-migration `V2__init_orphaned_table.sql`.
 
 ---
 
@@ -254,6 +344,7 @@ Global felhantering via `GlobalExceptionHandler` (`@RestControllerAdvice`).
 |----------------------------|-------------|------------------------------------|
 | `ResourceNotFoundException`| 404         | Resursen hittades inte             |
 | `ForbiddenException`       | 403         | Behörighet saknas                  |
-| `BusinessRuleException`    | 400         | Affärsregelfel                     |
+| `BusinessRuleException`    | 422         | Affärsregelfel                     |
+| `BadCredentialsException`  | 401         | Fel email/lösenord vid login       |
 | Valideringsfel             | 400         | Ogiltiga request-fält              |
 | Övriga fel                 | 500         | Okänt serverfel                    |
